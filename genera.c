@@ -190,9 +190,11 @@ static int globalis_adde(
     const char *nomen, typus_t *typus,
     int est_staticus, long valor
 ) {
-    for (int i = 0; i < num_globalium; i++)
-        if (strcmp(globales[i].nomen, nomen) == 0)
-            return i;
+    if (!est_staticus) {
+        for (int i = 0; i < num_globalium; i++)
+            if (strcmp(globales[i].nomen, nomen) == 0)
+                return i;
+    }
     if (num_globalium >= MAX_GLOBALES)
         erratum("nimis multae globales");
     int id = num_globalium++;
@@ -919,6 +921,35 @@ static void genera_expr(nodus_t *n, int dest)
         }
 
     case N_BINOP: {
+            /* short-circuit pro && et || */
+            if (n->op == T_AMPAMP) {
+                int l_false = label_novus();
+                int l_end   = label_novus();
+                genera_expr(n->sinister, dest);
+                emit_cbz_label(r, l_false);
+                genera_expr(n->dexter, dest);
+                emit_cbz_label(r, l_false);
+                emit_movi(r, 1);
+                emit_b_label(l_end);
+                label_pone(l_false);
+                emit_movi(r, 0);
+                label_pone(l_end);
+                break;
+            }
+            if (n->op == T_PIPEPIPE) {
+                int l_true = label_novus();
+                int l_end  = label_novus();
+                genera_expr(n->sinister, dest);
+                emit_cbnz_label(r, l_true);
+                genera_expr(n->dexter, dest);
+                emit_cbnz_label(r, l_true);
+                emit_movi(r, 0);
+                emit_b_label(l_end);
+                label_pone(l_true);
+                emit_movi(r, 1);
+                label_pone(l_end);
+                break;
+            }
             genera_expr(n->sinister, dest);
             int r2 = reg_alloca();
             genera_expr(n->dexter, r2);
@@ -1422,11 +1453,13 @@ static void genera_sententia(nodus_t *n)
             symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
             if (s && (s->est_globalis || s->est_staticus)) {
             /* globalis/statica */
-                long val = 0;
-                if (n->sinister && n->sinister->genus == N_NUM)
-                    val = n->sinister->valor;
-                int gid = globalis_adde(n->nomen, n->typus_decl, n->est_staticus, val);
-                s->globalis_index = gid;
+                if (s->globalis_index < 0) {
+                    long val = 0;
+                    if (n->sinister && n->sinister->genus == N_NUM)
+                        val = n->sinister->valor;
+                    int gid = globalis_adde(n->nomen, n->typus_decl, n->est_staticus, val);
+                    s->globalis_index = gid;
+                }
             } else if (n->num_membrorum > 0 && n->membra) {
             /* initiale tabulae { expr, expr, ... } */
                 if (s) {
