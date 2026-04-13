@@ -921,7 +921,8 @@ static void genera_expr(nodus_t *n, int dest)
         }
 
     case N_BINOP: {
-            /* short-circuit pro && et || */
+            /* §6.5.13, §6.5.14: short-circuit — dextrum non evaluatur
+             * si sinistrum iam determinat resultatum */
             if (n->op == T_AMPAMP) {
                 int l_false = label_novus();
                 int l_end   = label_novus();
@@ -985,6 +986,7 @@ static void genera_expr(nodus_t *n, int dest)
                 }
                 break;
             case T_STAR:    emit_mul(ra, ra, rb); break;
+            /* §6.5.5: / et % — unsigned vel signed secundum typum */
             case T_SLASH:
                 if (est_unsigned(n->typus))
                     emit_udiv(ra, ra, rb);
@@ -1003,6 +1005,7 @@ static void genera_expr(nodus_t *n, int dest)
             case T_PIPE:    emit_orr(ra, ra, rb); break;
             case T_CARET:   emit_eor(ra, ra, rb); break;
             case T_LTLT:    emit_lsl(ra, ra, rb); break;
+            /* §6.5.7: >> logicus pro unsigned, arithmeticus pro signed */
             case T_GTGT:
                 if (est_unsigned(n->sinister->typus))
                     emit_lsr(ra, ra, rb);
@@ -1015,21 +1018,23 @@ static void genera_expr(nodus_t *n, int dest)
             case T_BANGEQ:  emit_cmp(ra, rb);
                 emit_cset(ra, COND_NE);
                 break;
+            /* §6.3.1.8: usual arithmetic conversions —
+             * si uterque operandus unsigned, comparatio unsigned */
             case T_LT:
                 emit_cmp(ra, rb);
-                emit_cset(ra, est_unsigned(n->sinister->typus) ? COND_LO : COND_LT);
+                emit_cset(ra, (est_unsigned(n->sinister->typus) || est_unsigned(n->dexter->typus)) ? COND_LO : COND_LT);
                 break;
             case T_GT:
                 emit_cmp(ra, rb);
-                emit_cset(ra, est_unsigned(n->sinister->typus) ? COND_HI : COND_GT);
+                emit_cset(ra, (est_unsigned(n->sinister->typus) || est_unsigned(n->dexter->typus)) ? COND_HI : COND_GT);
                 break;
             case T_LTEQ:
                 emit_cmp(ra, rb);
-                emit_cset(ra, est_unsigned(n->sinister->typus) ? COND_LS : COND_LE);
+                emit_cset(ra, (est_unsigned(n->sinister->typus) || est_unsigned(n->dexter->typus)) ? COND_LS : COND_LE);
                 break;
             case T_GTEQ:
                 emit_cmp(ra, rb);
-                emit_cset(ra, est_unsigned(n->sinister->typus) ? COND_HS : COND_GE);
+                emit_cset(ra, (est_unsigned(n->sinister->typus) || est_unsigned(n->dexter->typus)) ? COND_HS : COND_GE);
                 break;
             case T_AMPAMP:
                 {
@@ -1194,7 +1199,13 @@ static void genera_expr(nodus_t *n, int dest)
             case T_PIPEEQ:    emit_orr(r, r, rb); break;
             case T_CARETEQ:   emit_eor(r, r, rb); break;
             case T_LTLTEQ:    emit_lsl(r, r, rb); break;
-            case T_GTGTEQ:    emit_asr(r, r, rb); break;
+            /* §6.5.7: >>= logicus pro unsigned, arithmeticus pro signed */
+            case T_GTGTEQ:
+                if (est_unsigned(n->sinister->typus))
+                    emit_lsr(r, r, rb);
+                else
+                    emit_asr(r, r, rb);
+                break;
             }
             reg_libera(r3);
             emit_store(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
