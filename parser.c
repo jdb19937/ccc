@@ -646,11 +646,10 @@ static typus_t *parse_declarator(typus_t *basis, char *nomen, int max_nomen)
     while (sig.genus == T_LBRACKET) {
         lex_proximum();
         int num = 0;
-        if (sig.genus == T_NUM) {
-            num = (int)sig.valor;
-            lex_proximum();
-        } else if (sig.genus != T_RBRACKET) {
-            /* expressio constans — simplify */
+        if (sig.genus == T_RBRACKET) {
+            /* [] — dimensio ignota */
+        } else {
+            /* expressio constans */
             nodus_t *e = parse_expr_assign();
             if (e && e->genus == N_NUM)
                 num = (int)e->valor;
@@ -1568,8 +1567,9 @@ static nodus_t *parse_declaratio(int est_globalis)
         /* symbolum — salva in nodo */
         symbolum_t *vs = ambitus_adde(nomen, SYM_VAR);
         vs->typus = td;
-        vs->est_globalis = est_globalis || s_stat;
+        vs->est_globalis = est_globalis || s_stat || s_ext;
         vs->est_staticus = s_stat;
+        vs->est_externus = s_ext;
         vd->sym = vs;
 
         int alloca_differtur = 0;

@@ -768,7 +768,15 @@ static void genera_lval(nodus_t *n, int dest)
             symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
             if (!s)
                 erratum_ad(n->linea, "symbolum ignotum: %s", n->nomen);
-            if (s->est_globalis) {
+            if (s->est_globalis && s->est_externus) {
+                /* variabilis externa — adresse per GOT */
+                char got_nomen[260];
+                snprintf(got_nomen, 260, "_%s", s->nomen);
+                int gid = got_adde(got_nomen);
+                emit_adrp_fixup(r, FIX_ADRP_GOT, gid);
+                fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
+                emit_ldr64(r, r, 0);
+            } else if (s->est_globalis) {
                 int gid = s->globalis_index;
                 if (gid < 0)
                     gid = globalis_adde(s->nomen, s->typus, s->est_staticus, 0);
@@ -881,14 +889,22 @@ static void genera_expr(nodus_t *n, int dest)
                 break;
             }
             if (s->genus == SYM_FUNC) {
-            /* carrica adresse functionis ex GOT */
-                char got_nomen[260];
-                snprintf(got_nomen, 260, "_%s", s->nomen);
-                int gid      = got_adde(got_nomen);
-                s->got_index = gid;
-                emit_adrp_fixup(r, FIX_ADRP_GOT, gid);
-                fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
-                emit_ldr64(r, r, 0);
+                /* proba si functio est localis */
+                int flabel = func_loc_quaere(s->nomen);
+                if (flabel >= 0) {
+                    /* adresse functionis localis per ADR */
+                    fixup_adde(FIX_ADR_LABEL, codex_lon, flabel, 0);
+                    emit32(0x10000000 | r); /* ADR Xr, label — placeholder */
+                } else {
+                    /* functio externa — per GOT */
+                    char got_nomen[260];
+                    snprintf(got_nomen, 260, "_%s", s->nomen);
+                    int gid      = got_adde(got_nomen);
+                    s->got_index = gid;
+                    emit_adrp_fixup(r, FIX_ADRP_GOT, gid);
+                    fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
+                    emit_ldr64(r, r, 0);
+                }
                 break;
             }
             genera_lval(n, dest);
@@ -2035,6 +2051,15 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus)
                 int delta = (target_off - f->offset) / 4;
                 int rt = inst & 0x1F;
                 inst = 0xB4000000 | ((delta & 0x7FFFF) << 5) | rt;
+                break;
+            }
+        case FIX_ADR_LABEL: {
+                int target_off = labels[f->target];
+                int delta = target_off - f->offset;
+                int rd = inst & 0x1F;
+                int immlo = delta & 3;
+                int immhi = (delta >> 2) & 0x7FFFF;
+                inst = 0x10000000 | (immlo << 29) | (immhi << 5) | rd;
                 break;
             }
         case FIX_CBNZ: {

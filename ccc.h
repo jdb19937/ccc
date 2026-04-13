@@ -35,7 +35,7 @@
 #define MAX_PLICAE_ACERVUS 64
 #define MAX_GLOBALES    4096
 #define MAX_CASUS       512
-#define MAX_AMBITUS     256
+#define MAX_AMBITUS     1024
 #define MAX_BREAK       256
 
 #define PAGINA          0x4000    /* ARM64 macOS pagina = 16 KiB */
@@ -200,6 +200,7 @@ struct symbolum {
     int offset;             /* offset in acervo (locals) */
     int est_globalis;
     int est_staticus;
+    int est_externus;
     int est_parametrus;
     int valor_enum;         /* pro SYM_ENUM_CONST */
     int got_index;          /* index in GOT pro functione externa */
@@ -236,6 +237,7 @@ enum {
     FIX_ADD_LO12_DATA,     /* ADD #lo12 ad datum globale */
     FIX_LDR_LO12_DATA,    /* LDR [x, #lo12] ad datum globale */
     FIX_STR_LO12_DATA,    /* STR [x, #lo12] ad datum globale */
+    FIX_ADR_LABEL,         /* ADR Xn, label (adresse codicis) */
 };
 
 typedef struct {
