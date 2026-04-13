@@ -46,10 +46,60 @@ static int switch_num_casuum;
 static int switch_default_label;
 static int in_switch = 0;
 
+static int label_novus(void);
+
+/* tabula functionum localium (nomen -> label) */
+typedef struct {
+    char nomen[256];
+    int label;
+} func_loc_t;
+
+static func_loc_t func_loci[MAX_GLOBALES];
+static int num_func_loc = 0;
+
+static int func_loc_quaere(const char *nomen)
+{
+    for (int i = 0; i < num_func_loc; i++)
+        if (strcmp(func_loci[i].nomen, nomen) == 0)
+            return func_loci[i].label;
+    return -1;
+}
+
+static int func_loc_adde(const char *nomen)
+{
+    int lab = label_novus();
+    strncpy(func_loci[num_func_loc].nomen, nomen, 255);
+    func_loci[num_func_loc].label = lab;
+    num_func_loc++;
+    return lab;
+}
+
+/* goto labels intra functionem */
+typedef struct {
+    char nomen[256];
+    int label;
+} goto_label_t;
+
+static goto_label_t goto_labels[256];
+static int num_goto_labels = 0;
+
+static int goto_label_quaere_vel_crea(const char *nomen)
+{
+    for (int i = 0; i < num_goto_labels; i++)
+        if (strcmp(goto_labels[i].nomen, nomen) == 0)
+            return goto_labels[i].label;
+    int lab = label_novus();
+    strncpy(goto_labels[num_goto_labels].nomen, nomen, 255);
+    goto_labels[num_goto_labels].label = lab;
+    num_goto_labels++;
+    return lab;
+}
+
 /* status functionis currentis */
 static int cur_frame_mag;     /* magnitudo frame */
 static int cur_param_num;     /* numerus parametrorum */
 static typus_t *cur_func_typus;
+static int profunditas_vocationis = 0; /* profunditas vocationum nestarum */
 
 /* registra temporaria: x0-x7, x9-x15 */
 static int reg_vertex = 0;
@@ -393,6 +443,13 @@ static void emit_b_label(int label)
     emit32(0x14000000); /* placeholder */
 }
 
+/* BL label (vocationem directam) */
+static void emit_bl_label(int label)
+{
+    fixup_adde(FIX_BL, codex_lon, label, 0);
+    emit32(0x94000000); /* placeholder */
+}
+
 /* B.cond label */
 static void emit_bcond_label(int cond, int label)
 {
@@ -666,6 +723,16 @@ static int mag_typi(typus_t *t)
     return t->magnitudo ? t->magnitudo : 4;
 }
 
+/* magnitudo vera pro accessu tabulae — non reducit TY_ARRAY ad 8 */
+static int mag_typi_verus(typus_t *t)
+{
+    if (!t)
+        return 8;
+    if (t->genus == TY_ARRAY)
+        return t->magnitudo > 0 ? t->magnitudo : 8;
+    return mag_typi(t);
+}
+
 static int est_unsigned(typus_t *t)
 {
     if (!t)
@@ -730,7 +797,7 @@ static void genera_lval(nodus_t *n, int dest)
             genera_expr(n->dexter, r2);
             int basis_mag = 1;
             if (n->sinister->typus)
-                basis_mag = mag_typi(typus_basis_indicis(n->sinister->typus));
+                basis_mag = mag_typi_verus(typus_basis_indicis(n->sinister->typus));
             if (basis_mag > 1) {
                 emit_movi(17, basis_mag);
                 emit_mul(reg_arm(r2), reg_arm(r2), 17);
@@ -861,7 +928,7 @@ static void genera_expr(nodus_t *n, int dest)
                     }
                 }
                 emit_sub(ra, ra, rb);
-            /* si ambo indices, divide per magnitudinem basis */
+                /* si ambo indices, divide per magnitudinem basis */
                 if (typus_est_index(n->sinister->typus) && typus_est_index(n->dexter->typus)) {
                     int bm = mag_typi(typus_basis_indicis(n->sinister->typus));
                     if (bm > 1) {
@@ -917,7 +984,8 @@ static void genera_expr(nodus_t *n, int dest)
                 emit_cmp(ra, rb);
                 emit_cset(ra, est_unsigned(n->sinister->typus) ? COND_HS : COND_GE);
                 break;
-            case T_AMPAMP: {
+            case T_AMPAMP:
+                {
                     int l_false = label_novus();
                     int l_end   = label_novus();
                     emit_cbz_label(ra, l_false);
@@ -929,7 +997,8 @@ static void genera_expr(nodus_t *n, int dest)
                     label_pone(l_end);
                     break;
                 }
-            case T_PIPEPIPE: {
+            case T_PIPEPIPE:
+                {
                     int l_true = label_novus();
                     int l_end  = label_novus();
                     emit_cbnz_label(ra, l_true);
@@ -955,8 +1024,9 @@ static void genera_expr(nodus_t *n, int dest)
                 emit_cmpi(r, 0);
                 emit_cset(r, COND_EQ);
                 break;
-            case T_PLUSPLUS: {
-            /* pre-increment */
+            case T_PLUSPLUS:
+                /* pre-increment */
+                {
                     int r2 = reg_alloca();
                     genera_lval(n->sinister, r2);
                     int mag = mag_typi(n->typus);
@@ -969,7 +1039,8 @@ static void genera_expr(nodus_t *n, int dest)
                     reg_libera(r2);
                     break;
                 }
-            case T_MINUSMINUS: {
+            case T_MINUSMINUS:
+                {
                     int r2 = reg_alloca();
                     genera_lval(n->sinister, r2);
                     int mag = mag_typi(n->typus);
@@ -1012,7 +1083,7 @@ static void genera_expr(nodus_t *n, int dest)
             genera_expr(n->dexter, dest);
             int mag = mag_typi(n->sinister->typus);
             if (n->sinister->typus && n->sinister->typus->genus == TY_STRUCT) {
-            /* copia structurae */
+                /* copia structurae */
                 for (int i = 0; i < mag; i += 8) {
                     int rem = mag - i;
                     if (rem >= 8) {
@@ -1037,7 +1108,7 @@ static void genera_expr(nodus_t *n, int dest)
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);
             int mag = mag_typi(n->sinister->typus);
-        /* carrica valorem currentem */
+            /* carrica valorem currentem */
             if (est_unsigned(n->sinister->typus))
                 emit_load_unsigned(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
             else
@@ -1101,23 +1172,27 @@ static void genera_expr(nodus_t *n, int dest)
         genera_expr(n->dexter, dest);
         break;
 
-    case N_CALL: {
+    case N_CALL:
         /* salva registra viva */
+        {
             int salvati = reg_vertex;
             for (int i = 0; i < salvati; i++)
                 emit_str64(reg_arm(i), FP, -(cur_frame_mag - 16 - i * 8));
 
-        /* evaluare argumenta et salvare in acervo temporario */
+            /* evaluare argumenta et salvare in acervo temporario */
             int nargs = n->num_membrorum;
-            int arg_spill_base = cur_frame_mag - 16 - 15 * 8;
+            int arg_spill_base = cur_frame_mag - 16 - 15 * 8
+                + profunditas_vocationis * 8 * 8;
+            profunditas_vocationis++;
             for (int i = 0; i < nargs; i++) {
                 reg_vertex = 0;
                 genera_expr(n->membra[i], 0);
                 emit_str64(0, FP, -(arg_spill_base + i * 8));
             }
 
-        /* ABI Apple ARM64: argumenta variadica in acervo, non in registris.
-         * determinare quot parametri nominati sint. */
+            /* ABI Apple ARM64: argumenta variadica in acervo, non in registris.
+             * determinare quot parametri nominati sint. */
+
             typus_t *func_typ = NULL;
             if (n->sinister->typus && n->sinister->typus->genus == TY_FUNC)
                 func_typ = n->sinister->typus;
@@ -1132,12 +1207,12 @@ static void genera_expr(nodus_t *n, int dest)
             if (num_nominati > nargs)
                 num_nominati = nargs;
 
-        /* nominati in registris x0-x7 */
+            /* nominati in registris x0-x7 */
             int regs_usati = num_nominati < 8 ? num_nominati : 8;
             for (int i = 0; i < regs_usati; i++)
                 emit_ldr64(i, FP, -(arg_spill_base + i * 8));
 
-        /* si variadica: reliqua argumenta in acervo */
+            /* si variadica: reliqua argumenta in acervo */
             int acervus_args = 0;
             if (est_variadica && nargs > num_nominati) {
                 acervus_args    = nargs - num_nominati;
@@ -1148,10 +1223,10 @@ static void genera_expr(nodus_t *n, int dest)
                     emit_str64(17, SP, i * 8);
                 }
             } else if (!est_variadica) {
-            /* non variadica: omnia in registris */
+                /* non variadica: omnia in registris */
                 for (int i = regs_usati; i < nargs && i < 8; i++)
                     emit_ldr64(i, FP, -(arg_spill_base + i * 8));
-            /* superflua in acervo */
+                /* superflua in acervo */
                 if (nargs > 8) {
                     int extra     = nargs - 8;
                     int extra_mag = ((extra * 8) + 15) & ~15;
@@ -1167,45 +1242,57 @@ static void genera_expr(nodus_t *n, int dest)
         /* voca functionem */
             reg_vertex = 0;
             if (n->sinister->genus == N_IDENT) {
-                symbolum_t *s = n->sinister->sym ? n->sinister->sym : ambitus_quaere_omnes(n->sinister->nomen);
-                char got_nomen[260];
-                snprintf(got_nomen, 260, "_%s", n->sinister->nomen);
-                int gid = got_adde(got_nomen);
-                if (s)
-                    s->got_index = gid;
-                emit_adrp_fixup(16, FIX_ADRP_GOT, gid);
-                fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
-                emit_ldr64(16, 16, 0);
-                emit_blr(16);
+                /* proba si functio est localis */
+                int flabel = func_loc_quaere(n->sinister->nomen);
+                if (flabel >= 0) {
+                    /* vocationem directam per BL */
+                    emit_bl_label(flabel);
+                } else {
+                    /* functio externa — per GOT */
+                    symbolum_t *s = n->sinister->sym ? n->sinister->sym : ambitus_quaere_omnes(n->sinister->nomen);
+                    char got_nomen[260];
+                    snprintf(got_nomen, 260, "_%s", n->sinister->nomen);
+                    int gid = got_adde(got_nomen);
+                    if (s)
+                        s->got_index = gid;
+                    emit_adrp_fixup(16, FIX_ADRP_GOT, gid);
+                    fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
+                    emit_ldr64(16, 16, 0);
+                    emit_blr(16);
+                }
             } else {
                 genera_expr(n->sinister, 0);
                 emit_mov(16, 0);
                 emit_blr(16);
             }
 
+            profunditas_vocationis--;
+
             if (acervus_args > 0) {
                 int acervus_mag = ((acervus_args * 8) + 15) & ~15;
                 emit_addi(SP, SP, acervus_mag);
             }
 
-        /* resultatum in x0 — move ad dest */
+            /* resultatum in x0 — move ad dest primo */
             if (r != 0)
                 emit_mov(r, 0);
 
-        /* restitue registra */
+            /* restitue registra — praetermitte dest ne resultatum deleatur */
             reg_vertex = salvati;
-            for (int i = 0; i < salvati; i++)
+            for (int i = 0; i < salvati; i++) {
+                if (i == dest)
+                    continue; /* hic iam habet resultatum */
                 emit_ldr64(reg_arm(i), FP, -(cur_frame_mag - 16 - i * 8));
-            if (dest < salvati)
-                emit_mov(r, 0); /* overwrite cum resultato */
+            }
             break;
         }
 
-    case N_INDEX: {
+    case N_INDEX:
+        {
             genera_expr(n->sinister, dest);
             int r2 = reg_alloca();
             genera_expr(n->dexter, r2);
-            int basis_mag = mag_typi(n->typus);
+            int basis_mag = mag_typi_verus(n->typus);
             if (basis_mag > 1) {
                 emit_movi(17, basis_mag);
                 emit_mul(reg_arm(r2), reg_arm(r2), 17);
@@ -1217,14 +1304,16 @@ static void genera_expr(nodus_t *n, int dest)
             break;
         }
 
-    case N_MEMBER: {
+    case N_MEMBER:
+        {
             genera_lval(n, dest);
             if (n->typus && n->typus->genus != TY_ARRAY && n->typus->genus != TY_STRUCT)
                 emit_load_from_addr(r, n->typus);
             break;
         }
 
-    case N_ARROW: {
+    case N_ARROW:
+        {
             genera_lval(n, dest);
             if (n->typus && n->typus->genus != TY_ARRAY && n->typus->genus != TY_STRUCT)
                 emit_load_from_addr(r, n->typus);
@@ -1312,7 +1401,8 @@ static void genera_sententia(nodus_t *n)
         reg_vertex = 0;
         break;
 
-    case N_VAR_DECL: {
+    case N_VAR_DECL:
+        {
             symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
             if (s && (s->est_globalis || s->est_staticus)) {
             /* globalis/statica */
@@ -1321,15 +1411,125 @@ static void genera_sententia(nodus_t *n)
                     val = n->sinister->valor;
                 int gid = globalis_adde(n->nomen, n->typus_decl, n->est_staticus, val);
                 s->globalis_index = gid;
+            } else if (n->num_membrorum > 0 && n->membra) {
+            /* initiale tabulae { expr, expr, ... } */
+                if (s) {
+                    int off_basis = s->offset;
+                    typus_t *elem_typus = (s->typus && s->typus->genus == TY_ARRAY) ?
+                        s->typus->basis : ty_int;
+                    int elem_mag = typus_magnitudo(elem_typus);
+                    if (elem_mag < 1)
+                        elem_mag = 4;
+                    /* primo imple totam tabulam cum zeris */
+                    int tot_mag = (s->typus && s->typus->genus == TY_ARRAY) ?
+                        s->typus->magnitudo : mag_typi(s->typus);
+                    if (tot_mag > 0) {
+                        emit_movi(0, 0);
+                        for (int z = 0; z < tot_mag; z += 8) {
+                            int zo = off_basis + z;
+                            emit_movi(17, -zo);
+                            emit_sub(17, FP, 17);
+                            emit_str64(0, 17, 0);
+                        }
+                    }
+                    /* scribe singula elementa */
+                    for (int i = 0; i < n->num_membrorum; i++) {
+                        reg_vertex = 0;
+                        genera_expr(n->membra[i], 0);
+                        int elem_off = off_basis + i * elem_mag;
+                        emit_movi(17, -elem_off);
+                        emit_sub(17, FP, 17);
+                        emit_store(0, 17, 0, elem_mag);
+                        reg_vertex = 0;
+                    }
+                }
+            } else if (
+                n->sinister && n->sinister->genus == N_BLOCK &&
+                n->sinister->typus &&
+                (
+                    n->sinister->typus->genus == TY_STRUCT ||
+                    n->sinister->typus->genus == TY_ARRAY
+                ) && s
+            ) {
+            /* compound literal — scribe membra singulariter */
+                {
+                    int off     = s->offset;
+                    typus_t *st = n->sinister->typus;
+                    int tot_mag = st->magnitudo > 0 ? st->magnitudo : mag_typi(st);
+                    /* primo imple cum zeris */
+                    emit_movi(0, 0);
+                    for (int z = 0; z < tot_mag; z += 8) {
+                        emit_movi(17, -(off + z));
+                        emit_sub(17, FP, 17);
+                        emit_str64(0, 17, 0);
+                    }
+                    /* scribe singula elementa */
+                    if (st->genus == TY_STRUCT && st->membra) {
+                        for (int i = 0; i < n->sinister->num_membrorum && i < st->num_membrorum; i++) {
+                            reg_vertex = 0;
+                            genera_expr(n->sinister->membra[i], 0);
+                            int moff = off + st->membra[i].offset;
+                            int mmag = mag_typi(st->membra[i].typus);
+                            emit_movi(17, -moff);
+                            emit_sub(17, FP, 17);
+                            emit_store(0, 17, 0, mmag);
+                            reg_vertex = 0;
+                        }
+                    } else {
+                        /* tabula */
+                        typus_t *elem_t = st->basis ? st->basis : ty_int;
+                        int emag        = typus_magnitudo(elem_t);
+                        if (emag < 1)
+                            emag = 4;
+                        for (int i = 0; i < n->sinister->num_membrorum; i++) {
+                            reg_vertex = 0;
+                            genera_expr(n->sinister->membra[i], 0);
+                            emit_movi(17, -(off + i * emag));
+                            emit_sub(17, FP, 17);
+                            emit_store(0, 17, 0, emag);
+                            reg_vertex = 0;
+                        }
+                    }
+                }
+            } else if (
+                n->sinister && n->sinister->genus == N_STR &&
+                s && s->typus && s->typus->genus == TY_ARRAY &&
+                s->typus->basis && (
+                    s->typus->basis->genus == TY_CHAR ||
+                    s->typus->basis->genus == TY_UCHAR
+                )
+            ) {
+            /* initiale tabulae char cum chorda litterali */
+                {
+                    int off     = s->offset;
+                    int arr_mag = s->typus->magnitudo;
+                    /* primo imple cum zeris */
+                    emit_movi(0, 0);
+                    for (int z = 0; z < arr_mag; z += 8) {
+                        emit_movi(17, -(off + z));
+                        emit_sub(17, FP, 17);
+                        emit_str64(0, 17, 0);
+                    }
+                    /* deinde copia characteres chordae */
+                    const char *str = n->sinister->chorda;
+                    int slen        = n->sinister->lon_chordae;
+                    for (int i = 0; i <= slen && i < arr_mag; i++) {
+                        emit_movi(0, (unsigned char)str[i]);
+                        emit_movi(17, -(off + i));
+                        emit_sub(17, FP, 17);
+                        emit_strb(0, 17, 0);
+                    }
+                }
+                reg_vertex = 0;
             } else if (n->sinister) {
-            /* initiale */
+            /* initiale scalaris */
                 reg_vertex = 0;
                 genera_expr(n->sinister, 0);
                 if (s) {
                     int mag = mag_typi(s->typus);
                     int off = s->offset;
                     if (s->typus && s->typus->genus == TY_STRUCT) {
-                    /* copia struct */
+                    /* copia structurae */
                         emit_movi(17, -off);
                         emit_sub(17, FP, 17);
                         for (int i = 0; i < mag; i += 8) {
@@ -1356,7 +1556,8 @@ static void genera_sententia(nodus_t *n)
             break;
         }
 
-    case N_IF: {
+    case N_IF:
+        {
             int l_else = label_novus(), l_end = label_novus();
             reg_vertex = 0;
             genera_expr(n->sinister, 0);
@@ -1372,7 +1573,8 @@ static void genera_sententia(nodus_t *n)
             break;
         }
 
-    case N_WHILE: {
+    case N_WHILE:
+        {
             int l_cond = label_novus(), l_end = label_novus();
             int l_cont = l_cond;
             break_labels[break_vertex] = l_end;
@@ -1390,7 +1592,8 @@ static void genera_sententia(nodus_t *n)
             break;
         }
 
-    case N_DOWHILE: {
+    case N_DOWHILE:
+        {
             int l_top = label_novus(), l_cond = label_novus(), l_end = label_novus();
             break_labels[break_vertex] = l_end;
             continue_labels[break_vertex] = l_cond;
@@ -1406,7 +1609,8 @@ static void genera_sententia(nodus_t *n)
             break;
         }
 
-    case N_FOR: {
+    case N_FOR:
+        {
             int l_cond = label_novus(), l_inc = label_novus(), l_end = label_novus();
             break_labels[break_vertex] = l_end;
             continue_labels[break_vertex] = l_inc;
@@ -1435,8 +1639,9 @@ static void genera_sententia(nodus_t *n)
             break;
         }
 
-    case N_SWITCH: {
+    case N_SWITCH:
         /* collige casus ex corpore */
+        {
             int l_end         = label_novus();
             int old_in_switch = in_switch;
             casus_t old_casus[MAX_CASUS];
@@ -1453,23 +1658,23 @@ static void genera_sententia(nodus_t *n)
                 continue_labels[break_vertex - 1] : l_end;
             break_vertex++;
 
-        /* evaluare expressionem switch */
+            /* evaluare expressionem switch */
             reg_vertex = 0;
             genera_expr(n->sinister, 0);
-        /* salva in acervo */
+            /* salva in acervo */
             emit_str64(0, FP, -(cur_frame_mag - 16 - 15 * 8 - 8));
 
-        /* pre-scan corpus pro casus et default labels */
-        /* genera corpus — casus labels ponentur suis locis */
+            /* pre-scan corpus pro casus et default labels */
+            /* genera corpus — casus labels ponentur suis locis */
             int l_dispatch = label_novus();
             emit_b_label(l_dispatch); /* salta ad dispatch */
 
-        /* genera corpus */
+            /* genera corpus */
             reg_vertex = 0;
             genera_sententia(n->dexter);
             emit_b_label(l_end);
 
-        /* dispatch tabula */
+            /* dispatch tabula */
             label_pone(l_dispatch);
             emit_ldr64(0, FP, -(cur_frame_mag - 16 - 15 * 8 - 8));
             for (int i = 0; i < switch_num_casuum; i++) {
@@ -1492,7 +1697,8 @@ static void genera_sententia(nodus_t *n)
             break;
         }
 
-    case N_CASE: {
+    case N_CASE:
+        {
             int l = label_novus();
             if (switch_num_casuum < MAX_CASUS) {
                 switch_casus[switch_num_casuum].valor = n->valor;
@@ -1505,7 +1711,8 @@ static void genera_sententia(nodus_t *n)
             break;
         }
 
-    case N_DEFAULT: {
+    case N_DEFAULT:
+        {
             int l = label_novus();
             switch_default_label = l;
             label_pone(l);
@@ -1535,6 +1742,20 @@ static void genera_sententia(nodus_t *n)
             emit_b_label(continue_labels[break_vertex - 1]);
         break;
 
+    case N_GOTO: {
+            int lab = goto_label_quaere_vel_crea(n->nomen);
+            emit_b_label(lab);
+        }
+        break;
+
+    case N_LABEL: {
+            int lab = goto_label_quaere_vel_crea(n->nomen);
+            label_pone(lab);
+            if (n->sinister)
+                genera_sententia(n->sinister);
+        }
+        break;
+
     case N_FUNC_DEF:
         /* tractatur in genera_translatio */
         break;
@@ -1562,14 +1783,18 @@ static void genera_functio(nodus_t *n)
     /* usamus offset iam computatos a parsore */
     /* invenire minimum offset (maximus negativus) */
     /* simpliciter: frame = parametri + 128 spill + 256 extra */
-    cur_frame_mag  = 16 + nparams * 8 + 15 * 8 + 16 + 512;
-    cur_frame_mag  = (cur_frame_mag + 15) & ~15;
-    cur_param_num  = nparams;
-    cur_func_typus = n->typus;
+    /* n->op continet profunditatem acervi maximam a parsore */
+    int locals_depth = n->op > 0 ? n->op : 256;
+    cur_frame_mag    = 16 + nparams * 8 + 15 * 8 + 16 + locals_depth + 512;
+    cur_frame_mag    = (cur_frame_mag + 15) & ~15;
+    cur_param_num    = nparams;
+    cur_func_typus   = n->typus;
     (void)locals_mag;
 
-    /* label pro functione */
-    int func_label = label_novus();
+    /* label pro functione (iam allocatum in genera_translatio) */
+    int func_label = func_loc_quaere(n->nomen);
+    if (func_label < 0)
+        func_label = label_novus();
     label_pone(func_label);
 
     /* prologus — ADD/SUB imm tractant reg 31 ut SP, non XZR */
@@ -1593,8 +1818,9 @@ static void genera_functio(nodus_t *n)
     }
 
     /* genera corpus */
-    reg_vertex   = 0;
-    break_vertex = 0;
+    reg_vertex      = 0;
+    break_vertex    = 0;
+    num_goto_labels = 0;
     genera_sententia(n->dexter);
 
     /* epilogus implicitum (si non iam reditum) */
@@ -1689,7 +1915,14 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus)
         }
     }
 
-    /* secunda passu: genera functiones */
+    /* secunda passu: registra labels pro omnibus functionibus */
+    for (int i = 0; i < radix->num_membrorum; i++) {
+        nodus_t *n = radix->membra[i];
+        if (n->genus == N_FUNC_DEF)
+            func_loc_adde(n->nomen);
+    }
+
+    /* tertia passu: genera functiones */
     for (int i = 0; i < radix->num_membrorum; i++) {
         nodus_t *n = radix->membra[i];
         if (n->genus == N_FUNC_DEF) {

@@ -819,6 +819,55 @@ static nodus_t *parse_expr_primaria(void)
                 typus_t *ct = parse_declarator(tb, nom, 256);
                 expecta(T_RPAREN);
 
+                /* compound literal: (typename){ ... } */
+                if (sig.genus == T_LBRACE) {
+                    lex_proximum();
+                    /* parse initializer list ut N_BLOCK cum elementis */
+                    nodus_t *elems[256];
+                    int nel = 0;
+                    while (sig.genus != T_RBRACE && sig.genus != T_EOF) {
+                        /* praetermitte designatores */
+                        if (sig.genus == T_DOT) {
+                            lex_proximum();
+                            if (sig.genus == T_IDENT)
+                                lex_proximum();
+                            if (sig.genus == T_ASSIGN)
+                                lex_proximum();
+                        }
+                        if (sig.genus == T_LBRACKET) {
+                            lex_proximum();
+                            if (sig.genus == T_NUM)
+                                lex_proximum();
+                            if (sig.genus == T_RBRACKET)
+                                lex_proximum();
+                            if (sig.genus == T_ASSIGN)
+                                lex_proximum();
+                        }
+                        if (sig.genus == T_LBRACE) {
+                            /* sub-init */
+                            lex_proximum();
+                            while (sig.genus != T_RBRACE && sig.genus != T_EOF) {
+                                elems[nel++] = parse_expr_assign();
+                                if (!congruet(T_COMMA))
+                                    break;
+                            }
+                            expecta(T_RBRACE);
+                        } else {
+                            elems[nel++] = parse_expr_assign();
+                        }
+                        if (!congruet(T_COMMA))
+                            break;
+                    }
+                    expecta(T_RBRACE);
+                    /* crea nodum N_BLOCK cum elementis */
+                    n         = nodus_novus(N_BLOCK);
+                    n->typus  = ct;
+                    n->membra = calloc(nel, sizeof(nodus_t *));
+                    memcpy(n->membra, elems, nel * sizeof(nodus_t *));
+                    n->num_membrorum = nel;
+                    return n;
+                }
+
                 n = nodus_novus(N_CAST);
                 n->typus_decl = ct;
                 n->typus = ct;
@@ -833,28 +882,33 @@ static nodus_t *parse_expr_primaria(void)
     case T_SIZEOF: {
             lex_proximum();
             if (sig.genus == T_LPAREN) {
-            /* sizeof( — consume parenthesim et inspice an typus sequatur */
+                /* sizeof( — consume parenthesim et inspice an typus sequatur */
                 lex_proximum(); /* consume '(' */
                 if (est_specifier_typi()) {
-                    int s_stat  = 0, s_ext = 0;
+                    int s_stat  = 0;
+                    int s_ext   = 0;
                     typus_t *tb = parse_specifiers(&s_stat, &s_ext, NULL);
                     char nom[256] = {0};
-                    typus_t *st = parse_declarator(tb, nom, 256);
+                    typus_t *st   = parse_declarator(tb, nom, 256);
+
                     expecta(T_RPAREN);
                     n        = nodus_novus(N_NUM);
                     n->valor = typus_magnitudo(st);
                     n->typus = ty_long;
                     return n;
                 }
-            /* sizeof(expr) */
+
+                /* sizeof(expr) */
                 nodus_t *e = parse_expr();
+
                 expecta(T_RPAREN);
                 n        = nodus_novus(N_NUM);
                 n->valor = e->typus ? typus_magnitudo(e->typus) : 0;
                 n->typus = ty_long;
                 return n;
             }
-        /* sizeof expr */
+
+            /* sizeof expr */
             nodus_t *e = parse_expr_unaria();
             n = nodus_novus(N_NUM);
             n->valor = e->typus ? typus_magnitudo(e->typus) : 0;
@@ -1328,6 +1382,15 @@ static nodus_t *parse_sententia(void)
         expecta(T_SEMICOLON);
         return nodus_novus(N_CONTINUE);
 
+    case T_GOTO: {
+            lex_proximum();
+            nodus_t *n = nodus_novus(N_GOTO);
+            n->nomen   = strdup(sig.chorda);
+            lex_proximum(); /* consume nomen */
+            expecta(T_SEMICOLON);
+            return n;
+        }
+
     case T_SEMICOLON:
         lex_proximum();
         return nodus_novus(N_NOP);
@@ -1336,6 +1399,16 @@ static nodus_t *parse_sententia(void)
         /* declaratio vel expressio */
         if (est_specifier_typi()) {
             return parse_declaratio(0);
+        }
+        /* label: sententia (goto label) */
+        if (sig.genus == T_IDENT && lex_specta() == T_COLON) {
+            nodus_t *n = nodus_novus(N_LABEL);
+            n->nomen   = strdup(sig.chorda);
+            lex_proximum(); /* consume nomen */
+            lex_proximum(); /* consume : */
+            /* sententia post label */
+            n->sinister = parse_sententia();
+            return n;
         }
         {
             nodus_t *n  = nodus_novus(N_EXPR_STMT);
@@ -1450,6 +1523,8 @@ static nodus_t *parse_declaratio(int est_globalis)
                 fn->dexter = parse_blocum();
                 fn->sinister = nodus_novus(N_NOP);
                 fn->sinister->valor = nparams;
+                /* salva profunditatem acervi maximam */
+                fn->op = -(ambitus_currens()->proximus_offset);
 
                 ambitus_exi();
                 free(psyms);
@@ -1497,32 +1572,102 @@ static nodus_t *parse_declaratio(int est_globalis)
         vs->est_staticus = s_stat;
         vd->sym = vs;
 
+        int alloca_differtur = 0;
         if (!est_globalis && !s_stat && !s_ext) {
             /* variabilis localis — allocare in acervo */
             int mag = typus_magnitudo(td);
-            if (mag == 0)
-                mag = 8;
-            int col = typus_colineatio(td);
-            if (col < 1)
-                col = 1;
-            int off = cur_ambitus->proximus_offset - mag;
-            off = off & ~(col - 1);
-            vs->offset = off;
-            cur_ambitus->proximus_offset = off;
+            if (mag == 0 && td->genus == TY_ARRAY && td->num_elementorum <= 0) {
+                /* tabula sine magnitudine — differe allocatam usque ad initiale */
+                alloca_differtur = 1;
+            } else {
+                if (mag == 0)
+                    mag = 8;
+                int col = typus_colineatio(td);
+                if (col < 1)
+                    col = 1;
+                int off = cur_ambitus->proximus_offset - mag;
+                off = off & ~(col - 1);
+                vs->offset = off;
+                cur_ambitus->proximus_offset = off;
+            }
         }
 
         /* initiale */
         if (congruet(T_ASSIGN)) {
             if (sig.genus == T_LBRACE) {
-                /* initializer list — praetermitte pro nunc */
-                int profunditas = 1;
+                /* initializer list { expr, expr, ... } */
                 lex_proximum();
-                while (profunditas > 0 && sig.genus != T_EOF) {
-                    if (sig.genus == T_LBRACE)
-                        profunditas++;
-                    if (sig.genus == T_RBRACE)
-                        profunditas--;
-                    lex_proximum();
+                nodus_t *elems[4096];
+                int nelem = 0;
+                while (sig.genus != T_RBRACE && sig.genus != T_EOF) {
+                    /* praetermitte designatores: [N] = vel .nomen = */
+                    if (sig.genus == T_LBRACKET) {
+                        lex_proximum(); /* [ */
+                        if (sig.genus == T_NUM)
+                            lex_proximum(); /* N */
+                        if (sig.genus == T_RBRACKET)
+                            lex_proximum(); /* ] */
+                        if (sig.genus == T_ASSIGN)
+                            lex_proximum(); /* = */
+                    }
+                    if (sig.genus == T_DOT) {
+                        lex_proximum(); /* . */
+                        if (sig.genus == T_IDENT)
+                            lex_proximum(); /* nomen */
+                        if (sig.genus == T_ASSIGN)
+                            lex_proximum(); /* = */
+                    }
+                    if (sig.genus == T_LBRACE) {
+                        /* sub-initializer (e.g., {{1,2},{3,4}}) */
+                        lex_proximum();
+                        nodus_t *sub_elems[256];
+                        int nsub = 0;
+                        while (sig.genus != T_RBRACE && sig.genus != T_EOF) {
+                            /* praetermitte designatores in sub-init */
+                            if (sig.genus == T_DOT) {
+                                lex_proximum();
+                                if (sig.genus == T_IDENT)
+                                    lex_proximum();
+                                if (sig.genus == T_ASSIGN)
+                                    lex_proximum();
+                            }
+                            sub_elems[nsub++] = parse_expr_assign();
+                            if (!congruet(T_COMMA))
+                                break;
+                        }
+                        expecta(T_RBRACE);
+                        for (int si = 0; si < nsub; si++)
+                            elems[nelem++] = sub_elems[si];
+                    } else {
+                        elems[nelem++] = parse_expr_assign();
+                    }
+                    if (!congruet(T_COMMA))
+                        break;
+                }
+                expecta(T_RBRACE);
+                if (nelem > 0) {
+                    vd->membra = calloc(nelem, sizeof(nodus_t *));
+                    memcpy(vd->membra, elems, nelem * sizeof(nodus_t *));
+                    vd->num_membrorum = nelem;
+                }
+                /* si tabula sine magnitudine, defini magnitudinem */
+                if (td->genus == TY_ARRAY && td->num_elementorum <= 0) {
+                    td->num_elementorum = nelem;
+                    td->magnitudo       = nelem * typus_magnitudo(td->basis);
+                }
+                /* allocatio differata — nunc allocamus */
+                if (alloca_differtur) {
+                    int mag = td->magnitudo;
+                    if (mag == 0)
+                        mag = 8;
+                    int col = typus_colineatio(td);
+                    if (col < 1)
+                        col = 1;
+                    int off = cur_ambitus->proximus_offset - mag;
+                    off = off & ~(col - 1);
+                    vs->offset = off;
+                    cur_ambitus->proximus_offset = off;
+                    alloca_differtur = 0;
                 }
             } else {
                 vd->sinister = parse_expr_assign();

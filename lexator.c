@@ -21,6 +21,7 @@ static const char caput_internum[] =
     "#define size_t __ccc_size_t\n"
     "#define ssize_t __ccc_ssize_t\n"
     "#define NULL ((void *)0)\n"
+    "typedef int _Bool;\n"
     "#define EOF (-1)\n"
     "#define SEEK_SET 0\n"
     "#define SEEK_CUR 1\n"
@@ -167,6 +168,9 @@ typedef struct {
     char nomen[256];
     char valor[MAX_CHORDA];
     int activa;
+    int est_functionalis;       /* 1 si macra functionalis */
+    int num_parametrorum;
+    char parametri[16][128];    /* nomina parametrorum */
 } macra_t;
 
 static macra_t macrae[MAX_MACRAE];
@@ -180,12 +184,12 @@ static macra_t *macra_quaere(const char *nomen)
     return NULL;
 }
 
-static void macra_defini(const char *nomen, const char *valor)
+static macra_t *macra_defini(const char *nomen, const char *valor)
 {
     macra_t *m = macra_quaere(nomen);
     if (m) {
         strncpy(m->valor, valor, MAX_CHORDA - 1);
-        return;
+        return m;
     }
     if (num_macrarum >= MAX_MACRAE)
         erratum("nimis multae macrae");
@@ -193,6 +197,9 @@ static void macra_defini(const char *nomen, const char *valor)
     strncpy(m->nomen, nomen, 255);
     strncpy(m->valor, valor, MAX_CHORDA - 1);
     m->activa = 1;
+    m->est_functionalis = 0;
+    m->num_parametrorum = 0;
+    return m;
 }
 
 static void macra_dele(const char *nomen)
@@ -285,6 +292,12 @@ static int lege_c(void)
             char c = cur_fons[cur_positus++];
             if (c == '\n')
                 cur_linea++;
+            /* continuatio lineae: \ ante novam lineam */
+            if (c == '\\' && cur_positus < cur_longitudo && cur_fons[cur_positus] == '\n') {
+                cur_positus++;
+                cur_linea++;
+                continue;
+            }
             return (unsigned char)c;
         }
         /* fine plicae currentis — restitue ex acervo */
@@ -492,9 +505,47 @@ static int tracta_directivam(void)
         }
         char nomen[256];
         lege_nomen_pp(nomen, sizeof(nomen));
-        char valor[MAX_CHORDA];
-        lege_residuum_lineae(valor, sizeof(valor));
-        macra_defini(nomen, valor);
+        /* proba si macra functionalis: '(' sine spatio post nomen */
+        int c_peek = lege_c();
+        if (c_peek == '(') {
+            /* macra functionalis — lege parametros */
+            char param_nomina[16][128];
+            int nparam = 0;
+            for (;;) {
+                char pn[128];
+                int pi = 0;
+                /* praetermitte spatia */
+                int pc;
+                while ((pc = lege_c()) == ' ' || pc == '\t') {}
+                if (pc == ')')
+                    break;
+                if (pc == ',' )
+                    continue;
+                /* lege nomen parametri */
+                pn[pi++] = pc;
+                while ((pc = lege_c()) != -1 && pc != ',' && pc != ')' && pc != ' ' && pc != '\t') {
+                    if (pi < 127)
+                        pn[pi++] = pc;
+                }
+                pn[pi] = '\0';
+                if (nparam < 16)
+                    strncpy(param_nomina[nparam++], pn, 127);
+                if (pc == ')')
+                    break;
+            }
+            char valor[MAX_CHORDA];
+            lege_residuum_lineae(valor, sizeof(valor));
+            macra_t *m = macra_defini(nomen, valor);
+            m->est_functionalis = 1;
+            m->num_parametrorum = nparam;
+            for (int i = 0; i < nparam; i++)
+                strncpy(m->parametri[i], param_nomina[i], 127);
+        } else {
+            repone_c();
+            char valor[MAX_CHORDA];
+            lege_residuum_lineae(valor, sizeof(valor));
+            macra_defini(nomen, valor);
+        }
         return 1;
     }
 
@@ -736,9 +787,35 @@ inicio:
             while ((c = lege_c()) != -1 && c >= '0' && c <= '9')
                 val = val * 10 + (c - '0');
         }
-        /* praetermitte suffixum (U, L, UL, ULL, etc.) */
-        while (c == 'u' || c == 'U' || c == 'l' || c == 'L')
+        /* tractatio numeri cum puncto (double/float → fictus ut long) */
+        if (c == '.') {
+            /* pars fractionalis — quia double est fictus, serva ut long */
+            /* sed mantissa truncatur ad integrum partiale */
+            long frac_part = 0;
+            long frac_div  = 1;
+            while ((c = lege_c()) != -1 && c >= '0' && c <= '9') {
+                frac_part = frac_part * 10 + (c - '0');
+                frac_div *= 10;
+            }
+            /* pro computatione ficta: valor = pars integra */
+            /* frac_part ignoratur (nulla arithmetica FP) */
+            (void)frac_part;
+            (void)frac_div;
+        }
+        /* praetermitte suffixum (U, L, UL, ULL, f, F, etc.) */
+        while (
+            c == 'u' || c == 'U' || c == 'l' || c == 'L' ||
+            c == 'f' || c == 'F'
+        )
             c = lege_c();
+        /* praetermitte exponentem (e, E) */
+        if (c == 'e' || c == 'E') {
+            c = lege_c();
+            if (c == '+' || c == '-')
+                c = lege_c();
+            while (c >= '0' && c <= '9')
+                c = lege_c();
+        }
         if (c != -1)
             repone_c();
         sig.genus = T_NUM;
@@ -763,6 +840,11 @@ inicio:
         for (;;) {
             praetermitte_spatia();
             c = lege_c();
+            /* praetermitte novas lineas inter chordas */
+            while (c == '\n') {
+                praetermitte_spatia();
+                c = lege_c();
+            }
             if (c == '"') {
                 while ((c = lege_c()) != -1 && c != '"') {
                     if (c == '\\')
@@ -820,8 +902,106 @@ inicio:
 
         /* est macra? */
         macra_t *m = macra_quaere(sig.chorda);
-        if (m && m->valor[0] != '\0') {
-            /* expande macram — pelle textum expansionis */
+        if (m && m->est_functionalis) {
+            /* macra functionalis — lege argumenta */
+            praetermitte_spatia();
+            int pc = lege_c();
+            if (pc == '\n') {
+                praetermitte_spatia();
+                pc = lege_c();
+            }
+            if (pc == '(') {
+                char args[16][MAX_CHORDA];
+                int nargs   = 0;
+                int profund = 0;
+                int ai      = 0;
+                for (;;) {
+                    pc = lege_c();
+                    if (pc == -1)
+                        break;
+                    if (pc == '(') {
+                        profund++;
+                        if (ai < MAX_CHORDA - 1)
+                            args[nargs][ai++] = pc;
+                    } else if (pc == ')') {
+                        if (profund == 0) {
+                            args[nargs][ai] = '\0';
+                            if (ai > 0 || nargs > 0)
+                                nargs++;
+                            break;
+                        }
+                        profund--;
+                        if (ai < MAX_CHORDA - 1)
+                            args[nargs][ai++] = pc;
+                    } else if (pc == ',' && profund == 0) {
+                        args[nargs][ai] = '\0';
+                        nargs++;
+                        ai = 0;
+                    } else {
+                        if (ai < MAX_CHORDA - 1)
+                            args[nargs][ai++] = pc;
+                    }
+                }
+                /* substitue parametros in corpore macrae */
+                static char expansio_alvei[8][MAX_CHORDA * 2];
+                static int expansio_vertex = 0;
+                char *expansio = expansio_alvei[expansio_vertex % 8];
+                expansio_vertex++;
+                int ei = 0;
+                const char *corpus = m->valor;
+                int clon = (int)strlen(corpus);
+                for (int ci = 0; ci < clon; ) {
+                    /* proba si est nomen parametri */
+                    if (
+                        (corpus[ci] >= 'a' && corpus[ci] <= 'z') ||
+                        (corpus[ci] >= 'A' && corpus[ci] <= 'Z') ||
+                        corpus[ci] == '_'
+                    ) {
+                        char tok[128];
+                        int ti = 0;
+                        while (
+                            ci < clon && (
+                                (corpus[ci] >= 'a' && corpus[ci] <= 'z') ||
+                                (corpus[ci] >= 'A' && corpus[ci] <= 'Z') ||
+                                (corpus[ci] >= '0' && corpus[ci] <= '9') ||
+                                corpus[ci] == '_'
+                            )
+                        ) {
+                            if (ti < 127)
+                                tok[ti++] = corpus[ci];
+                            ci++;
+                        }
+                        tok[ti] = '\0';
+                        /* quaere in parametris */
+                        int invenit = 0;
+                        for (int pi = 0; pi < m->num_parametrorum; pi++) {
+                            if (strcmp(tok, m->parametri[pi]) == 0 && pi < nargs) {
+                                /* substitue argumentum */
+                                const char *arg = args[pi];
+                                while (*arg && ei < MAX_CHORDA * 2 - 1)
+                                    expansio[ei++] = *arg++;
+                                invenit = 1;
+                                break;
+                            }
+                        }
+                        if (!invenit) {
+                            for (int ki = 0; ki < ti && ei < MAX_CHORDA * 2 - 1; ki++)
+                                expansio[ei++] = tok[ki];
+                        }
+                    } else {
+                        if (ei < MAX_CHORDA * 2 - 1)
+                            expansio[ei++] = corpus[ci];
+                        ci++;
+                    }
+                }
+                expansio[ei] = '\0';
+                pelle_expansionem(expansio, ei);
+                goto inicio;
+            } else {
+                repone_c();
+            }
+        } else if (m && m->valor[0] != '\0') {
+            /* expande macram simplicem — pelle textum expansionis */
             pelle_expansionem(m->valor, strlen(m->valor));
             goto inicio;
         }
