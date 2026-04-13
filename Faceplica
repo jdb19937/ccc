@@ -1,0 +1,34 @@
+# Faceplica — aedificatio ccc
+#
+# Usus:
+#   face            — aedifica ccc
+#   face purga      — dele omnia aedificata
+
+CC      ?= cc
+CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2
+
+FONTES  = ccc.c lexator.c parser.c genera.c
+OBJECTA = $(FONTES:.c=.o)
+
+omnia: ccc
+
+%.o: %.c ccc.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+ccc: $(OBJECTA)
+	$(CC) $(CFLAGS) -o $@ $(OBJECTA)
+	@echo "==> ccc aedificatum"
+
+PREFIX = /opt/apotheca
+
+colloca: omnia
+	install -d $(PREFIX)/bin
+	install -m 755 ccc $(PREFIX)/bin/
+
+purga:
+	rm -f $(OBJECTA) ccc
+
+linte:
+	insinulint -c $(FONTES) ccc.h
+
+.PHONY: omnia colloca purga linte

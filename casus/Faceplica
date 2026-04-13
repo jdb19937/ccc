@@ -1,0 +1,28 @@
+# Faceplica — casus probationis insinulint
+#
+# Compilat omnes casus ad executabilia.
+
+CC     ?= cc
+CFLAGS ?= -Wall -Wextra -pedantic -std=c99 -O2
+
+FONTES = approximo.c circulus.c constans.c cribrum.c dicta.c \
+	fatum.c felices.c formica.c fractum.c genera.c \
+	gradus.c interpres.c numeri.c piramis.c planum.c \
+	probatio.c puncta.c quadratum.c recursio.c regula.c \
+	series.c triangulum.c turres.c vita.c
+
+NOMINA = approximo circulus constans cribrum dicta \
+	fatum felices formica fractum genera \
+	gradus interpres numeri piramis planum \
+	probatio puncta quadratum recursio regula \
+	series triangulum turres vita
+
+omnia: $(NOMINA)
+
+%: %.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+purga:
+	rm -f $(NOMINA)
+
+.PHONY: omnia purga
