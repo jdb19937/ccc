@@ -1,0 +1,553 @@
+                                          Annex G
+                                        (informative)
+                   IEC 60559-compatible complex arithmetic
+    G.1 Introduction
+1   This annex supplements annex F to specify complex arithmetic for compatibility with
+    IEC 60559 real floating-point arithmetic. Although these specifications have been
+    carefully designed, there is little existing practice to validate the design decisions.
+    Therefor, these specifications are not normative, but should be viewed more as
+    recommended          practice.       An         implementation        that     defines
+    _ _STDC_IEC_559_COMPLEX_ _ should conform to the specifications in this annex.
+    G.2 Types
+1   There are three imaginary types, designated as float _Imaginary, double
+    _Imaginary, and long double _Imaginary. The imaginary types (along with
+    the real floating and complex types) are floating types.
+2   For imaginary types, the corresponding real type is given by deleting the keyword
+    _Imaginary from the type name.
+3   Each imaginary type has the same representation and alignment requirements as the
+    corresponding real type. The value of an object of imaginary type is the value of the real
+    representation times the imaginary unit.
+4   The imaginary type domain comprises the imaginary types.
+    G.3 Conventions
+    A complex or imaginary value with at least one infinite part is regarded as an infinity
+    (even if its other part is a NaN). A complex or imaginary value is a finite number if each
+    of its parts is a finite number (neither infinite nor NaN). A complex or imaginary value is
+    a zero if each of its parts is a zero.
+
+
+
+
+    §G.3                   IEC 60559-compatible complex arithmetic                         465
+    ISO/IEC 9899:1999 (E)                                                             ©ISO/IEC
+
+
+    G.4 Conversions
+    G.4.1 Imaginary types
+1   Conversions among imaginary types follow rules analogous to those for real floating
+    types.
+    G.4.2 Real and imaginary
+1   When a value of imaginary type is converted to a real type, the result is a positive zero.
+2   When a value of real type is converted to an imaginary type, the result is a positive
+    imaginary zero.
+    G.4.3 Imaginary and complex
+1   When a value of imaginary type is converted to a complex type, the real part of the
+    complex result value is a positive zero and the imaginary part of the complex result value
+    is determined by the conversion rules for the corresponding real types.
+2   When a value of complex type is converted to an imaginary type, the real part of the
+    complex value is discarded and the value of the imaginary part is converted according to
+    the conversion rules for the corresponding real types.
+    G.5 Binary operators
+1   The following subclauses supplement 6.5 in order to specify the type of the result for an
+    operation with an imaginary operand.
+2   For most operand types, the value of the result of a binary operator with an imaginary or
+    complex operand is completely determined, with reference to real arithmetic, by the usual
+    mathematical formula. For some operand types, the usual mathematical formula is
+    problematic because of its treatment of infinities and because of undue overflow or
+    underflow; in these cases the result satisfies certain properties (specified in G.5.1), but is
+    not completely determined.
+    G.5.1 Multiplicative operators
+    Semantics
+1   If one operand has real type and the other operand has imaginary type, then the result has
+    imaginary type. If both operands have imaginary type, then the result has real type. (If
+    either operand has complex type, then the result has complex type.)
+2   If the operands are not both complex, then the result and floating-point exception
+    behavior of the * operator is defined by the usual mathematical formula:
+
+
+
+
+    466                     IEC 60559-compatible complex arithmetic                       §G.5.1
+    ©ISO/IEC                                                                        ISO/IEC 9899:1999 (E)
+
+
+           *                  u                   iv                 u + iv
+
+           x                  xu                i(xv)            (xu) + i(xv)
+
+           iy               i(yu)                −yv            (−yv) + i(yu)
+
+           x + iy       (xu) + i(yu)        (−yv) + i(xv)
+3   If the second operand is not complex, then the result and floating-point exception
+    behavior of the / operator is defined by the usual mathematical formula:
+           /                   u                       iv
+
+           x                  x/u                 i(−x/v)
+
+           iy               i(y/u)                     y/v
+
+           x + iy       (x/u) + i(y/u)        (y/v) + i(−x/v)
+4   The * and / operators satisfy the following infinity properties for all real, imaginary, and
+    complex operands:315)
+    — if one operand is an infinity and the other operand is a nonzero finite number or an
+      infinity, then the result of the * operator is an infinity;
+    — if the first operand is an infinity and the second operand is a finite number, then the
+      result of the / operator is an infinity;
+    — if the first operand is a finite number and the second operand is an infinity, then the
+      result of the / operator is a zero;
+    — if the first operand is a nonzero finite number or an infinity and the second operand is
+      a zero, then the result of the / operator is an infinity.
+5   If both operands of the * operator are complex or if the second operand of the / operator
+    is complex, the operator raises floating-point exceptions if appropriate for the calculation
+    of the parts of the result, and may raise spurious floating-point exceptions.
+6   EXAMPLE 1 Multiplication of double _Complex operands could be implemented as follows. Note
+    that the imaginary unit I has imaginary type (see G.6).
+
+
+
+
+    315) These properties are already implied for those cases covered in the tables, but are required for all cases
+         (at least where the state for CX_LIMITED_RANGE is ‘‘off’’).
+
+    §G.5.1                         IEC 60559-compatible complex arithmetic                                    467
+    ISO/IEC 9899:1999 (E)                                                                     ©ISO/IEC
+
+
+            #include <math.h>
+            #include <complex.h>
+            /* Multiply z * w ... */
+            double complex _Cmultd(double complex z, double complex w)
+            {
+                   #pragma STDC FP_CONTRACT OFF
+                   double a, b, c, d, ac, bd, ad, bc, x, y;
+                   a = creal(z); b = cimag(z)
+                   c = creal(w); d = cimag(w);
+                   ac = a * c;       bd = b * d;
+                   ad = a * d;       bc = b * c;
+                   x = ac - bd; y = ad + bc;
+                   if (isnan(x) && isnan(y)) {
+                           /* Recover infinities that computed as NaN+iNaN ... */
+                           int recalc = 0;
+                           if ( isinf(a) || isinf(b) ) { // z is infinite
+                                   /* "Box" the infinity and change NaNs in the other factor to 0 */
+                                   a = copysign(isinf(a) ? 1.0 : 0.0, a);
+                                   b = copysign(isinf(b) ? 1.0 : 0.0, b);
+                                   if (isnan(c)) c = copysign(0.0, c);
+                                   if (isnan(d)) d = copysign(0.0, d);
+                                   recalc = 1;
+                           }
+                           if ( isinf(c) || isinf(d) ) { // w is infinite
+                                   /* "Box" the infinity and change NaNs in the other factor to 0 */
+                                   c = copysign(isinf(c) ? 1.0 : 0.0, c);
+                                   d = copysign(isinf(d) ? 1.0 : 0.0, d);
+                                   if (isnan(a)) a = copysign(0.0, a);
+                                   if (isnan(b)) b = copysign(0.0, b);
+                                   recalc = 1;
+                           }
+                           if (!recalc && (isinf(ac) || isinf(bd) ||
+                                                   isinf(ad) || isinf(bc))) {
+                                   /* Recover infinities from overflow by changing NaNs to 0 ... */
+                                   if (isnan(a)) a = copysign(0.0, a);
+                                   if (isnan(b)) b = copysign(0.0, b);
+                                   if (isnan(c)) c = copysign(0.0, c);
+                                   if (isnan(d)) d = copysign(0.0, d);
+                                   recalc = 1;
+                           }
+                           if (recalc) {
+                                   x = INFINITY * ( a * c - b * d );
+                                   y = INFINITY * ( a * d + b * c );
+                           }
+                   }
+                   return x + I * y;
+            }
+7   This implementation achieves the required treatment of infinities at the cost of only one isnan test in
+    ordinary (finite) cases. It is less than ideal in that undue overflow and underflow may occur.
+
+
+
+    468                        IEC 60559-compatible complex arithmetic                             §G.5.1
+    ©ISO/IEC                                                                        ISO/IEC 9899:1999 (E)
+
+
+8   EXAMPLE 2      Division of two double _Complex operands could be implemented as follows.
+             #include <math.h>
+             #include <complex.h>
+             /* Divide z / w ... */
+             double complex _Cdivd(double complex z, double complex w)
+             {
+                    #pragma STDC FP_CONTRACT OFF
+                    double a, b, c, d, logbw, denom, x, y;
+                    int ilogbw = 0;
+                    a = creal(z); b = cimag(z);
+                    c = creal(w); d = cimag(w);
+                    logbw = logb(fmax(fabs(c), fabs(d)));
+                    if (isfinite(logbw)) {
+                           ilogbw = (int)logbw;
+                           c = scalbn(c, -ilogbw); d = scalbn(d, -ilogbw);
+                    }
+                    denom = c * c + d * d;
+                    x = scalbn((a * c + b * d) / denom, -ilogbw);
+                    y = scalbn((b * c - a * d) / denom, -ilogbw);
+                     /* Recover infinities and zeros that computed as NaN+iNaN;                     */
+                     /* the only cases are non-zero/zero, infinite/finite, and finite/infinite, ... */
+                     if (isnan(x) && isnan(y)) {
+                           if ((denom == 0.0) &&
+                                 (!isnan(a) || !isnan(b))) {
+                                 x = copysign(INFINITY, c) * a;
+                                 y = copysign(INFINITY, c) * b;
+                           }
+                           else if ((isinf(a) || isinf(b)) &&
+                                 isfinite(c) && isfinite(d)) {
+                                 a = copysign(isinf(a) ? 1.0 : 0.0, a);
+                                 b = copysign(isinf(b) ? 1.0 : 0.0, b);
+                                 x = INFINITY * ( a * c + b * d );
+                                 y = INFINITY * ( b * c - a * d );
+                           }
+                           else if (isinf(logbw) &&
+                                 isfinite(a) && isfinite(b)) {
+                                 c = copysign(isinf(c) ? 1.0 : 0.0, c);
+                                 d = copysign(isinf(d) ? 1.0 : 0.0, d);
+                                 x = 0.0 * ( a * c + b * d );
+                                 y = 0.0 * ( b * c - a * d );
+                           }
+                     }
+                     return x + I * y;
+             }
+9   Scaling the denominator alleviates the main overflow and underflow problem, which is more serious than
+    for multiplication. In the spirit of the multiplication example above, this code does not defend against
+    overflow and underflow in the calculation of the numerator. Scaling with the scalbn function, instead of
+    with division, provides better roundoff characteristics.
+
+
+    §G.5.1                     IEC 60559-compatible complex arithmetic                                   469
+    ISO/IEC 9899:1999 (E)                                                            ©ISO/IEC
+
+
+    G.5.2 Additive operators
+    Semantics
+1   If both operands have imaginary type, then the result has imaginary type. (If one operand
+    has real type and the other operand has imaginary type, or if either operand has complex
+    type, then the result has complex type.)
+2   In all cases the result and floating-point exception behavior of a + or - operator is defined
+    by the usual mathematical formula:
+          + or −            u                     iv                 u + iv
+
+          x                x±u                  x ± iv            (x ± u) ± iv
+
+          iy             ±u + iy               i(y ± v)          ±u + i(y ± v)
+
+          x + iy       (x ± u) + iy          x + i(y ± v)      (x ± u) + i(y ± v)
+    G.6 Complex arithmetic <complex.h>
+1   The macros
+           imaginary
+    and
+           _Imaginary_I
+    are defined, and the macro
+           I
+    is defined to be _Imaginary_I (7.3).
+2   This subclause contains specifications for the <complex.h> functions that are
+    particularly suited to IEC 60559 implementations. For families of functions, the
+    specifications apply to all of the functions even though only the principal function is
+    shown. Unless otherwise specified, where the symbol ‘‘±’’ occurs in both an argument
+    and the result, the result has the same sign as the argument.
+3   The functions are continuous onto both sides of their branch cuts, taking into account the
+    sign of zero. For example, csqrt(−2 ± 0i) = ±i√     2.
+4   Since complex and imaginary values are composed of real values, each function may be
+    regarded as computing real values from real values. Except as noted, the functions treat
+    real infinities, NaNs, signed zeros, subnormals, and the floating-point exception flags in a
+
+
+
+
+    470                     IEC 60559-compatible complex arithmetic                        §G.6
+    ©ISO/IEC                                                                      ISO/IEC 9899:1999 (E)
+
+
+    manner consistent with the specifications for real functions in F.9.316)
+5   The functions cimag, conj, cproj, and creal are fully specified for all
+    implementations, including IEC 60559 ones, in 7.3.9. These functions raise no floating-
+    point exceptions.
+6   Each of the functions cabs and carg is specified by a formula in terms of a real
+    function (whose special cases are covered in annex F):
+            cabs(x + iy) = hypot(x, y)
+            carg(x + iy) = atan2(y, x)
+7   Each of the functions casin, catan, ccos, csin, and ctan is specified implicitly by
+    a formula in terms of other complex functions (whose special cases are specified below):
+            casin(z) = −i casinh(iz)
+            catan(z) = −i catanh(iz)
+            ccos(z) = ccosh(iz)
+            csin(z) = −i csinh(iz)
+            ctan(z) = −i ctanh(iz)
+8   For the other functions, the following subclauses specify behavior for special cases,
+    including treatment of the ‘‘invalid’’ and ‘‘divide-by-zero’’ floating-point exceptions. For
+    families of functions, the specifications apply to all of the functions even though only the
+    principal function is shown. For a function f satisfying f (conj(z)) = conj( f (z)), the
+    specification for the upper half-plane implies the specification for the lower half-plane; if
+    the function f is also either even, f (−z) = f (z), or odd, f (−z) = − f (z), then the
+    specification for the first quadrant implies the specification for the other three quadrants.
+9   In the following subclauses, cis(y) is defined as cos(y) + i sin(y).
+    G.6.1 Trigonometric functions
+    G.6.1.1 The cacos functions
+1   — cacos(conj(z)) = conj(cacos(z)).
+    — cacos(±0 + i0) returns π /2 − i0.
+    — cacos(±0 + iNaN) returns π /2 + iNaN.
+    — cacos(x + i ∞) returns π /2 − i ∞, for finite x.
+    — cacos(x + iNaN) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for nonzero finite x.
+
+
+
+    316) As noted in G.3, a complex value with at least one infinite part is regarded as an infinity even if its
+         other part is a NaN.
+
+    §G.6.1.1                    IEC 60559-compatible complex arithmetic                                    471
+    ISO/IEC 9899:1999 (E)                                                     ©ISO/IEC
+
+
+    — cacos(−∞ + iy) returns π − i ∞, for positive-signed finite y.
+    — cacos(+∞ + iy) returns +0 − i ∞, for positive-signed finite y.
+    — cacos(−∞ + i ∞) returns 3π /4 − i ∞.
+    — cacos(+∞ + i ∞) returns π /4 − i ∞.
+    — cacos(±∞ + iNaN) returns NaN ± i ∞ (where the sign of the imaginary part of the
+      result is unspecified).
+    — cacos(NaN + iy) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for finite y.
+    — cacos(NaN + i ∞) returns NaN − i ∞.
+    — cacos(NaN + iNaN) returns NaN + iNaN.
+    G.6.2 Hyperbolic functions
+    G.6.2.1 The cacosh functions
+1   — cacosh(conj(z)) = conj(cacosh(z)).
+    — cacosh(±0 + i0) returns +0 + iπ /2.
+    — cacosh(x + i ∞) returns +∞ + iπ /2, for finite x.
+    — cacosh(x + iNaN) returns NaN + iNaN and optionally raises the ‘‘invalid’’
+      floating-point exception, for finite x.
+    — cacosh(−∞ + iy) returns +∞ + iπ , for positive-signed finite y.
+    — cacosh(+∞ + iy) returns +∞ + i0, for positive-signed finite y.
+    — cacosh(−∞ + i ∞) returns +∞ + i3π /4.
+    — cacosh(+∞ + i ∞) returns +∞ + iπ /4.
+    — cacosh(±∞ + iNaN) returns +∞ + iNaN.
+    — cacosh(NaN + iy) returns NaN + iNaN and optionally raises the ‘‘invalid’’
+      floating-point exception, for finite y.
+    — cacosh(NaN + i ∞) returns +∞ + iNaN.
+    — cacosh(NaN + iNaN) returns NaN + iNaN.
+
+
+
+
+    472                   IEC 60559-compatible complex arithmetic              §G.6.2.1
+    ©ISO/IEC                                                       ISO/IEC 9899:1999 (E)
+
+
+    G.6.2.2 The casinh functions
+    — casinh(conj(z)) = conj(casinh(z)) and casinh is odd.
+    — casinh(+0 + i0) returns 0 + i0.
+    — casinh(x + i ∞) returns +∞ + iπ /2 for positive-signed finite x.
+    — casinh(x + iNaN) returns NaN + iNaN and optionally raises the ‘‘invalid’’
+      floating-point exception, for finite x.
+    — casinh(+∞ + iy) returns +∞ + i0 for positive-signed finite y.
+    — casinh(+∞ + i ∞) returns +∞ + iπ /4.
+    — casinh(+∞ + iNaN) returns +∞ + iNaN.
+    — casinh(NaN + i0) returns NaN + i0.
+    — casinh(NaN + iy) returns NaN + iNaN and optionally raises the ‘‘invalid’’
+      floating-point exception, for finite nonzero y.
+    — casinh(NaN + i ∞) returns ±∞ + iNaN (where the sign of the real part of the result
+      is unspecified).
+    — casinh(NaN + iNaN) returns NaN + iNaN.
+    G.6.2.3 The catanh functions
+1   — catanh(conj(z)) = conj(catanh(z)) and catanh is odd.
+    — catanh(+0 + i0) returns +0 + i0.
+    — catanh(+0 + iNaN) returns +0 + iNaN.
+    — catanh(+1 + i0) returns +∞ + i0 and raises the ‘‘divide-by-zero’’ floating-point
+      exception.
+    — catanh(x + i ∞) returns +0 + iπ /2, for finite positive-signed x.
+    — catanh(x + iNaN) returns NaN + iNaN and optionally raises the ‘‘invalid’’
+      floating-point exception, for nonzero finite x.
+    — catanh(+∞ + iy) returns +0 + iπ /2, for finite positive-signed y.
+    — catanh(+∞ + i ∞) returns +0 + iπ /2.
+    — catanh(+∞ + iNaN) returns +0 + iNaN.
+    — catanh(NaN + iy) returns NaN + iNaN and optionally raises the ‘‘invalid’’
+      floating-point exception, for finite y.
+    — catanh(NaN + i ∞) returns ±0 + iπ /2 (where the sign of the real part of the result is
+      unspecified).
+
+
+    §G.6.2.3               IEC 60559-compatible complex arithmetic                      473
+    ISO/IEC 9899:1999 (E)                                                      ©ISO/IEC
+
+
+    — catanh(NaN + iNaN) returns NaN + iNaN.
+    G.6.2.4 The ccosh functions
+1   — ccosh(conj(z)) = conj(ccosh(z)) and ccosh is even.
+    — ccosh(+0 + i0) returns 1 + i0.
+    — ccosh(+0 + i ∞) returns NaN ± i0 (where the sign of the imaginary part of the
+      result is unspecified) and raises the ‘‘invalid’’ floating-point exception.
+    — ccosh(+0 + iNaN) returns NaN ± i0 (where the sign of the imaginary part of the
+      result is unspecified).
+    — ccosh(x + i ∞) returns NaN + iNaN and raises the ‘‘invalid’’ floating-point
+      exception, for finite nonzero x.
+    — ccosh(x + iNaN) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for finite nonzero x.
+    — ccosh(+∞ + i0) returns +∞ + i0.
+    — ccosh(+∞ + iy) returns +∞ cis(y), for finite nonzero y.
+    — ccosh(+∞ + i ∞) returns ±∞ + iNaN (where the sign of the real part of the result is
+      unspecified) and raises the ‘‘invalid’’ floating-point exception.
+    — ccosh(+∞ + iNaN) returns +∞ + iNaN.
+    — ccosh(NaN + i0) returns NaN ± i0 (where the sign of the imaginary part of the
+      result is unspecified).
+    — ccosh(NaN + iy) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for all nonzero numbers y.
+    — ccosh(NaN + iNaN) returns NaN + iNaN.
+    G.6.2.5 The csinh functions
+1   — csinh(conj(z)) = conj(csinh(z)) and csinh is odd.
+    — csinh(+0 + i0) returns +0 + i0.
+    — csinh(+0 + i ∞) returns ±0 + iNaN (where the sign of the real part of the result is
+      unspecified) and raises the ‘‘invalid’’ floating-point exception.
+    — csinh(+0 + iNaN) returns ±0 + iNaN (where the sign of the real part of the result is
+      unspecified).
+    — csinh(x + i ∞) returns NaN + iNaN and raises the ‘‘invalid’’ floating-point
+      exception, for positive finite x.
+
+
+
+    474                   IEC 60559-compatible complex arithmetic                §G.6.2.5
+    ©ISO/IEC                                                       ISO/IEC 9899:1999 (E)
+
+
+    — csinh(x + iNaN) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for finite nonzero x.
+    — csinh(+∞ + i0) returns +∞ + i0.
+    — csinh(+∞ + iy) returns +∞ cis(y), for positive finite y.
+    — csinh(+∞ + i ∞) returns ±∞ + iNaN (where the sign of the real part of the result is
+      unspecified) and raises the ‘‘invalid’’ floating-point exception.
+    — csinh(+∞ + iNaN) returns ±∞ + iNaN (where the sign of the real part of the result
+      is unspecified).
+    — csinh(NaN + i0) returns NaN + i0.
+    — csinh(NaN + iy) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for all nonzero numbers y.
+    — csinh(NaN + iNaN) returns NaN + iNaN.
+    G.6.2.6 The ctanh functions
+1   — ctanh(conj(z)) = conj(ctanh(z))and ctanh is odd.
+    — ctanh(+0 + i0) returns +0 + i0.
+    — ctanh(x + i ∞) returns NaN + iNaN and raises the ‘‘invalid’’ floating-point
+      exception, for finite x.
+    — ctanh(x + iNaN) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for finite x.
+    — ctanh(+∞ + iy) returns 1 + i0 sin(2y), for positive-signed finite y.
+    — ctanh(+∞ + i ∞) returns 1 ± i0 (where the sign of the imaginary part of the result
+      is unspecified).
+    — ctanh(+∞ + iNaN) returns 1 ± i0 (where the sign of the imaginary part of the
+      result is unspecified).
+    — ctanh(NaN + i0) returns NaN + i0.
+    — ctanh(NaN + iy) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for all nonzero numbers y.
+    — ctanh(NaN + iNaN) returns NaN + iNaN.
+
+
+
+
+    §G.6.2.6              IEC 60559-compatible complex arithmetic                    475
+    ISO/IEC 9899:1999 (E)                                                     ©ISO/IEC
+
+
+    G.6.3 Exponential and logarithmic functions
+    G.6.3.1 The cexp functions
+1   — cexp(conj(z)) = conj(cexp(z)).
+    — cexp(±0 + i0) returns 1 + i0.
+    — cexp(x + i ∞) returns NaN + iNaN and raises the ‘‘invalid’’ floating-point
+      exception, for finite x.
+    — cexp(x + iNaN) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for finite x.
+    — cexp(+∞ + i0) returns +∞ + i0.
+    — cexp(−∞ + iy) returns +0 cis(y), for finite y.
+    — cexp(+∞ + iy) returns +∞ cis(y), for finite nonzero y.
+    — cexp(−∞ + i ∞) returns ±0 ± i0 (where the signs of the real and imaginary parts of
+      the result are unspecified).
+    — cexp(+∞ + i ∞) returns ±∞ + iNaN and raises the ‘‘invalid’’ floating-point
+      exception (where the sign of the real part of the result is unspecified).
+    — cexp(−∞ + iNaN) returns ±0 ± i0 (where the signs of the real and imaginary parts
+      of the result are unspecified).
+    — cexp(+∞ + iNaN) returns ±∞ + iNaN (where the sign of the real part of the result
+      is unspecified).
+    — cexp(NaN + i0) returns NaN + i0.
+    — cexp(NaN + iy) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for all non-zero numbers y.
+    — cexp(NaN + iNaN) returns NaN + iNaN.
+    G.6.3.2 The clog functions
+1   — clog(conj(z)) = conj(clog(z)).
+    — clog(−0 + i0) returns −∞ + iπ and raises the ‘‘divide-by-zero’’ floating-point
+      exception.
+    — clog(+0 + i0) returns −∞ + i0 and raises the ‘‘divide-by-zero’’ floating-point
+      exception.
+    — clog(x + i ∞) returns +∞ + iπ /2, for finite x.
+    — clog(x + iNaN) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for finite x.
+
+    476                   IEC 60559-compatible complex arithmetic              §G.6.3.2
+    ©ISO/IEC                                                           ISO/IEC 9899:1999 (E)
+
+
+    — clog(−∞ + iy) returns +∞ + iπ , for finite positive-signed y.
+    — clog(+∞ + iy) returns +∞ + i0, for finite positive-signed y.
+    — clog(−∞ + i ∞) returns +∞ + i3π /4.
+    — clog(+∞ + i ∞) returns +∞ + iπ /4.
+    — clog(±∞ + iNaN) returns +∞ + iNaN.
+    — clog(NaN + iy) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for finite y.
+    — clog(NaN + i ∞) returns +∞ + iNaN.
+    — clog(NaN + iNaN) returns NaN + iNaN.
+    G.6.4 Power and absolute-value functions
+    G.6.4.1 The cpow functions
+1   The cpow functions raise floating-point exceptions if appropriate for the calculation of
+    the parts of the result, and may raise spurious exceptions.317)
+    G.6.4.2 The csqrt functions
+1   — csqrt(conj(z)) = conj(csqrt(z)).
+    — csqrt(±0 + i0) returns +0 + i0.
+    — csqrt(x + i ∞) returns +∞ + i ∞, for all x (including NaN).
+    — csqrt(x + iNaN) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for finite x.
+    — csqrt(−∞ + iy) returns +0 + i ∞, for finite positive-signed y.
+    — csqrt(+∞ + iy) returns +∞ + i0, for finite positive-signed y.
+    — csqrt(−∞ + iNaN) returns NaN ± i ∞ (where the sign of the imaginary part of the
+      result is unspecified).
+    — csqrt(+∞ + iNaN) returns +∞ + iNaN.
+    — csqrt(NaN + iy) returns NaN + iNaN and optionally raises the ‘‘invalid’’ floating-
+      point exception, for finite y.
+    — csqrt(NaN + iNaN) returns NaN + iNaN.
+
+
+
+
+    317) This allows cpow( z , c ) to be implemented as cexp(c      clog( z )) without precluding
+         implementations that treat special cases more carefully.
+
+    §G.6.4.2                IEC 60559-compatible complex arithmetic                          477
+    ISO/IEC 9899:1999 (E)                                                     ©ISO/IEC
+
+
+    G.7 Type-generic math <tgmath.h>
+1   Type-generic macros that accept complex arguments also accept imaginary arguments. If
+    an argument is imaginary, the macro expands to an expression whose type is real,
+    imaginary, or complex, as appropriate for the particular function: if the argument is
+    imaginary, then the types of cos, cosh, fabs, carg, cimag, and creal are real; the
+    types of sin, tan, sinh, tanh, asin, atan, asinh, and atanh are imaginary; and
+    the types of the others are complex.
+2   Given an imaginary argument, each of the type-generic macros cos, sin, tan, cosh,
+    sinh, tanh, asin, atan, asinh, atanh is specified by a formula in terms of real
+    functions:
+           cos(iy)   = cosh(y)
+           sin(iy)   = i sinh(y)
+           tan(iy)   = i tanh(y)
+           cosh(iy) = cos(y)
+           sinh(iy) = i sin(y)
+           tanh(iy) = i tan(y)
+           asin(iy) = i asinh(y)
+           atan(iy) = i atanh(y)
+           asinh(iy) = i asin(y)
+           atanh(iy) = i atan(y)
+
+
+
+
+    478                   IEC 60559-compatible complex arithmetic                   §G.7
+    ©ISO/IEC                                                         ISO/IEC 9899:1999 (E)
+
+

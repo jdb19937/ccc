@@ -1,0 +1,31 @@
+    2. Normative references
+1   The following normative documents contain provisions which, through reference in this
+    text, constitute provisions of this International Standard. For dated references,
+    subsequent amendments to, or revisions of, any of these publications do not apply.
+    However, parties to agreements based on this International Standard are encouraged to
+    investigate the possibility of applying the most recent editions of the normative
+    documents indicated below. For undated references, the latest edition of the normative
+    document referred to applies. Members of ISO and IEC maintain registers of currently
+    valid International Standards.
+2   ISO 31−11:1992, Quantities and units — Part 11: Mathematical signs and symbols for
+    use in the physical sciences and technology.
+3   ISO/IEC 646, Information technology — ISO 7-bit coded character set for information
+    interchange.
+4   ISO/IEC 2382−1:1993, Information technology — Vocabulary — Part 1: Fundamental
+    terms.
+5   ISO 4217, Codes for the representation of currencies and funds.
+6   ISO 8601, Data elements and interchange formats — Information interchange —
+    Representation of dates and times.
+7   ISO/IEC 10646 (all parts), Information technology — Universal Multiple-Octet Coded
+    Character Set (UCS).
+8   IEC 60559:1989, Binary floating-point arithmetic for microprocessor systems (previously
+    designated IEC 559:1989).
+
+
+
+
+    2                                       General                                     §2
+    ©ISO/IEC                                                                     ISO/IEC 9899:1999 (E)
+
+
+

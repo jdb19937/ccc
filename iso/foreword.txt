@@ -1,0 +1,110 @@
+    Foreword
+1   ISO (the International Organization for Standardization) and IEC (the
+    International Electrotechnical Commission) form the specialized system for
+    worldwide standardization. National bodies that are member of ISO or IEC
+    participate in the development of International Standards through technical
+    committees established by the respective organization to deal with
+    particular fields of technical activity. ISO and IEC technical committees
+    collaborate in fields of mutual interest. Other international organizations,
+    governmental and non-governmental, in liaison with ISO and IEC, also take
+    part in the work.
+2   International Standards are drafted in accordance with the rules given in the
+    ISO/IEC Directives, Part 3.
+3   In the field of information technology, ISO and IEC have established a joint
+    technical committee, ISO/IEC JTC 1. Draft International Standards
+    adopted by the joint technical committee are circulated to national bodies
+    for voting. Publication as an International Standard requires approval by at
+    least 75% of the national bodies casting a vote.
+4   International Standard ISO/IEC 9899 was prepared by Joint Technical
+    Committee ISO/IEC JTC 1, Information technology, Subcommittee SC 22,
+    Programming languages, their environments and system software
+    interfaces. The Working Group responsible for this standard (WG 14)
+    maintains     a     site     on     the    World     Wide      Web     at
+    http://www.dkuug.dk/JTC1/SC22/WG14/ containing additional
+    information relevant to this standard such as a Rationale for many of the
+    decisions made during its preparation and a log of Defect Reports and
+    Responses.
+5   This second edition cancels and replaces the first edition,
+    ISO/IEC 9899:1990,   as    amended      and    corrected     by
+    ISO/IEC 9899/COR1:1994,      ISO/IEC 9899/AMD1:1995,       and
+    ISO/IEC 9899/COR2:1996. Major changes from the previous edition
+    include:
+    — restricted character set support via digraphs and <iso646.h>
+      (originally specified in AMD1)
+    — wide character library support in <wchar.h> and <wctype.h>
+      (originally specified in AMD1)
+    — more precise aliasing rules via effective type
+    — restricted pointers
+    — variable-length arrays
+
+
+
+                                            Foreword                                    xi
+ISO/IEC 9899:1999 (E)                                                ©ISO/IEC
+
+
+— flexible array members
+— static and type qualifiers in parameter array declarators
+— complex (and imaginary) support in <complex.h>
+— type-generic math macros in <tgmath.h>
+— the long long int type and library functions
+— increased minimum translation limits
+— additional floating-point characteristics in <float.h>
+— remove implicit int
+— reliable integer division
+— universal character names (\u and \U)
+— extended identifiers
+— hexadecimal floating-point constants and %a and %A printf/scanf
+  conversion specifiers
+— compound literals
+— designated initializers
+— // comments
+— extended integer types and library functions in <inttypes.h> and
+  <stdint.h>
+— remove implicit function declaration
+— preprocessor arithmetic done in intmax_t/uintmax_t
+— mixed declarations and code
+— new block scopes for selection and iteration statements
+— integer constant type rules
+— integer promotion rules
+— vararg macros
+— the vscanf family of functions in <stdio.h> and <wchar.h>
+— additional math library functions in <math.h>
+— floating-point environment access in <fenv.h>
+— IEC 60559 (also known as IEC 559 or IEEE arithmetic) support
+— trailing comma allowed in enum declaration
+— %lf conversion specifier allowed in printf
+
+
+
+xii                                    Foreword
+    ©ISO/IEC                                                        ISO/IEC 9899:1999 (E)
+
+
+    — inline functions
+    — the snprintf family of functions in <stdio.h>
+    — boolean type in <stdbool.h>
+    — idempotent type qualifiers
+    — empty macro arguments
+    — new struct type compatibility rules (tag compatibility)
+    — additional predefined macro names
+    — _Pragma preprocessing operator
+    — standard pragmas
+    — _ _func_ _ predefined identifier
+    — VA_COPY macro
+    — additional strftime conversion specifiers
+    — LIA compatibility annex
+    — deprecate ungetc at the beginning of a binary file
+    — remove deprecation of aliased array parameters
+6   Annexes D and F form a normative part of this standard; annexes A, B, C,
+    E, G, H, I, J, the bibliography, and the index are for information only. In
+    accordance with Part 3 of the ISO/IEC Directives, this foreword, the
+    introduction, notes, footnotes, and examples are for information only.
+
+
+
+
+                                           Foreword                                   xiii
+    ISO/IEC 9899:1999 (E)                                                         ©ISO/IEC
+
+

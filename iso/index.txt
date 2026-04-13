@@ -1,0 +1,1229 @@
+Index
+ x , 3.18                                                    , (comma punctuator), 6.5.2, 6.7, 6.7.2.1, 6.7.2.2,
+ x , 3.19                                                         6.7.2.3, 6.7.8
+! (logical negation operator), 6.5.3.3                         − (subtraction operator), 6.5.6, F.3, G.5.2
+!= (inequality operator), 6.5.9                                − (unary minus operator), 6.5.3.3, F.3
+# operator, 6.10.3.2                                           −− (postfix decrement operator), 6.3.2.1, 6.5.2.4
+# preprocessing directive, 6.10.7                              −− (prefix decrement operator), 6.3.2.1, 6.5.3.1
+# punctuator, 6.10                                             −= (subtraction assignment operator), 6.5.16.2
+## operator, 6.10.3.3                                          −> (structure/union pointer operator), 6.5.2.3
+#define preprocessing directive, 6.10.3                        . (structure/union member operator), 6.3.2.1,
+#elif preprocessing directive, 6.10.1                               6.5.2.3
+#else preprocessing directive, 6.10.1                          . punctuator, 6.7.8
+#endif preprocessing directive, 6.10.1                         ... (ellipsis punctuator), 6.5.2.2, 6.7.5.3, 6.10.3
+#error preprocessing directive, 4, 6.10.5                      / (division operator), 6.5.5, F.3, G.5.1
+#if preprocessing directive, 5.2.4.2.1, 5.2.4.2.2,             /* */ (comment delimiters), 6.4.9
+     6.10.1, 7.1.4                                             // (comment delimiter), 6.4.9
+#ifdef preprocessing directive, 6.10.1                         /= (division assignment operator), 6.5.16.2
+#ifndef preprocessing directive, 6.10.1                        : (colon punctuator), 6.7.2.1
+#include preprocessing directive, 5.1.1.2,                     :> (alternative spelling of ]), 6.4.6
+     6.10.2                                                    ; (semicolon punctuator), 6.7, 6.7.2.1, 6.8.3,
+#line preprocessing directive, 6.10.4                               6.8.5, 6.8.6
+#pragma preprocessing directive, 6.10.6                        < (less-than operator), 6.5.8
+#undef preprocessing directive, 6.10.3.5, 7.1.3,               <% (alternative spelling of {), 6.4.6
+     7.1.4                                                     <: (alternative spelling of [), 6.4.6
+% (remainder operator), 6.5.5                                  << (left-shift operator), 6.5.7
+%: (alternative spelling of #), 6.4.6                          <<= (left-shift assignment operator), 6.5.16.2
+%:%: (alternative spelling of ##), 6.4.6                       <= (less-than-or-equal-to operator), 6.5.8
+%= (remainder assignment operator), 6.5.16.2                   <assert.h> header, 7.2, B.1
+%> (alternative spelling of }), 6.4.6                          <complex.h> header, 5.2.4.2.2, 7.3, 7.22,
+& (address operator), 6.3.2.1, 6.5.3.2                              7.26.1, G.6, J.5.17
+& (bitwise AND operator), 6.5.10                               <ctype.h> header, 7.4, 7.26.2
+&& (logical AND operator), 6.5.13                              <errno.h> header, 7.5, 7.26.3
+&= (bitwise AND assignment operator), 6.5.16.2                 <fenv.h> header, 5.1.2.3, 5.2.4.2.2, 7.6, 7.12, F,
+' ' (space character), 5.1.1.2, 5.2.1, 6.4, 7.4.1.3,                H
+     7.4.1.10, 7.25.2.1.3                                      <float.h> header, 4, 5.2.4.2.2, 7.7, 7.20.1.3,
+( ) (cast operator), 6.5.4                                          7.24.4.1.1
+( ) (function-call operator), 6.5.2.2                          <inttypes.h> header, 7.8, 7.26.4
+( ) (parentheses punctuator), 6.7.5.3, 6.8.4, 6.8.5            <iso646.h> header, 4, 7.9
+( ){ } (compound-literal operator), 6.5.2.5                    <limits.h> header, 4, 5.2.4.2.1, 6.2.5, 7.10
+* (asterisk punctuator), 6.7.5.1, 6.7.5.2                      <locale.h> header, 7.11, 7.26.5
+* (indirection operator), 6.5.2.1, 6.5.3.2                     <math.h> header, 5.2.4.2.2, 6.5, 7.12, 7.22, F,
+* (multiplication operator), 6.5.5, F.3, G.5.1                      F.9, J.5.17
+*= (multiplication assignment operator), 6.5.16.2              <setjmp.h> header, 7.13
++ (addition operator), 6.5.2.1, 6.5.3.2, 6.5.6, F.3,           <signal.h> header, 7.14, 7.26.6
+     G.5.2                                                     <stdarg.h> header, 4, 6.7.5.3, 7.15
++ (unary plus operator), 6.5.3.3                               <stdbool.h> header, 4, 7.16, 7.26.7, H
+++ (postfix increment operator), 6.3.2.1, 6.5.2.4              <stddef.h> header, 4, 6.3.2.1, 6.3.2.3, 6.4.4.4,
+++ (prefix increment operator), 6.3.2.1, 6.5.3.1                    6.4.5, 6.5.3.4, 6.5.6, 7.17
++= (addition assignment operator), 6.5.16.2                    <stdint.h> header, 4, 5.2.4.2, 6.10.1, 7.8,
+, (comma operator), 6.5.17                                          7.18, 7.26.8
+
+                                                       Index                                                 517
+ISO/IEC 9899:1999 (E)                                                                              ©ISO/IEC
+
+
+<stdio.h> header, 7.19, 7.26.9, F                            _ _DATE_ _ macro, 6.10.8
+<stdlib.h> header, 7.20, 7.26.10, F                          _ _FILE_ _ macro, 6.10.8, 7.2.1.1
+<string.h> header, 7.21, 7.26.11                             _ _func_ _ identifier, 6.4.2.2, 7.2.1.1
+<tgmath.h> header, 7.22, G.7                                 _ _LINE_ _ macro, 6.10.8, 7.2.1.1
+<time.h> header, 7.23                                        _ _STDC_, 6.11.9
+<wchar.h> header, 7.19.1, 7.24, 7.26.12, F                   _ _STDC_ _ macro, 6.10.8
+<wctype.h> header, 7.25, 7.26.13                             _ _STDC_CONSTANT_MACROS macro, 7.18.4
+= (equal-sign punctuator), 6.7, 6.7.2.2, 6.7.8               _ _STDC_FORMAT_MACROS macro, 7.8.1
+= (simple assignment operator), 6.5.16.1                     _ _STDC_HOSTED_ _ macro, 6.10.8
+== (equality operator), 6.5.9                                _ _STDC_IEC_559_ _ macro, 6.10.8, F.1
+> (greater-than operator), 6.5.8                             _ _STDC_IEC_559_COMPLEX_ _ macro,
+>= (greater-than-or-equal-to operator), 6.5.8                     6.10.8, G.1
+>> (right-shift operator), 6.5.7                             _ _STDC_ISO_10646_ _ macro, 6.10.8
+>>= (right-shift assignment operator), 6.5.16.2              _ _STDC_LIMIT_MACROS macro, 7.18.2,
+? : (conditional operator), 6.5.15                                7.18.3
+?? (trigraph sequences), 5.2.1.1                             _ _STDC_VERSION_ _ macro, 6.10.8
+[ ] (array subscript operator), 6.5.2.1, 6.5.3.2             _ _TIME_ _ macro, 6.10.8
+[ ] (brackets punctuator), 6.7.5.2, 6.7.8                    _ _VA_ARGS_ _ identifier, 6.10.3, 6.10.3.1
+\ (backslash character), 5.1.1.2, 5.2.1, 6.4.4.4             _Bool type, 6.2.5, 6.3.1.1, 6.3.1.2, 6.7.2
+\ (escape character), 6.4.4.4                                _Bool type conversions, 6.3.1.2
+\" (double-quote escape sequence), 6.4.4.4,                  _Complex types, 6.2.5, 6.7.2, 7.3.1, G
+     6.4.5, 6.10.9                                           _Complex_I macro, 7.3.1
+\\ (backslash escape sequence), 6.4.4.4, 6.10.9              _Exit function, 7.20.4.4
+\' (single-quote escape sequence), 6.4.4.4, 6.4.5            _Imaginary types, 6.7.2, 7.3.1, G
+\0 (null character), 5.2.1, 6.4.4.4, 6.4.5                   _Imaginary_I macro, 7.3.1, G.6
+  padding of binary stream, 7.19.2                           _IOFBF macro, 7.19.1, 7.19.5.5, 7.19.5.6
+\? (question-mark escape sequence), 6.4.4.4                  _IOLBF macro, 7.19.1, 7.19.5.6
+\a (alert escape sequence), 5.2.2, 6.4.4.4                   _IONBF macro, 7.19.1, 7.19.5.5, 7.19.5.6
+\b (backspace escape sequence), 5.2.2, 6.4.4.4               _Pragma operator, 5.1.1.2, 6.10.9
+\f (form-feed escape sequence), 5.2.2, 6.4.4.4,              { } (braces punctuator), 6.7.2.2, 6.7.2.3, 6.7.8,
+     7.4.1.10                                                     6.8.2
+\n (new-line escape sequence), 5.2.2, 6.4.4.4,               { } (compound-literal operator), 6.5.2.5
+     7.4.1.10                                                | (bitwise inclusive OR operator), 6.5.12
+\octal digits (octal-character escape sequence),             |= (bitwise inclusive OR assignment operator),
+     6.4.4.4                                                      6.5.16.2
+\r (carriage-return escape sequence), 5.2.2,                 || (logical OR operator), 6.5.14
+     6.4.4.4, 7.4.1.10                                       ˜ (bitwise complement operator), 6.5.3.3
+\t (horizontal-tab escape sequence), 5.2.2,
+     6.4.4.4, 7.4.1.3, 7.4.1.10, 7.25.2.1.3                  abort function, 7.2.1.1, 7.14.1.1, 7.19.3,
+\U (universal character names), 6.4.3                             7.20.4.1
+\u (universal character names), 6.4.3                        abs function, 7.20.6.1
+\v (vertical-tab escape sequence), 5.2.2, 6.4.4.4,           absolute-value functions
+     7.4.1.10                                                  complex, 7.3.8, G.6.4
+\x hexadecimal digits (hexadecimal-character                   integer, 7.8.2.1, 7.20.6.1
+     escape sequence), 6.4.4.4                                 real, 7.12.7, F.9.4
+ˆ (bitwise exclusive OR operator), 6.5.11                    abstract declarator, 6.7.6
+ˆ= (bitwise exclusive OR assignment operator),               abstract machine, 5.1.2.3
+     6.5.16.2                                                access, 3.1, 6.7.3
+_ _bool_true_false_are_defined                               accuracy, floating-point, 5.2.4.2.2
+     macro, 7.16                                             acos functions, 7.12.4.1, F.9.1.1
+_ _cplusplus macro, 6.10.8                                   acos type-generic macro, 7.22
+
+518                                                  Index
+©ISO/IEC                                                                           ISO/IEC 9899:1999 (E)
+
+
+acosh functions, 7.12.5.1, F.9.2.1                                multidimensional, 6.5.2.1
+acosh type-generic macro, 7.22                                    parameter, 6.9.1
+active position, 5.2.2                                            storage order, 6.5.2.1
+actual argument, 3.3                                              subscript operator ([ ]), 6.5.2.1, 6.5.3.2
+actual parameter (deprecated), 3.3                                subscripting, 6.5.2.1
+addition assignment operator (+=), 6.5.16.2                       type, 6.2.5
+addition operator (+), 6.5.2.1, 6.5.3.2, 6.5.6, F.3,              type conversion, 6.3.2.1
+      G.5.2                                                    arrow operator (−>), 6.5.2.3
+additive expressions, 6.5.6, G.5.2                             as−if rule, 5.1.2.3
+address constant, 6.6                                          ASCII code set, 5.2.1.1
+address operator (&), 6.3.2.1, 6.5.3.2                         asctime function, 7.23.3.1
+aggregate initialization, 6.7.8                                asin functions, 7.12.4.2, F.9.1.2
+aggregate types, 6.2.5                                         asin type-generic macro, 7.22, G.7
+alert escape sequence (\a), 5.2.2, 6.4.4.4                     asinh functions, 7.12.5.2, F.9.2.2
+aliasing, 6.5                                                  asinh type-generic macro, 7.22, G.7
+alignment, 3.2                                                 asm keyword, J.5.10
+   pointer, 6.2.5, 6.3.2.3                                     assert macro, 7.2.1.1
+   structure/union member, 6.7.2.1                             assert.h header, 7.2, B.1
+allocated storage, order and contiguity, 7.20.3                assignment
+and macro, 7.9                                                    compound, 6.5.16.2
+AND operators                                                     conversion, 6.5.16.1
+   bitwise (&), 6.5.10                                            expression, 6.5.16
+   bitwise assignment (&=), 6.5.16.2                              operators, 6.3.2.1, 6.5.16
+   logical (&&), 6.5.13                                           simple, 6.5.16.1
+and_eq macro, 7.9                                              associativity of operators, 6.5
+ANSI/IEEE 754, F.1                                             asterisk punctuator (*), 6.7.5.1, 6.7.5.2
+ANSI/IEEE 854, F.1                                             atan functions, 7.12.4.3, F.9.1.3
+argc (main function parameter), 5.1.2.2.1                      atan type-generic macro, 7.22, G.7
+argument, 3.3                                                  atan2 functions, 7.12.4.4, F.9.1.4
+   array, 6.9.1                                                atan2 type-generic macro, 7.22
+   default promotions, 6.5.2.2                                 atanh functions, 7.12.5.3, F.9.2.3
+   function, 6.5.2.2, 6.9.1                                    atanh type-generic macro, 7.22, G.7
+   macro, substitution, 6.10.3.1                               atexit function, 7.20.4.2, 7.20.4.3, 7.20.4.4,
+argument, complex, 7.3.9.1                                           J.5.13
+argv (main function parameter), 5.1.2.2.1                      atof function, 7.20.1, 7.20.1.1
+arithmetic constant expression, 6.6                            atoi function, 7.20.1, 7.20.1.2
+arithmetic conversions, usual, see usual arithmetic            atol function, 7.20.1, 7.20.1.2
+      conversions                                              atoll function, 7.20.1, 7.20.1.2
+arithmetic operators                                           auto storage-class specifier, 6.7.1, 6.9
+   additive, 6.5.6, G.5.2                                      automatic storage duration, 5.2.3, 6.2.4
+   bitwise, 6.5.10, 6.5.11, 6.5.12
+   increment and decrement, 6.5.2.4, 6.5.3.1                   backslash character (\), 5.1.1.2, 5.2.1, 6.4.4.4
+   multiplicative, 6.5.5, G.5.1                                backslash escape sequence (\\), 6.4.4.4, 6.10.9
+   shift, 6.5.7                                                backspace escape sequence (\b), 5.2.2, 6.4.4.4
+   unary, 6.5.3.3                                              basic character set, 3.6, 3.7.2, 5.2.1
+arithmetic types, 6.2.5                                        basic types, 6.2.5
+arithmetic, pointer, 6.5.6                                     behavior, 3.4
+array                                                          binary streams, 7.19.2, 7.19.7.11, 7.19.9.2,
+   argument, 6.9.1                                                   7.19.9.4
+   declarator, 6.7.5.2                                         bit, 3.5
+   initialization, 6.7.8                                          high order, 3.6
+
+                                                       Index                                                 519
+ISO/IEC 9899:1999 (E)                                                                                ©ISO/IEC
+
+
+   low order, 3.6                                              carriage-return escape sequence (\r), 5.2.2,
+bit-field, 6.7.2.1                                                  6.4.4.4, 7.4.1.10
+bitand macro, 7.9                                              case label, 6.8.1, 6.8.4.2
+bitor macro, 7.9                                               case mapping functions
+bitwise operators, 6.5                                           character, 7.4.2
+   AND, 6.5.10                                                   wide character, 7.25.3.1
+   AND assignment (&=), 6.5.16.2                                    extensible, 7.25.3.2
+   complement (˜), 6.5.3.3                                     casin functions, 7.3.5.2, G.6
+   exclusive OR, 6.5.11                                          type-generic macro for, 7.22
+   exclusive OR assignment (ˆ=), 6.5.16.2                      casinh functions, 7.3.6.2, G.6.2.2
+   inclusive OR, 6.5.12                                          type-generic macro for, 7.22
+   inclusive OR assignment (|=), 6.5.16.2                      cast expression, 6.5.4
+   shift, 6.5.7                                                cast operator (( )), 6.5.4
+blank character, 7.4.1.3                                       catan functions, 7.3.5.3, G.6
+block, 6.8, 6.8.2, 6.8.4, 6.8.5                                  type-generic macro for, 7.22
+block scope, 6.2.1                                             catanh functions, 7.3.6.3, G.6.2.3
+block structure, 6.2.1                                           type-generic macro for, 7.22
+bold type convention, 6.1                                      cbrt functions, 7.12.7.1, F.9.4.1
+bool macro, 7.16                                               cbrt type-generic macro, 7.22
+boolean type, 6.3.1.2                                          ccos functions, 7.3.5.4, G.6
+boolean type conversion, 6.3.1.1, 6.3.1.2                        type-generic macro for, 7.22
+braces punctuator ({ }), 6.7.2.2, 6.7.2.3, 6.7.8,              ccosh functions, 7.3.6.4, G.6.2.4
+      6.8.2                                                      type-generic macro for, 7.22
+brackets operator ([ ]), 6.5.2.1, 6.5.3.2                      ceil functions, 7.12.9.1, F.9.6.1
+brackets punctuator ([ ]), 6.7.5.2, 6.7.8                      ceil type-generic macro, 7.22
+branch cuts, 7.3.3                                             cerf function, 7.26.1
+break statement, 6.8.6.3                                       cerfc function, 7.26.1
+broken-down time, 7.23.1, 7.23.2.3, 7.23.3,                    cexp functions, 7.3.7.1, G.6.3.1
+      7.23.3.1, 7.23.3.3, 7.23.3.4, 7.23.3.5                     type-generic macro for, 7.22
+bsearch function, 7.20.5, 7.20.5.1                             cexp2 function, 7.26.1
+btowc function, 7.24.6.1.1                                     cexpm1 function, 7.26.1
+BUFSIZ macro, 7.19.1, 7.19.2, 7.19.5.5                         char type, 6.2.5, 6.3.1.1, 6.7.2
+byte, 3.6, 6.5.3.4                                             char type conversion, 6.3.1.1, 6.3.1.3, 6.3.1.4,
+byte input/output functions, 7.19.1                                 6.3.1.8
+byte-oriented stream, 7.19.2                                   CHAR_BIT macro, 5.2.4.2.1
+                                                               CHAR_MAX macro, 5.2.4.2.1, 7.11.2.1
+C program, 5.1.1.1                                             CHAR_MIN macro, 5.2.4.2.1
+C++, 7.8.1, 7.18.2, 7.18.3, 7.18.4                             character, 3.7, 3.7.1
+cabs functions, 7.3.8.1, G.6                                   character array initialization, 6.7.8
+  type-generic macro for, 7.22                                 character case mapping functions, 7.4.2
+cacos functions, 7.3.5.1, G.6.1.1                                wide character, 7.25.3.1
+  type-generic macro for, 7.22                                      extensible, 7.25.3.2
+cacosh functions, 7.3.6.1, G.6.2.1                             character classification functions, 7.4.1
+  type-generic macro for, 7.22                                   wide character, 7.25.2.1
+calendar time, 7.23.1, 7.23.2.2, 7.23.2.3, 7.23.2.4,                extensible, 7.25.2.2
+      7.23.3.2, 7.23.3.3, 7.23.3.4                             character constant, 5.1.1.2, 5.2.1, 6.4.4.4
+call by value, 6.5.2.2                                         character display semantics, 5.2.2
+calloc function, 7.20.3, 7.20.3.1, 7.20.3.2,                   character handling header, 7.4, 7.11.1.1
+      7.20.3.4                                                 character input/output functions, 7.19.7
+carg functions, 7.3.9.1, G.6                                     wide character, 7.24.3
+carg type-generic macro, 7.22, G.7                             character sets, 5.2.1
+
+520                                                    Index
+©ISO/IEC                                                                         ISO/IEC 9899:1999 (E)
+
+
+character string literal, see string literal                  compound literals, 6.5.2.5
+character type conversion, 6.3.1.1                            compound statement, 6.8.2
+character types, 6.2.5, 6.7.8                                 compound-literal operator (( ){ }), 6.5.2.5
+cimag functions, 7.3.9.2, 7.3.9.4, G.6                        concatenation functions
+cimag type-generic macro, 7.22, G.7                             string, 7.21.3
+cis function, G.6                                               wide string, 7.24.4.3
+classification functions                                      concatenation, preprocessing, see preprocessing
+   character, 7.4.1                                                concatenation
+   wide character, 7.25.2.1                                   conceptual models, 5.1
+      extensible, 7.25.2.2                                    conditional inclusion, 6.10.1
+clearerr function, 7.19.10.1                                  conditional operator (? :), 6.5.15
+clgamma function, 7.26.1                                      conformance, 4
+clock function, 7.23.2.1                                      conj functions, 7.3.9.3, G.6
+clock_t type, 7.23.1, 7.23.2.1                                conj type-generic macro, 7.22
+CLOCKS_PER_SEC macro, 7.23.1, 7.23.2.1                        const type qualifier, 6.7.3
+clog functions, 7.3.7.2, G.6.3.2                              const-qualified type, 6.2.5, 6.3.2.1, 6.7.3
+   type-generic macro for, 7.22                               constant expression, 6.6, F.7.4
+clog10 function, 7.26.1                                       constants, 6.4.4
+clog1p function, 7.26.1                                         as primary expression, 6.5.1
+clog2 function, 7.26.1                                          character, 6.4.4.4
+collating sequences, 5.2.1                                      enumeration, 6.2.1, 6.4.4.3
+colon punctuator (:), 6.7.2.1                                   floating, 6.4.4.2
+comma operator (,), 6.5.17                                      hexadecimal, 6.4.4.1
+comma punctuator (,), 6.5.2, 6.7, 6.7.2.1, 6.7.2.2,             integer, 6.4.4.1
+      6.7.2.3, 6.7.8                                            octal, 6.4.4.1
+command processor, 7.20.4.6                                   constraint, 3.8, 4
+comment delimiters (/* */ and //), 6.4.9                      content of structure/union/enumeration, 6.7.2.3
+comments, 5.1.1.2, 6.4, 6.4.9                                 contiguity of allocated storage, 7.20.3
+common extensions, J.5                                        continue statement, 6.8.6.2
+common initial sequence, 6.5.2.3                              contracted expression, 6.5, 7.12.2, F.6
+common real type, 6.3.1.8                                     control character, 5.2.1, 7.4
+common warnings, I                                            control wide character, 7.25.2
+comparison functions, 7.20.5, 7.20.5.1, 7.20.5.2              conversion, 6.3
+   string, 7.21.4                                               arithmetic operands, 6.3.1
+   wide string, 7.24.4.4                                        array, 6.3.2.1
+comparison macros, 7.12.14                                      array argument, 6.9.1
+comparison, pointer, 6.5.8                                      array parameter, 6.9.1
+compatible type, 6.2.7, 6.7.2, 6.7.3, 6.7.5                     arrays, 6.3.2.1
+compl macro, 7.9                                                boolean, 6.3.1.2
+complement operator (˜), 6.5.3.3                                boolean, characters, and integers, 6.3.1.1
+complex macro, 7.3.1                                            by assignment, 6.5.16.1
+complex numbers, 6.2.5, G                                       by return statement, 6.8.6.4
+complex type conversion, 6.3.1.6, 6.3.1.7                       complex types, 6.3.1.6
+complex type domain, 6.2.5                                      explicit, 6.3
+complex types, 6.2.5, 6.7.2, G                                  function, 6.3.2.1
+complex.h header, 5.2.4.2.2, 7.3, 7.22, 7.26.1,                 function argument, 6.5.2.2, 6.9.1
+      G.6, J.5.17                                               function designators, 6.3.2.1
+compliance, see conformance                                     function parameter, 6.9.1
+components of time, 7.23.1                                      imaginary, G.4.1
+composite type, 6.2.7                                           imaginary and complex, G.4.3
+compound assignment, 6.5.16.2                                   implicit, 6.3
+
+                                                      Index                                               521
+ISO/IEC 9899:1999 (E)                                                                              ©ISO/IEC
+
+
+  lvalues, 6.3.2.1                                            ctan functions, 7.3.5.6, G.6
+  pointer, 6.3.2.1, 6.3.2.3                                     type-generic macro for, 7.22
+  real and complex, 6.3.1.7                                   ctanh functions, 7.3.6.6, G.6.2.6
+  real and imaginary, G.4.2                                     type-generic macro for, 7.22
+  real floating and integer, 6.3.1.4, F.3, F.4                ctgamma function, 7.26.1
+  real floating types, 6.3.1.5, F.3                           ctime function, 7.23.3.2
+  signed and unsigned integers, 6.3.1.3                       ctype.h header, 7.4, 7.26.2
+  usual arithmetic, see usual arithmetic                      current object, 6.7.8
+        conversions                                           CX_LIMITED_RANGE pragma, 6.10.6, 7.3.4
+  void type, 6.3.2.2
+conversion functions                                          data stream, see streams
+  multibyte/wide character, 7.20.7                            date and time header, 7.23
+     extended, 7.24.6                                         Daylight Saving Time, 7.23.1
+     restartable, 7.24.6.3                                    DBL_DIG macro, 5.2.4.2.2
+  multibyte/wide string, 7.20.8                               DBL_EPSILON macro, 5.2.4.2.2
+     restartable, 7.24.6.4                                    DBL_MANT_DIG macro, 5.2.4.2.2
+  numeric, 7.8.2.3, 7.20.1                                    DBL_MAX macro, 5.2.4.2.2
+     wide string, 7.8.2.4, 7.24.4.1                           DBL_MAX_10_EXP macro, 5.2.4.2.2
+  single byte/wide character, 7.24.6.1                        DBL_MAX_EXP macro, 5.2.4.2.2
+  time, 7.23.3                                                DBL_MIN macro, 5.2.4.2.2
+     wide character, 7.24.5                                   DBL_MIN_10_EXP macro, 5.2.4.2.2
+conversion specifier, 7.19.6.1, 7.19.6.2, 7.24.2.1,           DBL_MIN_EXP macro, 5.2.4.2.2
+     7.24.2.2                                                 decimal constant, 6.4.4.1
+conversion state, 7.20.7, 7.24.6, 7.24.6.2.1,                 decimal digit, 5.2.1
+     7.24.6.3, 7.24.6.3.2, 7.24.6.3.3, 7.24.6.4,              decimal-point character, 7.1.1, 7.11.2.1
+     7.24.6.4.1, 7.24.6.4.2                                   DECIMAL_DIG macro, 5.2.4.2.2, 7.19.6.1,
+conversion state functions, 7.24.6.2                                7.20.1.3, 7.24.2.1, 7.24.4.1.1, F.5
+copying functions                                             declaration specifiers, 6.7
+  string, 7.21.2                                              declarations, 6.7
+  wide string, 7.24.4.2                                          function, 6.7.5.3
+copysign functions, 7.3.9.4, 7.12.11.1, F.3,                     pointer, 6.7.5.1
+     F.9.8.1                                                     structure/union, 6.7.2.1
+copysign type-generic macro, 7.22                                typedef, 6.7.7
+correctly rounded result, 3.9                                 declarator, 6.7.5
+corresponding real type, 6.2.5                                   abstract, 6.7.6
+cos functions, 7.12.4.5, F.9.1.5                              declarator type derivation, 6.2.5, 6.7.5
+cos type-generic macro, 7.22, G.7                             decrement operators, see arithmetic operators,
+cosh functions, 7.12.5.4, F.9.2.4                                   increment and decrement
+cosh type-generic macro, 7.22, G.7                            default argument promotions, 6.5.2.2
+cpow functions, 7.3.8.2, G.6.4.1                              default initialization, 6.7.8
+  type-generic macro for, 7.22                                default label, 6.8.1, 6.8.4.2
+cproj functions, 7.3.9.4, G.6                                 define preprocessing directive, 6.10.3
+cproj type-generic macro, 7.22                                defined operator, 6.10.1, 6.10.8
+creal functions, 7.3.9.5, G.6                                 definition, 6.7
+creal type-generic macro, 7.22, G.7                              function, 6.9.1
+csin functions, 7.3.5.5, G.6                                  derived declarator types, 6.2.5
+  type-generic macro for, 7.22                                derived types, 6.2.5
+csinh functions, 7.3.6.5, G.6.2.5                             designated initializer, 6.7.8
+  type-generic macro for, 7.22                                destringizing, 6.10.9
+csqrt functions, 7.3.8.3, G.6.4.2                             device input/output, 5.1.2.3
+  type-generic macro for, 7.22                                diagnostic message, 3.10, 5.1.1.3
+
+522                                                   Index
+©ISO/IEC                                                                              ISO/IEC 9899:1999 (E)
+
+
+diagnostics, 5.1.1.3                                            endif preprocessing directive, 6.10.1
+diagnostics header, 7.2                                         enum type, 6.2.5, 6.7.2, 6.7.2.2
+difftime function, 7.23.2.2                                     enumerated type, 6.2.5
+digit, 5.2.1, 7.4                                               enumeration, 6.2.5, 6.7.2.2
+digraphs, 6.4.6                                                 enumeration constant, 6.2.1, 6.4.4.3
+direct input/output functions, 7.19.8                           enumeration content, 6.7.2.3
+display device, 5.2.2                                           enumeration members, 6.7.2.2
+div function, 7.20.6.2                                          enumeration specifiers, 6.7.2.2
+div_t type, 7.20                                                enumeration tag, 6.2.3, 6.7.2.3
+division assignment operator (/=), 6.5.16.2                     enumerator, 6.7.2.2
+division operator (/), 6.5.5, F.3, G.5.1                        environment, 5
+do statement, 6.8.5.2                                           environment functions, 7.20.4
+documentation of implementation, 4                              environment list, 7.20.4.5
+domain error, 7.12.1, 7.12.4.1, 7.12.4.2, 7.12.4.4,             environmental considerations, 5.2
+      7.12.5.1, 7.12.5.3, 7.12.6.7, 7.12.6.8,                   environmental limits, 5.2.4, 7.13.1.1, 7.19.2,
+      7.12.6.9, 7.12.6.10, 7.12.6.11, 7.12.7.4,                       7.19.3, 7.19.4.4, 7.19.6.1, 7.20.2.1, 7.20.4.2,
+      7.12.7.5, 7.12.8.4, 7.12.10.1                                   7.24.2.1
+dot operator (.), 6.5.2.3                                       EOF macro, 7.4, 7.19.1, 7.19.5.1, 7.19.5.2,
+double _Complex type, 6.2.5                                           7.19.6.2, 7.19.6.7, 7.19.6.9, 7.19.6.11,
+double _Complex type conversion, 6.3.1.6,                             7.19.6.14, 7.19.7.1, 7.19.7.3, 7.19.7.4,
+      6.3.1.7, 6.3.1.8                                                7.19.7.5, 7.19.7.6, 7.19.7.9, 7.19.7.10,
+double _Imaginary type, G.2                                           7.19.7.11, 7.24.1, 7.24.2.2, 7.24.2.4,
+double type, 6.2.5, 6.4.4.2, 6.7.2, 7.19.6.2,                         7.24.2.6, 7.24.2.8, 7.24.2.10, 7.24.2.12,
+      7.24.2.2, F.2                                                   7.24.3.4, 7.24.6.1.1, 7.24.6.1.2
+double type conversion, 6.3.1.4, 6.3.1.5, 6.3.1.7,              equal-sign punctuator (=), 6.7, 6.7.2.2, 6.7.8
+      6.3.1.8                                                   equal-to operator, see equality operator
+double-precision arithmetic, 5.1.2.3                            equality expressions, 6.5.9
+double-quote escape sequence (\"), 6.4.4.4,                     equality operator (==), 6.5.9
+      6.4.5, 6.10.9                                             ERANGE macro, 7.5, 7.8.2.3, 7.8.2.4, 7.12.1,
+double_t type, 7.12, J.5.6                                            7.20.1.3, 7.20.1.4, 7.24.4.1.1, 7.24.4.1.2, see
+                                                                      also range error
+EDOM macro, 7.5, 7.12.1, see also domain error                  erf functions, 7.12.8.1, F.9.5.1
+effective type, 6.5                                             erf type-generic macro, 7.22
+EILSEQ macro, 7.5, 7.19.3, 7.24.3.1, 7.24.3.3,                  erfc functions, 7.12.8.2, F.9.5.2
+      7.24.6.3.2, 7.24.6.3.3, 7.24.6.4.1, 7.24.6.4.2,           erfc type-generic macro, 7.22
+      see also encoding error                                   errno macro, 7.3.2, 7.5, 7.8.2.3, 7.8.2.4, 7.12.1,
+element type, 6.2.5                                                   7.14.1.1, 7.19.3, 7.19.9.3, 7.19.10.4, 7.20.1,
+elif preprocessing directive, 6.10.1                                  7.20.1.3, 7.20.1.4, 7.21.6.2, 7.24.3.1,
+ellipsis punctuator (...), 6.5.2.2, 6.7.5.3, 6.10.3                   7.24.3.3, 7.24.4.1.1, 7.24.4.1.2, 7.24.6.3.2,
+else preprocessing directive, 6.10.1                                  7.24.6.3.3, 7.24.6.4.1, 7.24.6.4.2, J.5.17
+else statement, 6.8.4.1                                         errno.h header, 7.5, 7.26.3
+empty statement, 6.8.3                                          error
+encoding error, 7.19.3, 7.24.3.1, 7.24.3.3,                        domain, see domain error
+      7.24.6.3.2, 7.24.6.3.3, 7.24.6.4.1, 7.24.6.4.2               encoding, see encoding error
+end-of-file, 7.24.1                                                range, see range error
+end-of-file indicator, 7.19.1, 7.19.5.3, 7.19.7.1,              error conditions, 7.12.1
+      7.19.7.5, 7.19.7.6, 7.19.7.11, 7.19.9.2,                  error functions, 7.12.8, F.9.5
+      7.19.9.3, 7.19.10.1, 7.19.10.2, 7.24.3.1,                 error indicator, 7.19.1, 7.19.5.3, 7.19.7.1,
+      7.24.3.10                                                       7.19.7.3, 7.19.7.5, 7.19.7.6, 7.19.7.8,
+end-of-file macro, see EOF macro                                      7.19.7.9, 7.19.9.2, 7.19.10.1, 7.19.10.3,
+end-of-line indicator, 5.2.1                                          7.24.3.1, 7.24.3.3
+
+                                                        Index                                                    523
+ISO/IEC 9899:1999 (E)                                                                              ©ISO/IEC
+
+
+error preprocessing directive, 4, 6.10.5                      external linkage, 6.2.2
+error-handling functions, 7.19.10, 7.21.6.2                   external name, 6.4.2.1
+escape character (\), 6.4.4.4                                 external object definitions, 6.9.2
+escape sequences, 5.2.1, 5.2.2, 6.4.4.4, 6.11.4
+evaluation order, 6.5                                         fabs functions, 7.12.7.2, F.9.4.2
+exceptional condition, 6.5, 7.12.1                            fabs type-generic macro, 7.22, G.7
+exclusive OR operators                                        false macro, 7.16
+   bitwise (ˆ), 6.5.11                                        fclose function, 7.19.5.1
+   bitwise assignment (ˆ=), 6.5.16.2                          fdim functions, 7.12.12.1, F.9.9.1
+executable program, 5.1.1.1                                   fdim type-generic macro, 7.22
+execution character set, 5.2.1                                FE_ALL_EXCEPT macro, 7.6
+execution environment, 5, 5.1.2, see also                     FE_DFL_ENV macro, 7.6
+      environmental limits                                    FE_DIVBYZERO macro, 7.6, 7.12, F.3
+execution sequence, 5.1.2.3, 6.8                              FE_DOWNWARD macro, 7.6, F.3
+exit function, 5.1.2.2.3, 7.19.3, 7.20, 7.20.4.3,             FE_INEXACT macro, 7.6, F.3
+      7.20.4.4                                                FE_INVALID macro, 7.6, 7.12, F.3
+EXIT_FAILURE macro, 7.20, 7.20.4.3                            FE_OVERFLOW macro, 7.6, 7.12, F.3
+EXIT_SUCCESS macro, 7.20, 7.20.4.3                            FE_TONEAREST macro, 7.6, F.3
+exp functions, 7.12.6.1, F.9.3.1                              FE_TOWARDZERO macro, 7.6, F.3
+exp type-generic macro, 7.22                                  FE_UNDERFLOW macro, 7.6, F.3
+exp2 functions, 7.12.6.2, F.9.3.2                             FE_UPWARD macro, 7.6, F.3
+exp2 type-generic macro, 7.22                                 feclearexcept function, 7.6.2, 7.6.2.1, F.3
+explicit conversion, 6.3                                      fegetenv function, 7.6.4.1, 7.6.4.3, 7.6.4.4, F.3
+expm1 functions, 7.12.6.3, F.9.3.3                            fegetexceptflag function, 7.6.2, 7.6.2.2, F.3
+expm1 type-generic macro, 7.22                                fegetround function, 7.6, 7.6.3.1, F.3
+exponent part, 6.4.4.2                                        feholdexcept function, 7.6.4.2, 7.6.4.3,
+exponential functions                                               7.6.4.4, F.3
+   complex, 7.3.7, G.6.3                                      fenv.h header, 5.1.2.3, 5.2.4.2.2, 7.6, 7.12, F, H
+   real, 7.12.6, F.9.3                                        FENV_ACCESS pragma, 6.10.6, 7.6.1, F.7, F.8,
+expression, 6.5                                                     F.9
+   assignment, 6.5.16                                         fenv_t type, 7.6
+   cast, 6.5.4                                                feof function, 7.19.10.2
+   constant, 6.6                                              feraiseexcept function, 7.6.2, 7.6.2.3, F.3
+   full, 6.8                                                  ferror function, 7.19.10.3
+   order of evaluation, 6.5                                   fesetenv function, 7.6.4.3, F.3
+   parenthesized, 6.5.1                                       fesetexceptflag function, 7.6.2, 7.6.2.4, F.3
+   primary, 6.5.1                                             fesetround function, 7.6, 7.6.3.2, F.3
+   unary, 6.5.3                                               fetestexcept function, 7.6.2, 7.6.2.5, F.3
+expression statement, 6.8.3                                   feupdateenv function, 7.6.4.2, 7.6.4.4, F.3
+extended character set, 3.7.2, 5.2.1, 5.2.1.2                 fexcept_t type, 7.6, F.3
+extended characters, 5.2.1                                    fflush function, 7.19.5.2, 7.19.5.3
+extended integer types, 6.2.5, 7.18                           fgetc function, 7.19.1, 7.19.3, 7.19.7.1,
+extended multibyte/wide character conversion                        7.19.7.5, 7.19.8.1
+      utilities, 7.24.6                                       fgetpos function, 7.19.2, 7.19.9.1, 7.19.9.3
+extensible wide character case mapping functions,             fgets function, 7.19.1, 7.19.7.2
+      7.25.3.2                                                fgetwc function, 7.19.1, 7.19.3, 7.24.3.1,
+extensible wide character classification functions,                 7.24.3.6
+      7.25.2.2                                                fgetws function, 7.19.1, 7.24.3.2
+extern storage-class specifier, 6.2.2, 6.7.1                  field width, 7.19.6.1, 7.24.2.1
+external definition, 6.9                                      file, 7.19.3
+external identifiers, underscore, 7.1.3                          access functions, 7.19.5
+
+524                                                   Index
+©ISO/IEC                                                                           ISO/IEC 9899:1999 (E)
+
+
+   name, 7.19.3                                                     7.24.2.1, 7.24.4.1.1
+   operations, 7.19.4                                          FLT_ROUNDS macro, 5.2.4.2.2, 7.6, 7.12.13.1,
+   position indicator, 7.19.1, 7.19.2, 7.19.3,                      F.3
+         7.19.5.3, 7.19.7.1, 7.19.7.3, 7.19.7.11,              fma functions, 7.12, 7.12.13.1, F.9.10.1
+         7.19.8.1, 7.19.8.2, 7.19.9.1, 7.19.9.2,               fma type-generic macro, 7.22
+         7.19.9.3, 7.19.9.4, 7.19.9.5, 7.24.3.1,               fmax functions, 7.12.12.2, F.9.9.2
+         7.24.3.3, 7.24.3.10                                   fmax type-generic macro, 7.22
+   positioning functions, 7.19.9                               fmin functions, 7.12.12.3, F.9.9.3
+file scope, 6.2.1, 6.9                                         fmin type-generic macro, 7.22
+FILE type, 7.19.1, 7.19.3                                      fmod functions, 7.12.10.1, F.9.7.1
+FILENAME_MAX macro, 7.19.1                                     fmod type-generic macro, 7.22
+flags, 7.19.6.1, 7.24.2.1                                      fopen function, 7.19.5.3, 7.19.5.4
+   floating-point status, see floating-point status            FOPEN_MAX macro, 7.19.1, 7.19.3, 7.19.4.3
+         flag                                                  for statement, 6.8.5, 6.8.5.3
+flexible array member, 6.7.2.1                                 form-feed character, 5.2.1, 6.4
+float _Complex type, 6.2.5                                     form-feed escape sequence (\f), 5.2.2, 6.4.4.4,
+float _Complex type conversion, 6.3.1.6,                            7.4.1.10
+      6.3.1.7, 6.3.1.8                                         formal argument (deprecated), 3.15
+float _Imaginary type, G.2                                     formal parameter, 3.15
+float type, 6.2.5, 6.4.4.2, 6.7.2, F.2                         formatted input/output functions, 7.11.1.1, 7.19.6
+float type conversion, 6.3.1.4, 6.3.1.5, 6.3.1.7,                 wide character, 7.24.2
+      6.3.1.8                                                  fortran keyword, J.5.9
+float.h header, 4, 5.2.4.2.2, 7.7, 7.20.1.3,                   forward reference, 3.11
+      7.24.4.1.1                                               FP_CONTRACT pragma, 6.10.6, 7.12.2
+float_t type, 7.12, J.5.6                                      FP_FAST_FMA macro, 7.12
+floating constant, 6.4.4.2                                     FP_FAST_FMAF macro, 7.12
+floating suffix, f or F, 6.4.4.2                               FP_FAST_FMAL macro, 7.12
+floating type conversion, 6.3.1.4, 6.3.1.5, 6.3.1.7,           FP_ILOGB0 macro, 7.12, 7.12.6.5
+      F.3, F.4                                                 FP_ILOGBNAN macro, 7.12, 7.12.6.5
+floating types, 6.2.5, 6.11.1                                  FP_INFINITE macro, 7.12, F.3
+floating-point accuracy, 5.2.4.2.2                             FP_NAN macro, 7.12, F.3
+floating-point arithmetic functions, 7.12, F.9                 FP_NORMAL macro, 7.12, F.3
+floating-point control mode, 7.6, F.7.6                        FP_SUBNORMAL macro, 7.12, F.3
+floating-point environment, 7.6, F.7, F.7.6                    FP_ZERO macro, 7.12, F.3
+floating-point exception, 7.6, 7.6.2, F.9                      fpclassify macro, 7.12.3.1, F.3
+floating-point number, 5.2.4.2.2, 6.2.5                        fpos_t type, 7.19.1, 7.19.2
+floating-point rounding mode, 5.2.4.2.2                        fprintf function, 7.8.1, 7.19.1, 7.19.6.1,
+floating-point status flag, 7.6, F.7.6                              7.19.6.2, 7.19.6.3, 7.19.6.5, 7.19.6.6,
+floor functions, 7.12.9.2, F.9.6.2                                  7.19.6.8, 7.24.2.2, F.3
+floor type-generic macro, 7.22                                 fputc function, 5.2.2, 7.19.1, 7.19.3, 7.19.7.3,
+FLT_DIG macro, 5.2.4.2.2                                            7.19.7.8, 7.19.8.2
+FLT_EPSILON macro, 5.2.4.2.2                                   fputs function, 7.19.1, 7.19.7.4
+FLT_EVAL_METHOD macro, 5.2.4.2.2, 7.12                         fputwc function, 7.19.1, 7.19.3, 7.24.3.3,
+FLT_MANT_DIG macro, 5.2.4.2.2                                       7.24.3.8
+FLT_MAX macro, 5.2.4.2.2                                       fputws function, 7.19.1, 7.24.3.4
+FLT_MAX_10_EXP macro, 5.2.4.2.2                                fread function, 7.19.1, 7.19.8.1
+FLT_MAX_EXP macro, 5.2.4.2.2                                   free function, 7.20.3.2, 7.20.3.4
+FLT_MIN macro, 5.2.4.2.2                                       freestanding execution environment, 4, 5.1.2,
+FLT_MIN_10_EXP macro, 5.2.4.2.2                                     5.1.2.1
+FLT_MIN_EXP macro, 5.2.4.2.2                                   freopen function, 7.19.2, 7.19.5.4
+FLT_RADIX macro, 5.2.4.2.2, 7.19.6.1, 7.20.1.3,                frexp functions, 7.12.6.4, F.9.3.4
+
+                                                       Index                                                 525
+ISO/IEC 9899:1999 (E)                                                                           ©ISO/IEC
+
+
+frexp type-generic macro, 7.22                           getchar function, 7.19.1, 7.19.7.6
+fscanf function, 7.8.1, 7.19.1, 7.19.6.2,                getenv function, 7.20.4.5
+      7.19.6.4, 7.19.6.7, 7.19.6.9, F.3                  gets function, 7.19.1, 7.19.7.7
+fseek function, 7.19.1, 7.19.5.3, 7.19.7.11,             getwc function, 7.19.1, 7.24.3.6, 7.24.3.7
+      7.19.9.2, 7.19.9.4, 7.19.9.5, 7.24.3.10            getwchar function, 7.19.1, 7.24.3.7
+fsetpos function, 7.19.2, 7.19.5.3, 7.19.7.11,           gmtime function, 7.23.3.3
+      7.19.9.1, 7.19.9.3, 7.24.3.10                      goto statement, 6.2.1, 6.8.1, 6.8.6.1
+ftell function, 7.19.9.2, 7.19.9.4                       graphic characters, 5.2.1
+full declarator, 6.7.5                                   greater-than operator (>), 6.5.8
+full expression, 6.8                                     greater-than-or-equal-to operator (>=), 6.5.8
+fully buffered stream, 7.19.3
+function                                                 header, 5.1.1.1, 7.1.2, see also standard headers
+   argument, 6.5.2.2, 6.9.1                              header names, 6.4, 6.4.7, 6.10.2
+   body, 6.9.1                                           hexadecimal constant, 6.4.4.1
+   call, 6.5.2.2                                         hexadecimal digit, 6.4.4.1, 6.4.4.2, 6.4.4.4
+      library, 7.1.4                                     hexadecimal prefix, 6.4.4.1
+   declarator, 6.7.5.3, 6.11.6                           hexadecimal-character escape sequence
+   definition, 6.7.5.3, 6.9.1, 6.11.7                         (\x hexadecimal digits), 6.4.4.4
+   designator, 6.3.2.1                                   high-order bit, 3.6
+   image, 5.2.3                                          horizontal-tab character, 5.2.1, 6.4
+   library, 5.1.1.1, 7.1.4                               horizontal-tab escape sequence (\r), 7.25.2.1.3
+   name length, 5.2.4.1, 6.4.2.1, 6.11.3                 horizontal-tab escape sequence (\t), 5.2.2,
+   parameter, 5.1.2.2.1, 6.5.2.2, 6.9.1                       6.4.4.4, 7.4.1.3, 7.4.1.10
+   prototype, 6.2.1, 6.5.2.2, 6.7.5.3, 6.9.1             hosted execution environment, 4, 5.1.2, 5.1.2.2
+   prototype scope, 6.2.1                                HUGE_VAL macro, 7.12, 7.12.1, 7.20.1.3,
+   recursive call, 6.5.2.2                                    7.24.4.1.1, F.9
+   return, 6.8.6.4                                       HUGE_VALF macro, 7.12, 7.12.1, 7.20.1.3,
+   scope, 6.2.1                                               7.24.4.1.1, F.9
+   type, 6.2.5                                           HUGE_VALL macro, 7.12, 7.12.1, 7.20.1.3,
+   type conversion, 6.3.2.1                                   7.24.4.1.1, F.9
+function specifiers, 6.7.4                               hyperbolic functions
+function type, 6.2.5                                       complex, 7.3.6, G.6.2
+function-call operator (( )), 6.5.2.2                      real, 7.12.5, F.9.2
+function-like macro, 6.10.3                              hypot functions, 7.12.7.3, F.9.4.3
+future directions                                        hypot type-generic macro, 7.22
+   language, 6.11
+   library, 7.26                                         I macro, 7.3.1, 7.3.9.4, G.6
+fwide function, 7.19.2, 7.24.3.5                         identifier, 6.4.2.1, 6.5.1
+fwprintf function, 7.8.1, 7.19.1, 7.19.6.2,                 linkage, see linkage
+      7.24.2.1, 7.24.2.2, 7.24.2.3, 7.24.2.5,               maximum length, 6.4.2.1
+      7.24.2.11                                             name spaces, 6.2.3
+fwrite function, 7.19.1, 7.19.8.2                           reserved, 6.4.1, 7.1.3
+fwscanf function, 7.8.1, 7.19.1, 7.24.2.2,                  scope, 6.2.1
+      7.24.2.4, 7.24.2.6, 7.24.2.12, 7.24.3.10              type, 6.2.5
+                                                         identifier list, 6.7.5
+gamma functions, 7.12.8, F.9.5                           identifier nondigit, 6.4.2.1
+general utilities, 7.20                                  IEC 559, F.1
+  wide string, 7.24.4                                    IEC 60559, 2, 5.1.2.3, 5.2.4.2.2, 6.10.8, 7.3.3, 7.6,
+general wide string utilities, 7.24.4                          7.6.4.2, 7.12.1, 7.12.10.2, 7.12.14, F, G, H.1
+generic parameters, 7.22                                 IEEE 754, F.1
+getc function, 7.19.1, 7.19.7.5, 7.19.7.6                IEEE 854, F.1
+
+526                                              Index
+©ISO/IEC                                                                               ISO/IEC 9899:1999 (E)
+
+
+IEEE floating-point arithmetic standard, see                           wide character, 7.24.2
+      IEC 60559, ANSI/IEEE 754,                                     wide character, 7.24.3
+      ANSI/IEEE 854                                                    formatted, 7.24.2
+if preprocessing directive, 5.2.4.2.1, 5.2.4.2.2,                input/output header, 7.19
+      6.10.1, 7.1.4                                              input/output, device, 5.1.2.3
+if statement, 6.8.4.1                                            int type, 6.2.5, 6.3.1.1, 6.3.1.3, 6.4.4.1, 6.7.2
+ifdef preprocessing directive, 6.10.1                            int type conversion, 6.3.1.1, 6.3.1.3, 6.3.1.4,
+ifndef preprocessing directive, 6.10.1                                 6.3.1.8
+ilogb functions, 7.12, 7.12.6.5, F.9.3.5                         INT_FASTN_MAX macros, 7.18.2.3
+ilogb type-generic macro, 7.22                                   INT_FASTN_MIN macros, 7.18.2.3
+imaginary macro, 7.3.1, G.6                                      int_fastN_t types, 7.18.1.3
+imaginary numbers, G                                             INT_LEASTN_MAX macros, 7.18.2.2
+imaginary type domain, G.2                                       INT_LEASTN_MIN macros, 7.18.2.2
+imaginary types, 6.7.2, G                                        int_leastN_t types, 7.18.1.2
+imaxabs function, 7.8.2.1                                        INT_MAX macro, 5.2.4.2.1, 7.12, 7.12.6.5
+imaxdiv function, 7.8, 7.8.2.2                                   INT_MIN macro, 5.2.4.2.1, 7.12
+imaxdiv_t type, 7.8                                              integer arithmetic functions, 7.8.2.1, 7.8.2.2,
+implementation, 3.12                                                   7.20.6
+implementation limit, 3.13, 4, 5.2.4.2, 6.4.2.1,                 integer character constant, 6.4.4.4
+      6.7.5, 6.8.4.2, E, see also environmental                  integer constant, 6.4.4.1
+      limits                                                     integer constant expression, 6.6
+implementation-defined behavior, 3.4.1, 4, J.3                   integer conversion rank, 6.3.1.1
+implementation-defined value, 3.17.1                             integer promotions, 5.1.2.3, 5.2.4.2.1, 6.3.1.1,
+implicit conversion, 6.3                                               6.5.2.2, 6.5.3.3, 6.5.7, 6.8.4.2, 7.18.2, 7.18.3,
+implicit initialization, 6.7.8                                         7.19.6.1, 7.24.2.1
+include preprocessing directive, 5.1.1.2, 6.10.2                 integer suffix, 6.4.4.1
+inclusive OR operators                                           integer type conversion, 6.3.1.1, 6.3.1.3, 6.3.1.4,
+   bitwise (|), 6.5.12                                                 F.3, F.4
+   bitwise assignment (|=), 6.5.16.2                             integer types, 6.2.5, 7.18
+incomplete type, 6.2.5                                              extended, 7.18
+increment operators, see arithmetic operators,                   interactive device, 5.1.2.3, 7.19.3, 7.19.5.3
+      increment and decrement                                    internal linkage, 6.2.2
+indeterminate value, 3.17.2                                      internal name, 6.4.2.1
+indirection operator (*), 6.5.2.1, 6.5.3.2                       interrupt, 5.2.3
+inequality operator (!=), 6.5.9                                  INTMAX_C macro, 7.18.4.2
+INFINITY macro, 7.3.9.4, 7.12, F.2.1                             INTMAX_MAX macro, 7.8.2.3, 7.8.2.4, 7.18.2.5
+initial position, 5.2.2                                          INTMAX_MIN macro, 7.8.2.3, 7.8.2.4, 7.18.2.5
+initial shift state, 5.2.1.2                                     intmax_t type, 7.18.1.5, 7.19.6.1, 7.19.6.2,
+initialization, 5.1.2, 6.2.4, 6.3.2.1, 6.5.2.5, 6.7.8,                 7.24.2.1, 7.24.2.2
+      F.7.5                                                      INTN_C macros, 7.18.4.1
+   in blocks, 6.8                                                INTN_MAX macros, 7.18.2.1
+initializer, 6.7.8                                               INTN_MIN macros, 7.18.2.1
+   permitted form, 6.6                                           intN_t types, 7.18.1.1
+   string literal, 6.3.2.1                                       INTPTR_MAX macro, 7.18.2.4
+inline, 6.7.4                                                    INTPTR_MIN macro, 7.18.2.4
+inner scope, 6.2.1                                               intptr_t type, 7.18.1.4
+input failure, 7.24.2.6, 7.24.2.8, 7.24.2.10                     inttypes.h header, 7.8, 7.26.4
+input/output functions                                           isalnum function, 7.4.1.1, 7.4.1.9, 7.4.1.10
+   character, 7.19.7                                             isalpha function, 7.4.1.1, 7.4.1.2
+   direct, 7.19.8                                                isblank function, 7.4.1.3
+   formatted, 7.19.6                                             iscntrl function, 7.4.1.2, 7.4.1.4, 7.4.1.7,
+
+                                                         Index                                                     527
+ISO/IEC 9899:1999 (E)                                                                                 ©ISO/IEC
+
+
+    7.4.1.11                                                        7.25.2.1.7, 7.25.2.1.9, 7.25.2.1.10,
+isdigit function, 7.4.1.1, 7.4.1.2, 7.4.1.5,                        7.25.2.1.11, 7.25.2.2.1
+    7.4.1.7, 7.4.1.11, 7.11.1.1                               iswspace function, 7.19.6.2, 7.24.2.2,
+isfinite macro, 7.12.3.2, F.3                                       7.24.4.1.1, 7.24.4.1.2, 7.25.2.1.2, 7.25.2.1.6,
+isgraph function, 7.4.1.6                                           7.25.2.1.7, 7.25.2.1.9, 7.25.2.1.10,
+isgreater macro, 7.12.14.1, F.3                                     7.25.2.1.11, 7.25.2.2.1
+isgreaterequal macro, 7.12.14.2, F.3                          iswupper function, 7.25.2.1.2, 7.25.2.1.11,
+isinf macro, 7.12.3.3                                               7.25.2.2.1, 7.25.3.1.1, 7.25.3.1.2
+isless macro, 7.12.14.3, F.3                                  iswxdigit function, 7.25.2.1.12, 7.25.2.2.1
+islessequal macro, 7.12.14.4, F.3                             isxdigit function, 7.4.1.12, 7.11.1.1
+islessgreater macro, 7.12.14.5, F.3                           italic type convention, 3, 6.1
+islower function, 7.4.1.2, 7.4.1.7, 7.4.2.1,                  iteration statements, 6.8.5
+    7.4.2.2
+isnan macro, 7.12.3.4, F.3                                    jmp_buf type, 7.13
+isnormal macro, 7.12.3.5                                      jump statements, 6.8.6
+ISO 31−11, 2, 3
+ISO 4217, 2, 7.11.2.1                                         keywords, 6.4.1
+ISO 8601, 2, 7.23.3.5
+ISO/IEC 10646, 2, 6.4.2.1, 6.4.3, 6.10.8                      L_tmpnam macro, 7.19.1, 7.19.4.4
+ISO/IEC 10976−1, H.1                                          label name, 6.2.1, 6.2.3
+ISO/IEC 2382−1, 2, 3                                          labeled statement, 6.8.1
+ISO/IEC 646, 2, 5.2.1.1                                       labs function, 7.20.6.1
+ISO/IEC 9945−2, 7.11                                          language, 6
+ISO/IEC TR 10176, D                                              future directions, 6.11
+iso646.h header, 4, 7.9                                          syntax summary, A
+isprint function, 5.2.2, 7.4.1.8                              Latin alphabet, 5.2.1, 6.4.2.1
+ispunct function, 7.4.1.2, 7.4.1.7, 7.4.1.9,                  LC_ALL macro, 7.11, 7.11.1.1, 7.11.2.1
+    7.4.1.11                                                  LC_COLLATE macro, 7.11, 7.11.1.1, 7.21.4.3,
+isspace function, 7.4.1.2, 7.4.1.7, 7.4.1.9,                        7.24.4.4.2
+    7.4.1.10, 7.4.1.11, 7.19.6.2, 7.20.1.3,                   LC_CTYPE macro, 7.11, 7.11.1.1, 7.20, 7.20.7,
+    7.20.1.4, 7.24.2.2                                              7.20.8, 7.24.6, 7.25.1, 7.25.2.2.1, 7.25.2.2.2,
+isunordered macro, 7.12.14.6, F.3                                   7.25.3.2.1, 7.25.3.2.2
+isupper function, 7.4.1.2, 7.4.1.11, 7.4.2.1,                 LC_MONETARY macro, 7.11, 7.11.1.1, 7.11.2.1
+    7.4.2.2                                                   LC_NUMERIC macro, 7.11, 7.11.1.1, 7.11.2.1
+iswalnum function, 7.25.2.1.1, 7.25.2.1.9,                    LC_TIME macro, 7.11, 7.11.1.1, 7.23.3.5
+    7.25.2.1.10, 7.25.2.2.1                                   lconv structure type, 7.11
+iswalpha function, 7.25.2.1.1, 7.25.2.1.2,                    LDBL_DIG macro, 5.2.4.2.2
+    7.25.2.2.1                                                LDBL_EPSILON macro, 5.2.4.2.2
+iswblank function, 7.25.2.1.3, 7.25.2.2.1                     LDBL_MANT_DIG macro, 5.2.4.2.2
+iswcntrl function, 7.25.2.1.2, 7.25.2.1.4,                    LDBL_MAX macro, 5.2.4.2.2
+    7.25.2.1.7, 7.25.2.1.11, 7.25.2.2.1                       LDBL_MAX_10_EXP macro, 5.2.4.2.2
+iswctype function, 7.25.2.2.1, 7.25.2.2.2                     LDBL_MAX_EXP macro, 5.2.4.2.2
+iswdigit function, 7.25.2.1.1, 7.25.2.1.2,                    LDBL_MIN macro, 5.2.4.2.2
+    7.25.2.1.5, 7.25.2.1.7, 7.25.2.1.11, 7.25.2.2.1           LDBL_MIN_10_EXP macro, 5.2.4.2.2
+iswgraph function, 7.25.2.1, 7.25.2.1.6,                      LDBL_MIN_EXP macro, 5.2.4.2.2
+    7.25.2.1.10, 7.25.2.2.1                                   ldexp functions, 7.12.6.6, F.9.3.6
+iswlower function, 7.25.2.1.2, 7.25.2.1.7,                    ldexp type-generic macro, 7.22
+    7.25.2.2.1, 7.25.3.1.1, 7.25.3.1.2                        ldiv function, 7.20.6.2
+iswprint function, 7.25.2.1.6, 7.25.2.1.8,                    ldiv_t type, 7.20
+    7.25.2.2.1                                                leading underscore in identifiers, 7.1.3
+iswpunct function, 7.25.2.1, 7.25.2.1.2,                      left-shift assignment operator (<<=), 6.5.16.2
+
+528                                                   Index
+©ISO/IEC                                                                       ISO/IEC 9899:1999 (E)
+
+
+left-shift operator (<<), 6.5.7                            localization, 7.11
+length                                                     localtime function, 7.23.2.3, 7.23.3.4
+   external name, 5.2.4.1, 6.4.2.1, 6.11.3                 log functions, 7.12.6.7, F.9.3.7
+   function name, 5.2.4.1, 6.4.2.1, 6.11.3                 log type-generic macro, 7.22
+   identifier, 6.4.2.1                                     log10 functions, 7.12.6.8, F.9.3.8
+   internal name, 5.2.4.1, 6.4.2.1                         log10 type-generic macro, 7.22
+length function, 7.20.7.1, 7.21.6.3, 7.24.4.6.1,           log1p functions, 7.12.6.9, F.9.3.9
+      7.24.6.3.1                                           log1p type-generic macro, 7.22
+length modifier, 7.19.6.1, 7.19.6.2, 7.24.2.1,             log2 functions, 7.12.6.10, F.9.3.10
+      7.24.2.2                                             log2 type-generic macro, 7.22
+less-than operator (<), 6.5.8                              logarithmic functions
+less-than-or-equal-to operator (<=), 6.5.8                    complex, 7.3.7, G.6.3
+letter, 5.2.1, 7.4                                            real, 7.12.6, F.9.3
+lexical elements, 5.1.1.2, 6.4                             logb functions, 7.12.6.11, F.3, F.9.3.11
+lgamma functions, 7.12.8.3, F.9.5.3                        logb type-generic macro, 7.22
+lgamma type-generic macro, 7.22                            logical operators
+library, 5.1.1.1, 7                                           AND (&&), 6.5.13
+   future directions, 7.26                                    negation (!), 6.5.3.3
+   summary, B                                                 OR (||), 6.5.14
+   terms, 7.1.1                                            logical source lines, 5.1.1.2
+   use of functions, 7.1.4                                 long double _Complex type, 6.2.5
+lifetime, 6.2.4                                            long double _Complex type conversion,
+limits                                                           6.3.1.6, 6.3.1.7, 6.3.1.8
+   environmental, see environmental limits                 long double _Imaginary type, G.2
+   implementation, see implementation limits               long double suffix, l or L, 6.4.4.2
+   numerical, see numerical limits                         long double type, 6.2.5, 6.4.4.2, 6.7.2,
+   translation, see translation limits                           7.19.6.1, 7.19.6.2, 7.24.2.1, 7.24.2.2, F.2
+limits.h header, 4, 5.2.4.2.1, 6.2.5, 7.10                 long double type conversion, 6.3.1.4, 6.3.1.5,
+line buffered stream, 7.19.3                                     6.3.1.7, 6.3.1.8
+line number, 6.10.4, 6.10.8                                long int type, 6.2.5, 6.3.1.1, 6.7.2, 7.19.6.1,
+line preprocessing directive, 6.10.4                             7.19.6.2, 7.24.2.1, 7.24.2.2
+lines, 5.1.1.2, 7.19.2                                     long int type conversion, 6.3.1.1, 6.3.1.3,
+   preprocessing directive, 6.10                                 6.3.1.4, 6.3.1.8
+linkage, 6.2.2, 6.7, 6.7.4, 6.7.5.2, 6.9, 6.9.2,           long integer suffix, l or L, 6.4.4.1
+      6.11.2                                               long long int type, 6.2.5, 6.3.1.1, 6.7.2,
+llabs function, 7.20.6.1                                         7.19.6.1, 7.19.6.2, 7.24.2.1, 7.24.2.2
+lldiv function, 7.20.6.2                                   long long int type conversion, 6.3.1.1,
+lldiv_t type, 7.20                                               6.3.1.3, 6.3.1.4, 6.3.1.8
+LLONG_MAX macro, 5.2.4.2.1, 7.20.1.4,                      long long integer suffix, ll or LL, 6.4.4.1
+      7.24.4.1.2                                           LONG_MAX macro, 5.2.4.2.1, 7.20.1.4, 7.24.4.1.2
+LLONG_MIN macro, 5.2.4.2.1, 7.20.1.4,                      LONG_MIN macro, 5.2.4.2.1, 7.20.1.4, 7.24.4.1.2
+      7.24.4.1.2                                           longjmp function, 7.13.1.1, 7.13.2.1, 7.20.4.3
+llrint functions, 7.12.9.5, F.3, F.9.6.5                   loop body, 6.8.5
+llrint type-generic macro, 7.22                            low-order bit, 3.6
+llround functions, 7.12.9.7, F.9.6.7                       lowercase letter, 5.2.1
+llround type-generic macro, 7.22                           lrint functions, 7.12.9.5, F.3, F.9.6.5
+local time, 7.23.1                                         lrint type-generic macro, 7.22
+locale, 3.4.2                                              lround functions, 7.12.9.7, F.9.6.7
+locale-specific behavior, 3.4.2, J.4                       lround type-generic macro, 7.22
+locale.h header, 7.11, 7.26.5                              lvalue, 6.3.2.1, 6.5.1, 6.5.2.4, 6.5.3.1, 6.5.16
+localeconv function, 7.11.1.1, 7.11.2.1
+
+                                                   Index                                                529
+ISO/IEC 9899:1999 (E)                                                                                 ©ISO/IEC
+
+
+macro argument substitution, 6.10.3.1                          minimum functions, 7.12.12, F.9.9
+macro definition                                               minus operator, unary, 6.5.3.3
+  library function, 7.1.4                                      miscellaneous functions
+macro invocation, 6.10.3                                         string, 7.21.6
+macro name, 6.10.3                                               wide string, 7.24.4.6
+  length, 5.2.4.1                                              mktime function, 7.23.2.3
+  predefined, 6.10.8, 6.11.9                                   modf functions, 7.12.6.12, F.9.3.12
+  redefinition, 6.10.3                                         modifiable lvalue, 6.3.2.1
+  scope, 6.10.3.5                                              modulus functions, 7.12.6.12
+macro parameter, 6.10.3                                        modulus, complex, 7.3.8.1
+macro preprocessor, 6.10                                       multibyte character, 3.7.2, 5.2.1.2, 6.4.4.4
+macro replacement, 6.10.3                                      multibyte conversion functions
+magnitude, complex, 7.3.8.1                                      wide character, 7.20.7
+main function, 5.1.2.2.1, 5.1.2.2.3, 6.7.3.1, 6.7.4,                extended, 7.24.6
+     7.19.3                                                         restartable, 7.24.6.3
+malloc function, 7.20.3, 7.20.3.2, 7.20.3.3,                     wide string, 7.20.8
+     7.20.3.4                                                       restartable, 7.24.6.4
+manipulation functions                                         multibyte string, 7.1.1
+  complex, 7.3.9                                               multibyte/wide character conversion functions,
+  real, 7.12.11, F.9.8                                              7.20.7
+matching failure, 7.24.2.6, 7.24.2.8, 7.24.2.10                  extended, 7.24.6
+math.h header, 5.2.4.2.2, 6.5, 7.12, 7.22, F, F.9,               restartable, 7.24.6.3
+     J.5.17                                                    multibyte/wide string conversion functions, 7.20.8
+MATH_ERREXCEPT macro, 7.12, F.9                                  restartable, 7.24.6.4
+math_errhandling macro, 7.12, F.9                              multidimensional array, 6.5.2.1
+MATH_ERRNO macro, 7.12                                         multiplication assignment operator (*=), 6.5.16.2
+maximum functions, 7.12.12, F.9.9                              multiplication operator (*), 6.5.5, F.3, G.5.1
+MB_CUR_MAX macro, 7.1.1, 7.20, 7.20.7.2,                       multiplicative expressions, 6.5.5, G.5.1
+     7.20.7.3, 7.24.6.3.3
+MB_LEN_MAX macro, 5.2.4.2.1, 7.1.1, 7.20                       n-char sequence, 7.20.1.3
+mblen function, 7.20.7.1, 7.24.6.3                             n-wchar sequence, 7.24.4.1.1
+mbrlen function, 7.24.6.3.1                                    name
+mbrtowc function, 7.19.3, 7.19.6.1, 7.19.6.2,                    external, 5.2.4.1, 6.4.2.1, 6.11.3
+     7.24.2.1, 7.24.2.2, 7.24.6.3.1, 7.24.6.3.2,                 file, 7.19.3
+     7.24.6.4.1                                                  internal, 5.2.4.1, 6.4.2.1
+mbsinit function, 7.24.6.2.1                                     label, 6.2.3
+mbsrtowcs function, 7.24.6.4.1                                   structure/union member, 6.2.3
+mbstate_t type, 7.19.2, 7.19.3, 7.19.6.1,                      name spaces, 6.2.3
+     7.19.6.2, 7.24.1, 7.24.2.1, 7.24.2.2, 7.24.6,             named label, 6.8.1
+     7.24.6.2.1, 7.24.6.3, 7.24.6.3.1, 7.24.6.4                NaN, 5.2.4.2.2
+mbstowcs function, 6.4.5, 7.20.8.1, 7.24.6.4                   nan functions, 7.12.11.2, F.2.1, F.9.8.2
+mbtowc function, 7.20.7.1, 7.20.7.2, 7.20.8.1,                 NAN macro, 7.12, F.2.1
+     7.24.6.3                                                  NDEBUG macro, 7.2
+member access operators (. and ->), 6.5.2.3                    nearbyint functions, 7.12.9.3, 7.12.9.4, F.3,
+member alignment, 6.7.2.1                                           F.9.6.3
+memchr function, 7.21.5.1                                      nearbyint type-generic macro, 7.22
+memcmp function, 7.21.4, 7.21.4.1                              nearest integer functions, 7.12.9, F.9.6
+memcpy function, 7.21.2.1                                      negation operator (!), 6.5.3.3
+memmove function, 7.21.2.2                                     negative zero, 6.2.6.2
+memory management functions, 7.20.3                            new-line character, 5.1.1.2, 5.2.1, 6.4, 6.10, 6.10.4
+memset function, 7.21.6.1                                      new-line escape sequence (\n), 5.2.2, 6.4.4.4,
+
+530                                                    Index
+©ISO/IEC                                                                           ISO/IEC 9899:1999 (E)
+
+
+     7.4.1.10                                                    relational, 6.5.8
+nextafter functions, 7.12.11.3, 7.12.11.4, F.3,                  shift, 6.5.7
+     F.9.8.3                                                     unary, 6.5.3
+nextafter type-generic macro, 7.22                               unary arithmetic, 6.5.3.3
+nexttoward functions, 7.12.11.4, F.3, F.9.8.4                 or macro, 7.9
+nexttoward type-generic macro, 7.22                           OR operators
+no linkage, 6.2.2                                                bitwise exclusive (ˆ), 6.5.11
+non-stop floating-point control mode, 7.6.4.2                    bitwise exclusive assignment (ˆ=), 6.5.16.2
+nongraphic characters, 5.2.2, 6.4.4.4                            bitwise inclusive (|), 6.5.12
+nonlocal jumps header, 7.13                                      bitwise inclusive assignment (|=), 6.5.16.2
+norm, complex, 7.3.8.1                                           logical (||), 6.5.14
+not macro, 7.9                                                or_eq macro, 7.9
+not-equal-to operator, see inequality operator                order of allocated storage, 7.20.3
+not_eq macro, 7.9                                             order of evaluation, 6.5
+null character (\0), 5.2.1, 6.4.4.4, 6.4.5                    ordinary identifier name space, 6.2.3
+  padding of binary stream, 7.19.2                            orientation of stream, 7.19.2, 7.24.3.5
+NULL macro, 7.11, 7.17, 7.19.1, 7.20, 7.21.1,                 outer scope, 6.2.1
+     7.23.1, 7.24.1
+null pointer, 6.3.2.3                                         padding
+null pointer constant, 6.3.2.3                                  binary stream, 7.19.2
+null preprocessing directive, 6.10.7                            structure/union, 6.7.2.1
+null statement, 6.8.3                                         padding bits, 6.2.6.2, 7.18.1.1
+null wide character, 7.1.1                                    parameter, 3.15
+numeric conversion functions, 7.8.2.3, 7.20.1                   array, 6.9.1
+  wide string, 7.8.2.4, 7.24.4.1                                ellipsis, 6.7.5.3, 6.10.3
+numerical limits, 5.2.4.2                                       function, 6.5.2.2, 6.9.1
+                                                                macro, 6.10.3
+object, 3.14                                                    main function, 5.1.2.2.1
+object representation, 6.2.6.1                                   program, 5.1.2.2.1
+object type, 6.2.5                                            parameter type list, 6.7.5.3
+object-like macro, 6.10.3                                     parentheses punctuator (( )), 6.7.5.3, 6.8.4, 6.8.5
+obsolescence, 6.11, 7.26                                      parenthesized expression, 6.5.1
+octal constant, 6.4.4.1                                       parse state, 7.19.2
+octal digit, 6.4.4.1, 6.4.4.4                                 permitted form of initializer, 6.6
+octal-character escape sequence (\octal digits),              perror function, 7.19.10.4
+     6.4.4.4                                                  phase angle, complex, 7.3.9.1
+offsetof macro, 7.17                                          physical source lines, 5.1.1.2
+on-off switch, 6.10.6                                         placemarker, 6.10.3.3
+one’s complement, 6.2.6.2                                     plus operator, unary, 6.5.3.3
+operand, 6.4.6, 6.5                                           pointer arithmetic, 6.5.6
+operating system, 5.1.2.1, 7.20.4.6                           pointer comparison, 6.5.8
+operations on files, 7.19.4                                   pointer declarator, 6.7.5.1
+operator, 6.4.6                                               pointer operator (−>), 6.5.2.3
+operators, 6.5                                                pointer to function, 6.5.2.2
+  assignment, 6.5.16                                          pointer type, 6.2.5
+  associativity, 6.5                                          pointer type conversion, 6.3.2.1, 6.3.2.3
+  equality, 6.5.9                                             pointer, null, 6.3.2.3
+  multiplicative, 6.5.5, G.5.1                                portability, 4, J
+  postfix, 6.5.2                                              position indicator, file, see file position indicator
+  precedence, 6.5                                             positive difference, 7.12.12.1
+  preprocessing, 6.10.1, 6.10.3.2, 6.10.3.3, 6.10.9           positive difference functions, 7.12.12, F.9.9
+
+                                                      Index                                                   531
+ISO/IEC 9899:1999 (E)                                                                            ©ISO/IEC
+
+
+postfix decrement operator (−−), 6.3.2.1, 6.5.2.4           promotions
+postfix expressions, 6.5.2                                    default argument, 6.5.2.2
+postfix increment operator (++), 6.3.2.1, 6.5.2.4             integer, 5.1.2.3, 6.3.1.1
+pow functions, 7.12.7.4, F.9.4.4                            prototype, see function prototype
+pow type-generic macro, 7.22                                pseudo-random sequence functions, 7.20.2
+power functions                                             PTRDIFF_MAX macro, 7.18.3
+   complex, 7.3.8, G.6.4                                    PTRDIFF_MIN macro, 7.18.3
+   real, 7.12.7, F.9.4                                      ptrdiff_t type, 7.17, 7.18.3, 7.19.6.1,
+pp-number, 6.4.8                                                 7.19.6.2, 7.24.2.1, 7.24.2.2
+pragma operator, 6.10.9                                     punctuators, 6.4.6
+pragma preprocessing directive, 6.10.6, 6.11.8              putc function, 7.19.1, 7.19.7.8, 7.19.7.9
+precedence of operators, 6.5                                putchar function, 7.19.1, 7.19.7.9
+precedence of syntax rules, 5.1.1.2                         puts function, 7.19.1, 7.19.7.10
+precision, 6.2.6.2, 6.3.1.1, 6.3.1.8, 7.19.6.1,             putwc function, 7.19.1, 7.24.3.8, 7.24.3.9
+      7.24.2.1                                              putwchar function, 7.19.1, 7.24.3.9
+predefined macro names, 6.10.8, 6.11.9
+prefix decrement operator (−−), 6.3.2.1, 6.5.3.1            qsort function, 7.20.5, 7.20.5.2
+prefix increment operator (++), 6.3.2.1, 6.5.3.1            qualified types, 6.2.5
+preprocessing concatenation, 6.10.3.3                       qualified version of type, 6.2.5
+preprocessing directives, 5.1.1.2, 6.10                     question-mark escape sequence (\?), 6.4.4.4
+preprocessing file, 5.1.1.1, 6.10                           quiet NaN, 5.2.4.2.2
+preprocessing numbers, 6.4, 6.4.8
+preprocessing operators                                     raise function, 7.14, 7.14.1.1, 7.14.2.1, 7.20.4.1
+   #, 6.10.3.2                                              rand function, 7.20, 7.20.2.1, 7.20.2.2
+   ##, 6.10.3.3                                             RAND_MAX macro, 7.20, 7.20.2.1
+   _Pragma, 5.1.1.2, 6.10.9                                 range error, 7.12.1, 7.12.5.3, 7.12.5.4, 7.12.5.5,
+   defined, 6.10.1                                                7.12.6.1, 7.12.6.2, 7.12.6.3, 7.12.6.5,
+preprocessing tokens, 5.1.1.2, 6.4, 6.10                          7.12.6.6, 7.12.6.7, 7.12.6.8, 7.12.6.9,
+preprocessing translation unit, 5.1.1.1                           7.12.6.10, 7.12.6.13, 7.12.7.3, 7.12.7.4,
+preprocessor, 6.10                                                7.12.8.2, 7.12.8.3, 7.12.8.4, 7.12.9.5,
+PRIcFASTN macros, 7.8.1                                           7.12.11.3, 7.12.12.1
+PRIcLEASTN macros, 7.8.1                                    rank, see integer conversion rank
+PRIcMAX macros, 7.8.1                                       real floating type conversion, 6.3.1.4, 6.3.1.5,
+PRIcN macros, 7.8.1                                               6.3.1.7, F.3, F.4
+PRIcPTR macros, 7.8.1                                       real floating types, 6.2.5
+primary expression, 6.5.1                                   real type domain, 6.2.5
+printf function, 7.19.1, 7.19.6.3, 7.19.6.10                real types, 6.2.5
+printing character, 5.2.2, 7.4, 7.4.1.8                     real-floating, 7.12.3
+printing wide character, 7.25.2                             realloc function, 7.20.3, 7.20.3.2, 7.20.3.4
+program diagnostics, 7.2.1                                  recommended practice, 3.16
+program execution, 5.1.2.2.2, 5.1.2.3                       recursion, 6.5.2.2
+program file, 5.1.1.1                                       recursive function call, 6.5.2.2
+program image, 5.1.1.2                                      redefinition of macro, 6.10.3
+program name (argv[0]), 5.1.2.2.1                           reentrancy, 5.1.2.3, 5.2.3
+program parameters, 5.1.2.2.1                                  library functions, 7.1.4
+program startup, 5.1.2, 5.1.2.1, 5.1.2.2.1                  referenced type, 6.2.5
+program structure, 5.1.1.1                                  register storage-class specifier, 6.7.1, 6.9
+program termination, 5.1.2, 5.1.2.1, 5.1.2.2.3,             relational expressions, 6.5.8
+      5.1.2.3                                               reliability of data, interrupted, 5.1.2.3
+program, conforming, 4                                      remainder assignment operator (%=), 6.5.16.2
+program, strictly conforming, 4                             remainder functions, 7.12.10, F.9.7
+
+532                                                 Index
+©ISO/IEC                                                                      ISO/IEC 9899:1999 (E)
+
+
+remainder functions, 7.12.10.2, 7.12.10.3, F.3,              utility, 7.20.5
+      F.9.7.2                                                wide string, 7.24.4.5
+remainder operator (%), 6.5.5                             SEEK_CUR macro, 7.19.1, 7.19.9.2
+remainder type-generic macro, 7.22                        SEEK_END macro, 7.19.1, 7.19.9.2
+remove function, 7.19.4.1, 7.19.4.4                       SEEK_SET macro, 7.19.1, 7.19.9.2
+remquo functions, 7.12.10.3, F.3, F.9.7.3                 selection statements, 6.8.4
+remquo type-generic macro, 7.22                           self-referential structure, 6.7.2.3
+rename function, 7.19.4.2                                 semicolon punctuator (;), 6.7, 6.7.2.1, 6.8.3,
+representations of types, 6.2.6                                 6.8.5, 6.8.6
+   pointer, 6.2.5                                         separate compilation, 5.1.1.1
+rescanning and replacement, 6.10.3.4                      separate translation, 5.1.1.1
+reserved identifiers, 6.4.1, 7.1.3                        sequence points, 5.1.2.3, 6.5, 6.8, 7.1.4, 7.19.6,
+restartable multibyte/wide character conversion                 7.20.5, 7.24.2, C
+      functions, 7.24.6.3                                 sequencing of statements, 6.8
+restartable multibyte/wide string conversion              setbuf function, 7.19.3, 7.19.5.1, 7.19.5.5
+      functions, 7.24.6.4                                 setjmp macro, 7.13.1.1, 7.13.2.1
+restore calling environment function, 7.13.2              setjmp.h header, 7.13
+restrict type qualifier, 6.7.3, 6.7.3.1                   setlocale function, 7.11.1.1, 7.11.2.1
+restrict-qualified type, 6.2.5, 6.7.3                     setvbuf function, 7.19.1, 7.19.3, 7.19.5.1,
+return statement, 6.8.6.4                                       7.19.5.5, 7.19.5.6
+rewind function, 7.19.5.3, 7.19.7.11, 7.19.9.5,           shall, 4
+      7.24.3.10                                           shift expressions, 6.5.7
+right-shift assignment operator (>>=), 6.5.16.2           shift sequence, 7.1.1
+right-shift operator (>>), 6.5.7                          shift states, 5.2.1.2
+rint functions, 7.12.9.4, F.3, F.9.6.4                    short identifier, character, 5.2.4.1, 6.4.3
+rint type-generic macro, 7.22                             short int type, 6.2.5, 6.3.1.1, 6.7.2, 7.19.6.1,
+round functions, 7.12.9.6, F.9.6.6                              7.19.6.2, 7.24.2.1, 7.24.2.2
+round type-generic macro, 7.22                            short int type conversion, 6.3.1.1, 6.3.1.3,
+rounding mode, floating point, 5.2.4.2.2                        6.3.1.4, 6.3.1.8
+rvalue, 6.3.2.1                                           SHRT_MAX macro, 5.2.4.2.1
+                                                          SHRT_MIN macro, 5.2.4.2.1
+same scope, 6.2.1                                         side effects, 5.1.2.3, 6.5
+save calling environment function, 7.13.1                 SIG_ATOMIC_MAX macro, 7.18.3
+scalar types, 6.2.5                                       SIG_ATOMIC_MIN macro, 7.18.3
+scalbln function, 7.12.6.13, F.3, F.9.3.13                sig_atomic_t type, 7.14, 7.14.1.1, 7.18.3
+scalbln type-generic macro, 7.22                          SIG_DFL macro, 7.14, 7.14.1.1
+scalbn function, 7.12.6.13, F.3, F.9.3.13                 SIG_ERR macro, 7.14, 7.14.1.1
+scalbn type-generic macro, 7.22                           SIG_IGN macro, 7.14, 7.14.1.1
+scanf function, 7.19.1, 7.19.6.4, 7.19.6.11               SIGABRT macro, 7.14, 7.20.4.1
+scanlist, 7.19.6.2, 7.24.2.2                              SIGFPE macro, 7.14, 7.14.1.1, J.5.17
+scanset, 7.19.6.2, 7.24.2.2                               SIGILL macro, 7.14, 7.14.1.1
+SCHAR_MAX macro, 5.2.4.2.1                                SIGINT macro, 7.14
+SCHAR_MIN macro, 5.2.4.2.1                                sign and magnitude, 6.2.6.2
+SCNcFASTN macros, 7.8.1                                   sign bit, 6.2.6.2
+SCNcLEASTN macros, 7.8.1                                  signal function, 7.14.1.1, 7.20.4.4
+SCNcMAX macros, 7.8.1                                     signal handler, 5.1.2.3, 5.2.3, 7.14.1.1, 7.14.2.1
+SCNcN macros, 7.8.1                                       signal handling functions, 7.14.1
+SCNcPTR macros, 7.8.1                                     signal.h header, 7.14, 7.26.6
+scope of identifier, 6.2.1, 6.9.2                         signaling NaN, 5.2.4.2.2
+search functions                                          signals, 5.1.2.3, 5.2.3, 7.14.1
+  string, 7.21.5                                          signbit macro, 7.12.3.6, F.3
+
+                                                  Index                                                 533
+ISO/IEC 9899:1999 (E)                                                                                ©ISO/IEC
+
+
+signed char type, 6.2.5, 7.19.6.1, 7.19.6.2,                      <iso646.h>, 4, 7.9
+     7.24.2.1, 7.24.2.2                                           <limits.h>, 4, 5.2.4.2.1, 6.2.5, 7.10
+signed character, 6.3.1.1                                         <locale.h>, 7.11, 7.26.5
+signed integer types, 6.2.5, 6.3.1.3, 6.4.4.1                     <math.h>, 5.2.4.2.2, 6.5, 7.12, 7.22, F, F.9,
+signed type conversion, 6.3.1.1, 6.3.1.3, 6.3.1.4,                      J.5.17
+     6.3.1.8                                                      <setjmp.h>, 7.13
+signed types, 6.2.5, 6.7.2                                        <signal.h>, 7.14, 7.26.6
+significand part, 6.4.4.2                                         <stdarg.h>, 4, 6.7.5.3, 7.15
+SIGSEGV macro, 7.14, 7.14.1.1                                     <stdbool.h>, 4, 7.16, 7.26.7, H
+SIGTERM macro, 7.14                                               <stddef.h>, 4, 6.3.2.1, 6.3.2.3, 6.4.4.4,
+simple assignment operator (=), 6.5.16.1                                6.4.5, 6.5.3.4, 6.5.6, 7.17
+sin functions, 7.12.4.6, F.9.1.6                                  <stdint.h>, 4, 5.2.4.2, 6.10.1, 7.8, 7.18,
+sin type-generic macro, 7.22, G.7                                       7.26.8
+single-byte character, 3.7.1, 5.2.1.2                             <stdio.h>, 7.19, 7.26.9, F
+single-byte/wide character conversion functions,                  <stdlib.h>, 7.20, 7.26.10, F
+     7.24.6.1                                                     <string.h>, 7.21, 7.26.11
+single-precision arithmetic, 5.1.2.3                              <tgmath.h>, 7.22, G.7
+single-quote escape sequence (\'), 6.4.4.4, 6.4.5                 <time.h>, 7.23
+sinh functions, 7.12.5.5, F.9.2.5                                 <wchar.h>, 7.19.1, 7.24, 7.26.12, F
+sinh type-generic macro, 7.22, G.7                                <wctype.h>, 7.25, 7.26.13
+SIZE_MAX macro, 7.18.3                                         standard input stream, 7.19.1, 7.19.3
+size_t type, 6.5.3.4, 7.17, 7.18.3, 7.19.1,                    standard integer types, 6.2.5
+     7.19.6.1, 7.19.6.2, 7.20, 7.21.1, 7.23.1,                 standard output stream, 7.19.1, 7.19.3
+     7.24.1, 7.24.2.1, 7.24.2.2                                standard signed integer types, 6.2.5
+sizeof operator, 6.3.2.1, 6.5.3, 6.5.3.4                       state-dependent encoding, 5.2.1.2, 7.20.7
+snprintf function, 7.19.6.5, 7.19.6.12                         statements, 6.8
+sorting utility functions, 7.20.5                                 break, 6.8.6.3
+source character set, 5.1.1.2, 5.2.1                              compound, 6.8.2
+source file, 5.1.1.1                                              continue, 6.8.6.2
+   name, 6.10.4, 6.10.8                                           do, 6.8.5.2
+source file inclusion, 6.10.2                                     else, 6.8.4.1
+source lines, 5.1.1.2                                             expression, 6.8.3
+source text, 5.1.1.2                                              for, 6.8.5.3
+space character (' '), 5.1.1.2, 5.2.1, 6.4, 7.4.1.3,              goto, 6.8.6.1
+     7.4.1.10, 7.25.2.1.3                                         if, 6.8.4.1
+sprintf function, 7.19.6.6, 7.19.6.13                             iteration, 6.8.5
+sqrt functions, 7.12.7.5, F.3, F.9.4.5                            jump, 6.8.6
+sqrt type-generic macro, 7.22                                     labeled, 6.8.1
+srand function, 7.20.2.2                                          null, 6.8.3
+sscanf function, 7.19.6.7, 7.19.6.14                              return, 6.8.6.4
+standard error stream, 7.19.1, 7.19.3, 7.19.10.4                  selection, 6.8.4
+standard headers, 4, 7.1.2                                        sequencing, 6.8
+   <assert.h>, 7.2, B.1                                           switch, 6.8.4.2
+   <complex.h>, 5.2.4.2.2, 7.3, 7.22, 7.26.1,                     while, 6.8.5.1
+        G.6, J.5.17                                            static storage duration, 6.2.4
+   <ctype.h>, 7.4, 7.26.2                                      static storage-class specifier, 6.2.2, 6.2.4, 6.7.1
+   <errno.h>, 7.5, 7.26.3                                      stdarg.h header, 4, 6.7.5.3, 7.15
+   <fenv.h>, 5.1.2.3, 5.2.4.2.2, 7.6, 7.12, F, H               stdbool.h header, 4, 7.16, 7.26.7, H
+   <float.h>, 4, 5.2.4.2.2, 7.7, 7.20.1.3,                     STDC, 6.10.6, 6.11.8
+        7.24.4.1.1                                             stddef.h header, 4, 6.3.2.1, 6.3.2.3, 6.4.4.4,
+   <inttypes.h>, 7.8, 7.26.4                                         6.4.5, 6.5.3.4, 6.5.6, 7.17
+
+534                                                    Index
+©ISO/IEC                                                                               ISO/IEC 9899:1999 (E)
+
+
+stderr macro, 7.19.1, 7.19.2, 7.19.3                               strtod function, 7.12.11.2, 7.19.6.2, 7.20.1.3,
+stdin macro, 7.19.1, 7.19.2, 7.19.3, 7.19.6.4,                           7.24.2.2, F.3
+      7.19.7.6, 7.19.7.7, 7.24.2.12, 7.24.3.7                      strtof function, 7.12.11.2, 7.20.1.3, F.3
+stdint.h header, 4, 5.2.4.2, 6.10.1, 7.8, 7.18,                    strtoimax function, 7.8.2.3
+      7.26.8                                                       strtok function, 7.21.5.8
+stdio.h header, 7.19, 7.26.9, F                                    strtol function, 7.8.2.3, 7.19.6.2, 7.20.1.2,
+stdlib.h header, 7.20, 7.26.10, F                                        7.20.1.4, 7.24.2.2
+stdout macro, 7.19.1, 7.19.2, 7.19.3, 7.19.6.3,                    strtold function, 7.12.11.2, 7.20.1.3, F.3
+      7.19.7.9, 7.19.7.10, 7.24.2.11, 7.24.3.9                     strtoll function, 7.8.2.3, 7.20.1.2, 7.20.1.4
+storage duration, 6.2.4                                            strtoul function, 7.8.2.3, 7.19.6.2, 7.20.1.2,
+storage order of array, 6.5.2.1                                          7.20.1.4, 7.24.2.2
+storage-class specifiers, 6.7.1, 6.11.5                            strtoull function, 7.8.2.3, 7.20.1.2, 7.20.1.4
+strcat function, 7.21.3.1                                          strtoumax function, 7.8.2.3
+strchr function, 7.21.5.2                                          struct hack, see flexible array member
+strcmp function, 7.21.4, 7.21.4.2                                  structure
+strcoll function, 7.11.1.1, 7.21.4.3, 7.21.4.5                        arrow operator (−>), 6.5.2.3
+strcpy function, 7.21.2.3                                             content, 6.7.2.3
+strcspn function, 7.21.5.3                                            dot operator (.), 6.5.2.3
+streams, 7.19.2, 7.20.4.3                                             initialization, 6.7.8
+   fully buffered, 7.19.3                                             member alignment, 6.7.2.1
+   line buffered, 7.19.3                                              member name space, 6.2.3
+   orientation, 7.19.2                                                member operator (.), 6.3.2.1, 6.5.2.3
+   standard error, 7.19.1, 7.19.3                                     pointer operator (−>), 6.5.2.3
+   standard input, 7.19.1, 7.19.3                                     specifier, 6.7.2.1
+   standard output, 7.19.1, 7.19.3                                    tag, 6.2.3, 6.7.2.3
+   unbuffered, 7.19.3                                                 type, 6.2.5, 6.7.2.1
+strerror function, 7.19.10.4, 7.21.6.2                             strxfrm function, 7.11.1.1, 7.21.4.5
+strftime function, 7.11.1.1, 7.23.3, 7.23.3.5,                     subscripting, 6.5.2.1
+      7.24.5.1                                                     subtraction assignment operator (−=), 6.5.16.2
+strictly conforming program, 4                                     subtraction operator (−), 6.5.6, F.3, G.5.2
+string, 7.1.1                                                      suffix
+   comparison functions, 7.21.4                                       floating constant, 6.4.4.2
+   concatenation functions, 7.21.3                                    integer constant, 6.4.4.1
+   conversion functions, 7.11.1.1                                  switch body, 6.8.4.2
+   copying functions, 7.21.2                                       switch case label, 6.8.1, 6.8.4.2
+   library function conventions, 7.21.1                            switch default label, 6.8.1, 6.8.4.2
+   literal, 5.1.1.2, 5.2.1, 6.3.2.1, 6.4.5, 6.5.1, 6.7.8           switch statement, 6.8.1, 6.8.4.2
+   miscellaneous functions, 7.21.6                                 swprintf function, 7.24.2.3, 7.24.2.7
+   numeric conversion functions, 7.8.2.3, 7.20.1                   swscanf function, 7.24.2.4, 7.24.2.8
+   search functions, 7.21.5                                        symbols, 3
+string handling header, 7.21                                       syntactic categories, 6.1
+string.h header, 7.21, 7.26.11                                     syntax notation, 6.1
+stringizing, 6.10.3.2, 6.10.9                                      syntax rule precedence, 5.1.1.2
+strlen function, 7.21.6.3                                          syntax summary, language, A
+strncat function, 7.21.3.2                                         system function, 7.20.4.6
+strncmp function, 7.21.4, 7.21.4.4
+strncpy function, 7.21.2.4                                         tab characters, 5.2.1, 6.4
+strpbrk function, 7.21.5.4                                         tag name space, 6.2.3
+strrchr function, 7.21.5.5                                         tags, 6.7.2.3
+strspn function, 7.21.5.6                                          tan functions, 7.12.4.7, F.9.1.7
+strstr function, 7.21.5.7                                          tan type-generic macro, 7.22, G.7
+
+                                                           Index                                               535
+ISO/IEC 9899:1999 (E)                                                                              ©ISO/IEC
+
+
+tanh functions, 7.12.5.6, F.9.2.6                             type names, 6.7.6
+tanh type-generic macro, 7.22, G.7                            type qualifiers, 6.7.3
+tentative definition, 6.9.2                                   type specifiers, 6.7.2
+terms, 3                                                      type-generic macro, 7.22, G.7
+text streams, 7.19.2, 7.19.7.11, 7.19.9.2, 7.19.9.4           typedef declaration, 6.7.7
+tgamma functions, 7.12.8.4, F.9.5.4                           typedef storage-class specifier, 6.7.1, 6.7.7
+tgamma type-generic macro, 7.22                               types, 6.2.5
+tgmath.h header, 7.22, G.7                                      character, 6.7.8
+time                                                            compatible, 6.2.7, 6.7.2, 6.7.3, 6.7.5
+   broken down, 7.23.1, 7.23.2.3, 7.23.3, 7.23.3.1,             complex, 6.2.5, G
+         7.23.3.3, 7.23.3.4, 7.23.3.5                           composite, 6.2.7
+   calendar, 7.23.1, 7.23.2.2, 7.23.2.3, 7.23.2.4,              const qualified, 6.7.3
+         7.23.3.2, 7.23.3.3, 7.23.3.4                           conversions, 6.3
+   components, 7.23.1                                           imaginary, G
+   conversion functions, 7.23.3                                 restrict qualified, 6.7.3
+      wide character, 7.24.5                                    volatile qualified, 6.7.3
+   local, 7.23.1
+   manipulation functions, 7.23.2                             UCHAR_MAX macro, 5.2.4.2.1
+time function, 7.23.2.4                                       UINT_FASTN_MAX macros, 7.18.2.3
+time.h header, 7.23                                           uint_fastN_t types, 7.18.1.3
+time_t type, 7.23.1                                           UINT_LEASTN_MAX macros, 7.18.2.2
+tm structure type, 7.23.1, 7.24.1                             uint_leastN_t types, 7.18.1.2
+TMP_MAX macro, 7.19.1, 7.19.4.3, 7.19.4.4                     UINT_MAX macro, 5.2.4.2.1
+tmpfile function, 7.19.4.3, 7.20.4.3                          UINTMAX_C macro, 7.18.4.2
+tmpnam function, 7.19.1, 7.19.4.3, 7.19.4.4                   UINTMAX_MAX macro, 7.8.2.3, 7.8.2.4, 7.18.2.5
+token, 5.1.1.2, 6.4, see also preprocessing tokens            uintmax_t type, 7.18.1.5, 7.19.6.1, 7.19.6.2,
+token concatenation, 6.10.3.3                                     7.24.2.1, 7.24.2.2
+token pasting, 6.10.3.3                                       UINTN_C macros, 7.18.4.1
+tolower function, 7.4.2.1                                     UINTN_MAX macros, 7.18.2.1
+toupper function, 7.4.2.2                                     uintN_t types, 7.18.1.1
+towctrans function, 7.25.3.2.1, 7.25.3.2.2                    UINTPTR_MAX macro, 7.18.2.4
+towlower function, 7.25.3.1.1, 7.25.3.2.1                     uintptr_t type, 7.18.1.4
+towupper function, 7.25.3.1.2, 7.25.3.2.1                     ULLONG_MAX macro, 5.2.4.2.1, 7.20.1.4,
+translation environment, 5, 5.1.1                                 7.24.4.1.2
+translation limits, 5.2.4.1                                   ULONG_MAX macro, 5.2.4.2.1, 7.20.1.4,
+translation phases, 5.1.1.2                                       7.24.4.1.2
+translation unit, 5.1.1.1, 6.9                                unary arithmetic operators, 6.5.3.3
+trap representation, 6.2.6.1                                  unary expression, 6.5.3
+trigonometric functions                                       unary minus operator (−), 6.5.3.3, F.3
+   complex, 7.3.5, G.6.1                                      unary operators, 6.5.3
+   real, 7.12.4, F.9.1                                        unary plus operator (+), 6.5.3.3
+trigraph sequences, 5.1.1.2, 5.2.1.1                          unbuffered stream, 7.19.3
+true macro, 7.16                                              undef preprocessing directive, 6.10.3.5, 7.1.3,
+trunc functions, 7.12.9.8, F.9.6.8                                7.1.4
+trunc type-generic macro, 7.22                                undefined behavior, 3.4.3, 4, J.2
+truncation toward zero, 6.5.5                                 underscore character, 6.4.2.1
+two’s complement, 6.2.6.2, 7.18.1.1                           underscore, leading, in identifier, 7.1.3
+type category, 6.2.5                                          ungetc function, 7.19.1, 7.19.7.11, 7.19.9.2,
+type conversion, 6.3                                              7.19.9.3
+type definitions, 6.7.7                                       ungetwc function, 7.19.1, 7.24.3.10
+type domain, 6.2.5, G.2                                       union
+
+536                                                   Index
+©ISO/IEC                                                                            ISO/IEC 9899:1999 (E)
+
+
+   arrow operator (−>), 6.5.2.3                                variable arguments, 6.10.3, 7.15
+   content, 6.7.2.3                                            variable arguments header, 7.15
+   dot operator (.), 6.5.2.3                                   variable length array, 6.7.5, 6.7.5.2
+   initialization, 6.7.8                                       variably modified type, 6.7.5, 6.7.5.2
+   member alignment, 6.7.2.1                                   vertical-tab character, 5.2.1, 6.4
+   member name space, 6.2.3                                    vertical-tab escape sequence (\v), 5.2.2, 6.4.4.4,
+   member operator (.), 6.3.2.1, 6.5.2.3                            7.4.1.10
+   pointer operator (−>), 6.5.2.3                              vfprintf function, 7.19.1, 7.19.6.8
+   specifier, 6.7.2.1                                          vfscanf function, 7.19.1, 7.19.6.8, 7.19.6.9
+   tag, 6.2.3, 6.7.2.3                                         vfwprintf function, 7.19.1, 7.24.2.5
+   type, 6.2.5, 6.7.2.1                                        vfwscanf function, 7.19.1, 7.24.2.6, 7.24.3.10
+universal character name, 6.4.3                                visibility of identifier, 6.2.1
+unqualified type, 6.2.5                                        void expression, 6.3.2.2
+unqualified version of type, 6.2.5                             void function parameter, 6.7.5.3
+unsigned integer suffix, u or U, 6.4.4.1                       void type, 6.2.5, 6.3.2.2, 6.7.2
+unsigned integer types, 6.2.5, 6.3.1.3, 6.4.4.1                void type conversion, 6.3.2.2
+unsigned type conversion, 6.3.1.1, 6.3.1.3,                    volatile storage, 5.1.2.3
+      6.3.1.4, 6.3.1.8                                         volatile type qualifier, 6.7.3
+unsigned types, 6.2.5, 6.7.2, 7.19.6.1, 7.19.6.2,              volatile-qualified type, 6.2.5, 6.7.3
+      7.24.2.1, 7.24.2.2                                       vprintf function, 7.19.1, 7.19.6.8, 7.19.6.10
+unspecified behavior, 3.4.4, 4, J.1                            vscanf function, 7.19.1, 7.19.6.8, 7.19.6.11
+unspecified value, 3.17.3                                      vsnprintf function, 7.19.6.8, 7.19.6.12
+uppercase letter, 5.2.1                                        vsprintf function, 7.19.6.8, 7.19.6.13
+use of library functions, 7.1.4                                vsscanf function, 7.19.6.8, 7.19.6.14
+USHRT_MAX macro, 5.2.4.2.1                                     vswprintf function, 7.24.2.7
+usual arithmetic conversions, 6.3.1.8, 6.5.5, 6.5.6,           vswscanf function, 7.24.2.8
+      6.5.8, 6.5.9, 6.5.10, 6.5.11, 6.5.12, 6.5.15             vwprintf function, 7.19.1, 7.24.2.9
+utilities                                                      vwscanf function, 7.19.1, 7.24.2.10, 7.24.3.10
+   general
+      wide string, 7.24.4                                      warnings, I
+                                                               wchar.h header, 7.19.1, 7.24, 7.26.12, F
+va_arg macro, 7.15, 7.15.1, 7.15.1.1, 7.15.1.2,                WCHAR_MAX macro, 7.18.3, 7.24.1
+     7.15.1.4, 7.19.6.8, 7.19.6.9, 7.19.6.10,                  WCHAR_MIN macro, 7.18.3, 7.24.1
+     7.19.6.11, 7.19.6.12, 7.19.6.13, 7.19.6.14,               wchar_t type, 3.7.3, 6.4.4.4, 6.4.5, 6.7.8,
+     7.24.2.5, 7.24.2.6, 7.24.2.7, 7.24.2.8,                       6.10.8, 7.17, 7.18.3, 7.19.6.1, 7.19.6.2, 7.20,
+     7.24.2.9, 7.24.2.10                                           7.24.1, 7.24.2.1, 7.24.2.2
+va_copy macro, 7.15, 7.15.1, 7.15.1.1, 7.15.1.2,               wcrtomb function, 7.19.3, 7.19.6.2, 7.24.2.2,
+     7.15.1.3                                                      7.24.6.3.3, 7.24.6.4.2
+va_end macro, 7.15, 7.15.1, 7.15.1.3, 7.15.1.4,                wcscat function, 7.24.4.3.1
+     7.19.6.8, 7.19.6.9, 7.19.6.10, 7.19.6.11,                 wcschr function, 7.24.4.5.1
+     7.19.6.12, 7.19.6.13, 7.19.6.14, 7.24.2.5,                wcscmp function, 7.24.4.4.1, 7.24.4.4.4
+     7.24.2.6, 7.24.2.7, 7.24.2.8, 7.24.2.9,                   wcscoll function, 7.24.4.4.2, 7.24.4.4.4
+     7.24.2.10                                                 wcscpy function, 7.24.4.2.1
+va_list type, 7.15, 7.15.1.1, 7.15.1.2, 7.15.1.3               wcscspn function, 7.24.4.5.2
+va_start macro, 7.15, 7.15.1, 7.15.1.1,                        wcsftime function, 7.24.5.1
+     7.15.1.2, 7.15.1.3, 7.15.1.4, 7.19.6.8,                   wcslen function, 7.24.4.6.1
+     7.19.6.9, 7.19.6.10, 7.19.6.11, 7.19.6.12,                wcsncat function, 7.24.4.3.2
+     7.19.6.13, 7.19.6.14, 7.24.2.5, 7.24.2.6,                 wcsncmp function, 7.24.4.4.3
+     7.24.2.7, 7.24.2.8, 7.24.2.9, 7.24.2.10                   wcsncpy function, 7.24.4.2.2
+value, 3.17                                                    wcspbrk function, 7.24.4.5.3
+value bits, 6.2.6.2                                            wcsrchr function, 7.24.4.5.4
+
+                                                       Index                                                  537
+ISO/IEC 9899:1999 (E)                                                                             ©ISO/IEC
+
+
+wcsrtombs function, 7.24.6.4.2                               wide string search functions, 7.24.4.5
+wcsspn function, 7.24.4.5.5                                  wide-oriented stream, 7.19.2
+wcsstr function, 7.24.4.5.6                                  width, 6.2.6.2
+wcstod function, 7.19.6.2, 7.24.2.2                          WINT_MAX macro, 7.18.3
+wcstod function, 7.24.4.1.1                                  WINT_MIN macro, 7.18.3
+wcstof function, 7.24.4.1.1                                  wint_t type, 7.18.3, 7.19.6.1, 7.24.1, 7.24.2.1,
+wcstoimax function, 7.8.2.4                                      7.25.1
+wcstok function, 7.24.4.5.7                                  wmemchr function, 7.24.4.5.8
+wcstol function, 7.8.2.4, 7.19.6.2, 7.24.2.2,                wmemcmp function, 7.24.4.4.5
+     7.24.4.1.2                                              wmemcpy function, 7.24.4.2.3
+wcstold function, 7.24.4.1.1                                 wmemmove function, 7.24.4.2.4
+wcstoll function, 7.8.2.4, 7.24.4.1.2                        wmemset function, 7.24.4.6.2
+wcstombs function, 7.20.8.2, 7.24.6.4                        wprintf function, 7.19.1, 7.24.2.9, 7.24.2.11
+wcstoul function, 7.8.2.4, 7.19.6.2, 7.24.2.2,               wscanf function, 7.19.1, 7.24.2.10, 7.24.2.12,
+     7.24.4.1.2                                                  7.24.3.10
+wcstoull function, 7.8.2.4, 7.24.4.1.2
+wcstoumax function, 7.8.2.4                                  xor macro, 7.9
+wcsxfrm function, 7.24.4.4.4                                 xor_eq macro, 7.9
+wctob function, 7.24.6.1.2, 7.25.2.1
+wctomb function, 7.20.7.3, 7.20.8.2, 7.24.6.3
+wctrans function, 7.25.3.2.1, 7.25.3.2.2
+wctrans_t type, 7.25.1, 7.25.3.2.2
+wctype function, 7.25.2.2.1, 7.25.2.2.2
+wctype.h header, 7.25, 7.26.13
+wctype_t type, 7.25.1, 7.25.2.2.2
+WEOF macro, 7.24.1, 7.24.3.1, 7.24.3.3, 7.24.3.6,
+     7.24.3.7, 7.24.3.8, 7.24.3.9, 7.24.3.10,
+     7.24.6.1.1, 7.25.1
+while statement, 6.8.5.1
+white space, 5.1.1.2, 6.4, 6.10, 7.4.1.10,
+     7.25.2.1.10
+white-space characters, 6.4
+wide character, 3.7.3
+  case mapping functions, 7.25.3.1
+     extensible, 7.25.3.2
+  classification functions, 7.25.2.1
+     extensible, 7.25.2.2
+  constant, 6.4.4.4
+  formatted input/output functions, 7.24.2
+  input functions, 7.19.1
+  input/output functions, 7.19.1, 7.24.3
+  output functions, 7.19.1
+  single-byte conversion functions, 7.24.6.1
+wide string, 7.1.1
+wide string comparison functions, 7.24.4.4
+wide string concatenation functions, 7.24.4.3
+wide string copying functions, 7.24.4.2
+wide string literal, see string literal
+wide string miscellaneous functions, 7.24.4.6
+wide string numeric conversion functions, 7.8.2.4,
+     7.24.4.1
+
+538                                                  Index
+
