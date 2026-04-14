@@ -959,6 +959,7 @@ static void genera_expr(nodus_t *n, int dest)
             int ra = r, rb = reg_arm(r2);
 
             switch (n->op) {
+            /* §6.5.6.8: ptr + int — scala integrum per magnitudinem elementi */
             case T_PLUS:
                 if (typus_est_index(n->sinister->typus)) {
                     int bm = mag_typi(typus_basis_indicis(n->sinister->typus));
@@ -969,6 +970,7 @@ static void genera_expr(nodus_t *n, int dest)
                 }
                 emit_add(ra, ra, rb);
                 break;
+            /* §6.5.6.9: ptr - int scala; ptr - ptr dividitur per elem */
             case T_MINUS:
                 if (typus_est_index(n->sinister->typus) && typus_est_integer(n->dexter->typus)) {
                     int bm = mag_typi(typus_basis_indicis(n->sinister->typus));
@@ -978,7 +980,6 @@ static void genera_expr(nodus_t *n, int dest)
                     }
                 }
                 emit_sub(ra, ra, rb);
-                /* si ambo indices, divide per magnitudinem basis */
                 if (typus_est_index(n->sinister->typus) && typus_est_index(n->dexter->typus)) {
                     int bm = mag_typi(typus_basis_indicis(n->sinister->typus));
                     if (bm > 1) {
@@ -1158,6 +1159,7 @@ static void genera_expr(nodus_t *n, int dest)
             break;
         }
 
+    /* §6.5.16.2: assignatio composita — E1 op= E2 ≡ E1 = E1 op E2 */
     case N_OPASSIGN: {
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);

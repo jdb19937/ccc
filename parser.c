@@ -731,7 +731,7 @@ static typus_t *parse_parametros(
         char nomen[256] = {0};
         typus_t *tp = parse_declarator(tb, nomen, 256);
 
-        /* tabulae in parametris -> indicis */
+        /* §6.7.5.3: tabulae in parametris adaptantur ad indicem */
         if (tp->genus == TY_ARRAY)
             tp = typus_indicem(tp->basis);
 
@@ -780,6 +780,7 @@ static nodus_t *parse_expr_primaria(void)
     nodus_t *n;
 
     switch (sig.genus) {
+    /* §6.4.4.1: typus constantis integrae ex amplitudine valoris */
     case T_NUM:
         n        = nodus_novus(N_NUM);
         n->valor = sig.valor;
@@ -796,6 +797,7 @@ static nodus_t *parse_expr_primaria(void)
         lex_proximum();
         return n;
 
+    /* §6.4.5, §6.3.2.1: chorda litteralis — index ad char */
     case T_STR:
         n         = nodus_novus(N_STR);
         n->chorda = malloc(sig.lon_chordae + 1);

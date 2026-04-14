@@ -710,7 +710,7 @@ static int tracta_directivam(void)
         /* evaluatio simplex: supportamus '0', '1', 'defined(X)' */
         char expr[MAX_CHORDA];
         lege_residuum_lineae(expr, sizeof(expr));
-        /* expande macras in expressione #if */
+        /* §6.10.1: macrae expanduntur ante evaluationem #if */
         {
             char expandata[MAX_CHORDA];
             int ei = 0;
@@ -1000,7 +1000,7 @@ inicio:
         sig.lon_chordae = i;
         sig.genus       = T_STR;
 
-        /* concatenatio chordae — si proximus signum est etiam " */
+        /* §6.4.5: concatenatio chordarum litteralium adiacentium */
         for (;;) {
             praetermitte_spatia();
             c = lege_c();
