@@ -5,6 +5,9 @@
  */
 
 #include "ccc.h"
+#include "parser.h"
+#include "genera.h"
+#include "liga.h"
 
 #include <errno.h>
 
@@ -98,25 +101,71 @@ static void usus(void)
  * principale
  * ================================================================ */
 
+static int est_plica_objecti(const char *via)
+{
+    int lon = (int)strlen(via);
+    return lon > 2 && via[lon-2] == '.' && via[lon-1] == 'o';
+}
+
 int main(int argc, char *argv[])
 {
-    const char *plica_fontis = NULL;
-    const char *plica_exitus = "a.out";
+    const char *plicae[256];
+    int num_plicarum         = 0;
+    const char *plica_exitus = NULL;
+    int modus_objecti        = 0;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0) {
             if (++i >= argc)
                 usus();
             plica_exitus = argv[i];
+        } else if (strcmp(argv[i], "-c") == 0) {
+            modus_objecti = 1;
         } else if (argv[i][0] == '-') {
             /* ignora vexilla ignota */
         } else {
-            plica_fontis = argv[i];
+            if (num_plicarum < 256)
+                plicae[num_plicarum++] = argv[i];
         }
     }
 
-    if (!plica_fontis)
+    if (num_plicarum == 0)
         usus();
+
+    /* si omnes plicae sunt .o → liga */
+    int omnes_objecti = 1;
+    for (int i = 0; i < num_plicarum; i++)
+        if (!est_plica_objecti(plicae[i]))
+            omnes_objecti = 0;
+
+    if (omnes_objecti && !modus_objecti) {
+        if (!plica_exitus)
+            plica_exitus = "a.out";
+        liga_objecta(num_plicarum, plicae, plica_exitus);
+        return 0;
+    }
+
+    /* compilatio .c */
+    const char *plica_fontis = plicae[0];
+
+    /* si -c sine -o, .c → .o */
+    if (!plica_exitus) {
+        if (modus_objecti) {
+            static char auto_exitus[512];
+            strncpy(auto_exitus, plica_fontis, 507);
+            int lon = (int)strlen(auto_exitus);
+            if (lon > 2 && auto_exitus[lon-2] == '.' && auto_exitus[lon-1] == 'c')
+                auto_exitus[lon-1] = 'o';
+            else {
+                auto_exitus[lon]   = '.';
+                auto_exitus[lon+1] = 'o';
+                auto_exitus[lon+2] = '\0';
+            }
+            plica_exitus = auto_exitus;
+        } else {
+            plica_exitus = "a.out";
+        }
+    }
 
     /* lege fontem */
     int longitudo;
@@ -132,7 +181,7 @@ int main(int argc, char *argv[])
 
     /* genera codicem */
     genera_initia();
-    genera_translatio(radix, plica_exitus);
+    genera_translatio(radix, plica_exitus, modus_objecti);
 
     free(fons);
     free(fons_directorium);

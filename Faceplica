@@ -7,12 +7,14 @@
 CC      ?= cc
 CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2
 
-FONTES  = ccc.c lexator.c parser.c genera.c
+FONTES  = ccc.c lexator.c parser.c genera.c emitte.c scribo.c liga.c
 OBJECTA = $(FONTES:.c=.o)
 
 omnia: ccc
 
-%.o: %.c ccc.h
+CAPITA  = ccc.h emitte.h scribo.h genera.h parser.h liga.h
+
+%.o: %.c $(CAPITA)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 ccc: $(OBJECTA)
@@ -29,6 +31,6 @@ purga:
 	rm -f $(OBJECTA) ccc
 
 linte:
-	insinulint -c $(FONTES) ccc.h
+	insinulint -c $(FONTES) $(CAPITA)
 
 .PHONY: omnia colloca purga linte
