@@ -912,6 +912,8 @@ static void genera_expr(nodus_t *n, int dest)
             genera_lval(n, dest);
             if (s->typus && (s->typus->genus == TY_ARRAY)) {
             /* tabula → adresse iam in r */
+                if (s->typus->magnitudo == 0 && s->typus->num_elementorum <= 0)
+                    emit_ldr64(r, r, 0); /* §6.7.5.2: VLA — carrica indicem ex slot */
             } else if (s->typus && s->typus->genus == TY_STRUCT) {
             /* structura → adresse */
             } else {
@@ -1462,6 +1464,35 @@ static void genera_sententia(nodus_t *n)
     case N_VAR_DECL:
         {
             symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
+            /* §6.7.5.2: VLA — allocatio dynamica in acervo */
+            if (n->tertius && s && !s->est_globalis) {
+                reg_vertex = 0;
+                genera_expr(n->tertius, 0); /* magnitudo in x0 */
+                /* multiplica per magnitudinem elementi */
+                typus_t *elem = n->typus_decl ? n->typus_decl->basis : ty_int;
+                int emag      = typus_magnitudo(elem);
+                if (emag < 1)
+                    emag = 4;
+                if (emag > 1) {
+                    emit_movi(17, emag);
+                    emit_mul(0, 0, 17);
+                }
+                /* allinea ad 16 */
+                emit_addi(0, 0, 15);
+                emit_movi(17, ~(long)15);
+                emit_and(0, 0, 17);
+                /* SUB SP, SP, magnitudo (per x16 quia SUB non tractat SP) */
+                emit_addi(16, SP, 0); /* x16 = SP */
+                emit_sub(16, 16, 0);  /* x16 = x16 - mag */
+                emit_addi(SP, 16, 0); /* SP = x16 */
+                /* serva adresse tabulae in slotum variabilis */
+                int off = s->offset;
+                emit_movi(17, -off);
+                emit_sub(17, FP, 17);
+                emit_str64(16, 17, 0); /* *slot = adresse tabulae */
+                reg_vertex = 0;
+                break;
+            }
             if (s && (s->est_globalis || s->est_staticus)) {
             /* globalis/statica */
                 if (s->globalis_index < 0) {
@@ -1472,11 +1503,14 @@ static void genera_sententia(nodus_t *n)
                     s->globalis_index = gid;
                 }
             } else if (n->num_membrorum > 0 && n->membra) {
-            /* initiale tabulae { expr, expr, ... } */
+            /* §6.7.8: initiale tabulae { expr, expr, ... } */
                 if (s) {
                     int off_basis = s->offset;
+                    /* typus folii — pro tabulis 2D, descende ad scalarum */
                     typus_t *elem_typus = (s->typus && s->typus->genus == TY_ARRAY) ?
                         s->typus->basis : ty_int;
+                    while (elem_typus && elem_typus->genus == TY_ARRAY)
+                        elem_typus = elem_typus->basis;
                     int elem_mag = typus_magnitudo(elem_typus);
                     if (elem_mag < 1)
                         elem_mag = 4;
@@ -1994,6 +2028,70 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus)
 
     if (main_offset < 0)
         erratum("functio main non inventa");
+
+    /* quarta passu: genera __ccc_init si opus est —
+     * initializat globales tabulae cum chordis (§6.7.8) */
+    {
+        int habet_init = 0;
+        for (int i = 0; i < radix->num_membrorum; i++) {
+            nodus_t *n = radix->membra[i];
+            if (n->genus == N_VAR_DECL && n->num_membrorum > 0 && n->membra)
+                habet_init = 1;
+        }
+        if (habet_init) {
+            int init_offset = codex_lon;
+            /* prologus — serva argc/argv (x0/x1) in x19/x20 */
+            emit_stp_pre(FP, LR, SP, -16);
+            emit_addi(FP, SP, 0);
+            emit_mov(19, 0); /* x19 = argc */
+            emit_mov(20, 1); /* x20 = argv */
+            /* initializationes */
+            for (int i = 0; i < radix->num_membrorum; i++) {
+                nodus_t *n = radix->membra[i];
+                if (n->genus != N_VAR_DECL || n->num_membrorum <= 0 || !n->membra)
+                    continue;
+                symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
+                if (!s || s->globalis_index < 0)
+                    continue;
+                int gid = s->globalis_index;
+                typus_t *elem_t = (n->typus_decl && n->typus_decl->basis) ?
+                    n->typus_decl->basis : ty_int;
+                int elem_mag = typus_magnitudo(elem_t);
+                if (elem_mag < 1)
+                    elem_mag = 8;
+                for (int j = 0; j < n->num_membrorum; j++) {
+                    nodus_t *elem = n->membra[j];
+                    if (elem->genus == N_STR) {
+                        /* chorda litteralis — carrica adresse */
+                        int sid = chorda_adde(elem->chorda, elem->lon_chordae);
+                        emit_adrp_fixup(0, FIX_ADRP, sid);
+                        fixup_adde(FIX_ADD_LO12, codex_lon, sid, 0);
+                        emit32(0x91000000 | (0 << 5) | 0);
+                    } else if (elem->genus == N_NUM) {
+                        emit_movi(0, elem->valor);
+                    } else {
+                        continue;
+                    }
+                    /* carrica adresse globalis + offset */
+                    emit_adrp_fixup(17, FIX_ADRP_DATA, gid);
+                    fixup_adde(FIX_ADD_LO12_DATA, codex_lon, gid, 0);
+                    emit32(0x91000000 | (17 << 5) | 17);
+                    /* scribe elementum */
+                    emit_store(0, 17, j * elem_mag, elem_mag);
+                }
+            }
+            /* voca main — restitue argc/argv */
+            emit_mov(0, 19); /* x0 = argc */
+            emit_mov(1, 20); /* x1 = argv */
+            int main_label = func_loc_quaere("main");
+            emit_bl_label(main_label);
+            /* epilogus — redde exitum main */
+            emit_addi(SP, FP, 0);
+            emit_ldp_post(FP, LR, SP, 16);
+            emit_ret();
+            main_offset = init_offset;
+        }
+    }
 
     /* ================================================================
      * layout Mach-O

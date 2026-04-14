@@ -135,7 +135,10 @@ static const char caput_internum[] =
     "int ioctl(int, unsigned long, ...);\n"
     "\n"
     "/* stdarg — non plene supportatum, sed declarationes */\n"
-    "\n"
+;
+
+/* capita POSIX — separata ne chorda nimis longa sit */
+static const char caput_internum_posix[] =
     "/* signal */\n"
     "typedef int sig_atomic_t;\n"
     "typedef void (*__sighandler_t)(int);\n"
@@ -598,7 +601,8 @@ static int tracta_directivam(void)
             via[i] = '\0';
             praetermitte_lineam();
 
-            /* omnia capita systematis -> caput internum */
+            /* omnia capita systematis -> capita interna */
+            pelle_plicam(via, caput_internum_posix, (int)strlen(caput_internum_posix));
             pelle_plicam(via, caput_internum, (int)strlen(caput_internum));
         }
         return 1;
@@ -706,6 +710,40 @@ static int tracta_directivam(void)
         /* evaluatio simplex: supportamus '0', '1', 'defined(X)' */
         char expr[MAX_CHORDA];
         lege_residuum_lineae(expr, sizeof(expr));
+        /* expande macras in expressione #if */
+        {
+            char expandata[MAX_CHORDA];
+            int ei = 0;
+            for (int ci = 0; expr[ci] && ei < MAX_CHORDA - 1; ) {
+                if (
+                    (expr[ci] >= 'a' && expr[ci] <= 'z') ||
+                    (expr[ci] >= 'A' && expr[ci] <= 'Z') || expr[ci] == '_'
+                ) {
+                    char tok[256];
+                    int ti = 0;
+                    while (
+                        expr[ci] && (
+                            (expr[ci] >= 'a' && expr[ci] <= 'z') ||
+                            (expr[ci] >= 'A' && expr[ci] <= 'Z') ||
+                            (expr[ci] >= '0' && expr[ci] <= '9') || expr[ci] == '_'
+                        )
+                    )
+                        if (ti < 255)
+                            tok[ti++] = expr[ci++];
+                    else
+                        ci++;
+                    tok[ti]         = '\0';
+                    macra_t *m      = macra_quaere(tok);
+                    const char *rep = (m && !m->est_functionalis) ? m->valor : tok;
+                    while (*rep && ei < MAX_CHORDA - 1)
+                        expandata[ei++] = *rep++;
+                } else {
+                    expandata[ei++] = expr[ci++];
+                }
+            }
+            expandata[ei] = '\0';
+            strncpy(expr, expandata, MAX_CHORDA - 1);
+        }
         int val = 0;
         if (strstr(expr, "defined")) {
             /* extrahre nomen */
@@ -720,7 +758,27 @@ static int tracta_directivam(void)
             nomen[i] = '\0';
             val      = macra_quaere(nomen) ? 1 : 0;
         } else {
-            val = atoi(expr);
+            /* evaluatio simplex expressionum: N > M, N == M, etc. */
+            char *gt = strstr(expr, ">=");
+            char *lt = strstr(expr, "<=");
+            char *eq = strstr(expr, "==");
+            char *ne = strstr(expr, "!=");
+            char *g  = !gt ? strchr(expr, '>') : NULL;
+            char *l  = !lt ? strchr(expr, '<') : NULL;
+            if (eq)
+                val = atoi(expr) == atoi(eq + 2);
+            else if (ne)
+                val = atoi(expr) != atoi(ne + 2);
+            else if (gt)
+                val = atoi(expr) >= atoi(gt + 2);
+            else if (lt)
+                val = atoi(expr) <= atoi(lt + 2);
+            else if (g)
+                val = atoi(expr) >  atoi(g + 1);
+            else if (l)
+                val = atoi(expr) <  atoi(l + 1);
+            else
+                val = atoi(expr);
         }
         cond_acervus[cond_vertex++] = val ? 1 : 0;
         return 1;

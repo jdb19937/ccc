@@ -594,6 +594,8 @@ static typus_t *parse_enum(void)
  * parse declarator (nomen + indicis + tabulae + functio)
  * ================================================================ */
 
+static nodus_t *ultima_vla_expr; /* §6.7.5.2: VLA expressio magnitudinis */
+
 static typus_t *parse_declarator(typus_t *basis, char *nomen, int max_nomen)
 {
     typus_t *t = basis;
@@ -643,19 +645,41 @@ static typus_t *parse_declarator(typus_t *basis, char *nomen, int max_nomen)
         t = typus_indicem(t);
 
     /* tabulae: [N] [M] ... */
-    while (sig.genus == T_LBRACKET) {
-        lex_proximum();
-        int num = 0;
-        if (sig.genus == T_RBRACKET) {
-            /* [] — dimensio ignota */
-        } else {
-            /* expressio constans */
-            nodus_t *e = parse_expr_assign();
-            if (e && e->genus == N_NUM)
-                num = (int)e->valor;
+    /* §6.7.5.2: collige dimensiones, applica in ordine inverso
+     * ut int a[2][3] fiat TY_ARRAY(TY_ARRAY(int,3),2) */
+    {
+        int dims[64];
+        nodus_t *vla_expr[64];
+        int ndims = 0;
+        while (sig.genus == T_LBRACKET) {
+            lex_proximum();
+            int num     = 0;
+            nodus_t *ve = NULL;
+            if (sig.genus == T_RBRACKET) {
+                /* [] — dimensio ignota */
+            } else {
+                nodus_t *e = parse_expr_assign();
+                if (e && e->genus == N_NUM)
+                    num = (int)e->valor;
+                else
+                    ve = e; /* VLA — expressio non constans */
+            }
+            expecta(T_RBRACKET);
+            if (ndims < 64) {
+                dims[ndims]     = num;
+                vla_expr[ndims] = ve;
+                ndims++;
+            }
         }
-        expecta(T_RBRACKET);
-        t = typus_tabulam(t, num);
+        for (int i = ndims - 1; i >= 0; i--)
+            t = typus_tabulam(t, dims[i]);
+        /* serva primam VLA expressionem in variabile globali */
+        ultima_vla_expr = NULL;
+        for (int i = 0; i < ndims; i++)
+            if (vla_expr[i]) {
+            ultima_vla_expr = vla_expr[i];
+            break;
+        }
     }
 
     return t;
@@ -1563,6 +1587,8 @@ static nodus_t *parse_declaratio(int est_globalis)
         vd->typus        = td;
         vd->est_staticus = s_stat;
         vd->est_externus = s_ext;
+        if (ultima_vla_expr)
+            vd->tertius = ultima_vla_expr; /* §6.7.5.2: VLA magnitudo */
 
         /* symbolum — salva in nodo */
         symbolum_t *vs = ambitus_adde(nomen, SYM_VAR);
@@ -1577,8 +1603,16 @@ static nodus_t *parse_declaratio(int est_globalis)
             /* variabilis localis — allocare in acervo */
             int mag = typus_magnitudo(td);
             if (mag == 0 && td->genus == TY_ARRAY && td->num_elementorum <= 0) {
-                /* tabula sine magnitudine — differe allocatam usque ad initiale */
-                alloca_differtur = 1;
+                if (vd->tertius) {
+                    /* §6.7.5.2: VLA — allocare 8 octeti pro indice ad tabulam */
+                    int off = cur_ambitus->proximus_offset - 8;
+                    off = off & ~7;
+                    vs->offset = off;
+                    cur_ambitus->proximus_offset = off;
+                } else {
+                    /* tabula sine magnitudine — differe allocatam usque ad initiale */
+                    alloca_differtur = 1;
+                }
             } else {
                 if (mag == 0)
                     mag = 8;
@@ -1650,10 +1684,27 @@ static nodus_t *parse_declaratio(int est_globalis)
                     memcpy(vd->membra, elems, nelem * sizeof(nodus_t *));
                     vd->num_membrorum = nelem;
                 }
-                /* si tabula sine magnitudine, defini magnitudinem */
+                /* §6.7.8: si tabula sine magnitudine, defini ex initializatore */
                 if (td->genus == TY_ARRAY && td->num_elementorum <= 0) {
-                    td->num_elementorum = nelem;
-                    td->magnitudo       = nelem * typus_magnitudo(td->basis);
+                    int basis_mag = typus_magnitudo(td->basis);
+                    if (basis_mag > 0 && td->basis->genus == TY_ARRAY) {
+                        /* 2D: int[][3] — dividi elementa plana per inner */
+                        int folium_mag = basis_mag;
+                        typus_t *f     = td->basis;
+                        while (f && f->genus == TY_ARRAY)
+                            f = f->basis;
+                        if (f)
+                            folium_mag = typus_magnitudo(f);
+                        if (folium_mag < 1)
+                            folium_mag = 4;
+                        int inner_n = basis_mag / folium_mag;
+                        if (inner_n < 1)
+                            inner_n = 1;
+                        td->num_elementorum = (nelem + inner_n - 1) / inner_n;
+                    } else {
+                        td->num_elementorum = nelem;
+                    }
+                    td->magnitudo = td->num_elementorum * typus_magnitudo(td->basis);
                 }
                 /* allocatio differata — nunc allocamus */
                 if (alloca_differtur) {
