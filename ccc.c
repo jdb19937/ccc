@@ -18,6 +18,11 @@
 
 char *fons_directorium = NULL;
 
+int optio_Wall     = 0;
+int optio_Wextra   = 0;
+int optio_pedantic = 0;
+int optio_O        = 0;   /* gradus optimizationis (0, 1, 2, 3) */
+
 /* ================================================================
  * errores
  * ================================================================ */
@@ -104,6 +109,11 @@ static void usus(void)
         "  -I <via>     adde viam inclusionis\n"
         "  -L <via>     adde viam bibliothecarum\n"
         "  -l <nomen>   liga cum bibliotheca\n"
+        "  -Wall        activa monitiones omnes\n"
+        "  -Wextra      activa monitiones extra\n"
+        "  -pedantic    activa modum pedanticum\n"
+        "  -std=c99     norma linguae (solum c99)\n"
+        "  -O<gradus>   gradus optimizationis (0-3)\n"
         "  -h, --help   monstra hunc nuntium\n"
     );
     exit(1);
@@ -149,6 +159,20 @@ int main(int argc, char *argv[])
             if (!nomen)
                 usus();
             biblio_adde(nomen);
+        } else if (strcmp(argv[i], "-Wall") == 0) {
+            optio_Wall = 1;
+        } else if (strcmp(argv[i], "-Wextra") == 0) {
+            optio_Wextra = 1;
+        } else if (strcmp(argv[i], "-pedantic") == 0) {
+            optio_pedantic = 1;
+        } else if (strncmp(argv[i], "-std=", 5) == 0) {
+            if (strcmp(argv[i] + 5, "c99") != 0)
+                erratum("norma non sustenta: %s (solum -std=c99)", argv[i]);
+        } else if (strncmp(argv[i], "-O", 2) == 0) {
+            int g = argv[i][2] ? argv[i][2] - '0' : 2;
+            if (g < 0 || g > 3)
+                erratum("gradus optimizationis invalidus: %s", argv[i]);
+            optio_O = g;
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             usus();
         } else if (argv[i][0] == '-') {

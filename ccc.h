@@ -209,4 +209,9 @@ char *via_directoria(const char *via);
 
 extern char *fons_directorium;
 
+extern int optio_Wall;
+extern int optio_Wextra;
+extern int optio_pedantic;
+extern int optio_O;
+
 #endif /* CCC_H */
