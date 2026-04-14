@@ -6,7 +6,6 @@
  */
 
 #include "ccc.h"
-#include "genera.h"
 #include "emitte.h"
 #include "scribo.h"
 

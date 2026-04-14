@@ -1,6 +1,7 @@
 /*
  * ccc.c — CCC compilator principale
  *
+ * Compilat unam plicam .c in plicam .o.
  * Functio main(), lectio plicarum, nuntii errorum.
  */
 
@@ -8,14 +9,12 @@
 #include "biblio.h"
 #include "parser.h"
 #include "genera.h"
-#include "liga.h"
 
 #include <errno.h>
 
 /* ================================================================
  * status globalis
  * ================================================================ */
-
 
 int optio_Wall     = 0;
 int optio_Wextra   = 0;
@@ -100,14 +99,12 @@ static void usus(void)
 {
     fprintf(
         stderr,
-        "usus: ccc [optiones] plica.c [...]\n"
+        "usus: ccc [-o plica.o] [optiones] plica.c\n"
         "\n"
         "optiones:\n"
-        "  -o <plica>   plica exitus\n"
-        "  -c           compila solum (sine ligatione)\n"
+        "  -c           (ignoratur)\n"
+        "  -o <plica>   plica exitus (defalta: nomen.o)\n"
         "  -I <via>     adde viam inclusionis\n"
-        "  -L <via>     adde viam bibliothecarum\n"
-        "  -l <nomen>   liga cum bibliotheca\n"
         "  -Wall        activa monitiones omnes\n"
         "  -Wextra      activa monitiones extra\n"
         "  -pedantic    activa modum pedanticum\n"
@@ -122,24 +119,16 @@ static void usus(void)
  * principale
  * ================================================================ */
 
-static int est_plica_objecti(const char *via)
+static int est_plica_fontis(const char *via)
 {
     int lon = (int)strlen(via);
-    return lon > 2 && via[lon-2] == '.' && via[lon-1] == 'o';
-}
-
-static int est_plica_archivi(const char *via)
-{
-    int lon = (int)strlen(via);
-    return lon > 2 && via[lon-2] == '.' && via[lon-1] == 'a';
+    return lon > 2 && via[lon-2] == '.' && via[lon-1] == 'c';
 }
 
 int main(int argc, char *argv[])
 {
-    const char *plicae[256];
-    int num_plicarum         = 0;
+    const char *plica_fontis = NULL;
     const char *plica_exitus = NULL;
-    int modus_objecti        = 0;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0) {
@@ -147,23 +136,12 @@ int main(int argc, char *argv[])
                 usus();
             plica_exitus = argv[i];
         } else if (strcmp(argv[i], "-c") == 0) {
-            modus_objecti = 1;
+            /* ignoratur — ccc semper obiectum generat */
         } else if (strncmp(argv[i], "-I", 2) == 0) {
-            /* -Ivia vel -I via */
             const char *via = argv[i][2] ? argv[i] + 2 : (++i < argc ? argv[i] : NULL);
             if (!via)
                 usus();
             includ_adde(via);
-        } else if (strncmp(argv[i], "-L", 2) == 0) {
-            const char *via = argv[i][2] ? argv[i] + 2 : (++i < argc ? argv[i] : NULL);
-            if (!via)
-                usus();
-            biblio_via_adde(via);
-        } else if (strncmp(argv[i], "-l", 2) == 0) {
-            const char *nomen = argv[i][2] ? argv[i] + 2 : (++i < argc ? argv[i] : NULL);
-            if (!nomen)
-                usus();
-            biblio_adde(nomen);
         } else if (strcmp(argv[i], "-Wall") == 0) {
             optio_Wall = 1;
         } else if (strcmp(argv[i], "-Wextra") == 0) {
@@ -183,179 +161,35 @@ int main(int argc, char *argv[])
         } else if (argv[i][0] == '-') {
             erratum("vexillum ignotum: %s", argv[i]);
         } else {
-            if (num_plicarum < 256)
-                plicae[num_plicarum++] = argv[i];
+            if (plica_fontis)
+                erratum("solum una plica fontis permissa");
+            plica_fontis = argv[i];
         }
     }
 
-    if (num_plicarum == 0)
+    if (!plica_fontis)
         usus();
 
-    /* si omnes plicae sunt .o vel .a → liga */
-    int omnes_objecti = 1;
-    for (int i = 0; i < num_plicarum; i++)
-        if (!est_plica_objecti(plicae[i]) && !est_plica_archivi(plicae[i]))
-            omnes_objecti = 0;
+    if (!est_plica_fontis(plica_fontis))
+        erratum("plica '%s' non desinit in .c", plica_fontis);
 
-    if (omnes_objecti && !modus_objecti) {
-        if (!plica_exitus)
-            plica_exitus = "a.out";
-
-        /* adde .a plicae ad biblio_res ut extrahantur */
-        for (int i = 0; i < num_plicarum; i++)
-            if (est_plica_archivi(plicae[i]))
-                res_adde(plicae[i], BIBLIO_A);
-
-        /* extrahe objecta ex archivis .a */
-        int num_extractorum = 0;
-        char **extractae    = biblio_extrahe_objecta(&num_extractorum);
-
-        /* compone tabulam omnium obiectorum (.o solum) */
-        int num_obj = 0;
-        for (int i = 0; i < num_plicarum; i++)
-            if (est_plica_objecti(plicae[i]))
-                num_obj++;
-        int totum = num_obj + num_extractorum;
-        const char **omnes = malloc(totum * sizeof(const char *));
-        if (!omnes)
-            erratum("memoria exhausta");
-        int oi = 0;
-        for (int i = 0; i < num_plicarum; i++)
-            if (est_plica_objecti(plicae[i]))
-                omnes[oi++] = plicae[i];
-        for (int i = 0; i < num_extractorum; i++)
-            omnes[oi + i] = extractae[i];
-
-        liga_objecta(totum, omnes, plica_exitus);
-
-        free(omnes);
-        if (extractae)
-            biblio_purga_temporarias(extractae, num_extractorum);
-        return 0;
+    /* computa nomen exitus si non datum */
+    char auto_exitus[512];
+    if (!plica_exitus) {
+        strncpy(auto_exitus, plica_fontis, 507);
+        auto_exitus[507] = '\0';
+        int lon = (int)strlen(auto_exitus);
+        auto_exitus[lon-1] = 'o';
+        plica_exitus = auto_exitus;
     }
 
-    /* numera plicas .c, .o, .a */
-    int num_fontium = 0;
-    int num_obj     = 0;
-    for (int i = 0; i < num_plicarum; i++) {
-        if (est_plica_objecti(plicae[i]))
-            num_obj++;
-        else if (!est_plica_archivi(plicae[i]))
-            num_fontium++;
-    }
-
-    if (num_fontium == 0)
-        erratum("nulla plica fontis inventa");
-
-    /* si -c: compila quamque plicam .c ad .o */
-    if (modus_objecti) {
-        for (int i = 0; i < num_plicarum; i++) {
-            if (est_plica_objecti(plicae[i]) || est_plica_archivi(plicae[i]))
-                continue;
-            const char *plica_fontis = plicae[i];
-
-            char auto_exitus[512];
-            if (plica_exitus && num_fontium == 1) {
-                strncpy(auto_exitus, plica_exitus, 511);
-            } else {
-                strncpy(auto_exitus, plica_fontis, 507);
-                int lon = (int)strlen(auto_exitus);
-                if (lon > 2 && auto_exitus[lon-2] == '.' && auto_exitus[lon-1] == 'c')
-                    auto_exitus[lon-1] = 'o';
-                else {
-                    auto_exitus[lon]   = '.';
-                    auto_exitus[lon+1] = 'o';
-                    auto_exitus[lon+2] = '\0';
-                }
-            }
-            auto_exitus[511] = '\0';
-
-            int longitudo;
-            char *fons = lege_plicam(plica_fontis, &longitudo);
-            lex_initia(plica_fontis, fons, longitudo);
-            parse_initia();
-            nodus_t *radix = parse_translatio();
-            genera_initia();
-            genera_translatio(radix, auto_exitus, 1);
-            free(fons);
-        }
-        return 0;
-    }
-
-    /* compilatio ad executabile — compila quamque .c ad .o temporarium */
-    if (!plica_exitus)
-        plica_exitus = "a.out";
-
-    /* adde .a plicae ad biblio_res */
-    for (int i = 0; i < num_plicarum; i++)
-        if (est_plica_archivi(plicae[i]))
-            res_adde(plicae[i], BIBLIO_A);
-
-    int num_extractorum = 0;
-    char **extractae    = biblio_extrahe_objecta(&num_extractorum);
-
-    /* si una sola plica .c et nullae .o nec .a → via simplex */
-    if (num_fontium == 1 && num_obj == 0 && num_extractorum == 0) {
-        const char *plica_fontis = plicae[0];
-        int longitudo;
-        char *fons = lege_plicam(plica_fontis, &longitudo);
-        lex_initia(plica_fontis, fons, longitudo);
-        parse_initia();
-        nodus_t *radix = parse_translatio();
-        genera_initia();
-        genera_translatio(radix, plica_exitus, 0);
-        free(fons);
-        if (extractae)
-            biblio_purga_temporarias(extractae, num_extractorum);
-        return 0;
-    }
-
-    /* compila quamque .c ad .o temporarium, deinde liga omnia */
-    char *viae_tmp[256];
-    int num_tmp = 0;
-
-    for (int i = 0; i < num_plicarum; i++) {
-        if (est_plica_objecti(plicae[i]) || est_plica_archivi(plicae[i]))
-            continue;
-        char via_tmp[512];
-        snprintf(via_tmp, 512, "/tmp/ccc_%d.o", num_tmp);
-
-        int longitudo;
-        char *fons = lege_plicam(plicae[i], &longitudo);
-        lex_initia(plicae[i], fons, longitudo);
-        parse_initia();
-        nodus_t *radix = parse_translatio();
-        genera_initia();
-        genera_translatio(radix, via_tmp, 1);
-        free(fons);
-
-        viae_tmp[num_tmp] = strdup(via_tmp);
-        num_tmp++;
-    }
-
-    /* compone tabulam omnium obiectorum */
-    int totum = num_tmp + num_obj + num_extractorum;
-    const char **omnes = malloc(totum * sizeof(const char *));
-    if (!omnes)
-        erratum("memoria exhausta");
-    int oi = 0;
-    for (int i = 0; i < num_tmp; i++)
-        omnes[oi++] = viae_tmp[i];
-    for (int i = 0; i < num_plicarum; i++)
-        if (est_plica_objecti(plicae[i]))
-            omnes[oi++] = plicae[i];
-    for (int i = 0; i < num_extractorum; i++)
-        omnes[oi++] = extractae[i];
-
-    liga_objecta(totum, omnes, plica_exitus);
-
-    /* purga temporaria */
-    for (int i = 0; i < num_tmp; i++) {
-        remove(viae_tmp[i]);
-        free(viae_tmp[i]);
-    }
-    free(omnes);
-    if (extractae)
-        biblio_purga_temporarias(extractae, num_extractorum);
+    int longitudo;
+    char *fons = lege_plicam(plica_fontis, &longitudo);
+    lex_initia(plica_fontis, fons, longitudo);
+    parse_initia();
+    nodus_t *radix = parse_translatio();
+    genera_initia();
+    genera_translatio(radix, plica_exitus, 1);
+    free(fons);
     return 0;
 }

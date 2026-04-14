@@ -1,36 +1,42 @@
-# Faceplica — aedificatio ccc
+# Faceplica — aedificatio ccc et ldi
 #
 # Usus:
-#   face            — aedifica ccc
+#   face            — aedifica ccc et ldi
 #   face purga      — dele omnia aedificata
 
 CC      ?= cc
 CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2
 
-FONTES  = ccc.c lexator.c parser.c genera.c emitte.c scribo.c liga.c biblio.c
-OBJECTA = $(FONTES:.c=.o)
-
-omnia: ccc
-
 CAPITA  = ccc.h emitte.h scribo.h genera.h parser.h lexator.h liga.h biblio.h
+
+CCC_OBJECTA = ccc.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o
+LDI_OBJECTA = ldi.o liga.o emitte.o scribo.o biblio.o
+OBJECTA     = ccc.o ldi.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o
+
+omnia: ccc ldi
 
 %.o: %.c $(CAPITA)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-ccc: $(OBJECTA)
-	$(CC) $(CFLAGS) -o $@ $(OBJECTA)
+ccc: $(CCC_OBJECTA)
+	$(CC) $(CFLAGS) -o $@ $(CCC_OBJECTA)
 	@echo "==> ccc aedificatum"
+
+ldi: $(LDI_OBJECTA)
+	$(CC) $(CFLAGS) -o $@ $(LDI_OBJECTA)
+	@echo "==> ldi aedificatum"
 
 PREFIX = /opt/apotheca
 
 colloca: omnia
 	install -d $(PREFIX)/bin
 	install -m 755 ccc $(PREFIX)/bin/
+	install -m 755 ldi $(PREFIX)/bin/
 
 purga:
-	rm -f $(OBJECTA) ccc
+	rm -f $(OBJECTA) ccc ldi
 
 linte:
-	insinulint -c $(FONTES) $(CAPITA)
+	insinulint -c $(CAPITA)
 
 .PHONY: omnia colloca purga linte

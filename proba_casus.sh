@@ -5,6 +5,7 @@
 #
 
 CCC="${CCC:-./ccc}"
+LDI="${LDI:-./ldi}"
 CC="${CC:-cc}"
 DIR="${1:-casus}"
 TMP=$(mktemp -d)
@@ -48,8 +49,10 @@ for fons in "$DIR"/*.c; do
     $CC -std=c99 -O0 -o "$bin_cc" "$fons" 2>/dev/null
     cc_comp=$?
 
-    # compila cum ccc
-    $CCC "$fons" -o "$bin_ccc" >/dev/null 2>&1
+    # compila cum ccc + ldi
+    obj_ccc="$TMP/${nomen}_ccc.o"
+    $CCC -c -o "$obj_ccc" "$fons" >/dev/null 2>&1 && \
+    $LDI -o "$bin_ccc" "$obj_ccc" >/dev/null 2>&1
     ccc_comp=$?
 
     cc_run="-"
