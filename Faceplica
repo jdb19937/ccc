@@ -7,11 +7,11 @@
 CC      ?= cc
 CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2
 
-CAPITA  = ccc.h emitte.h scribo.h genera.h parser.h lexator.h liga.h biblio.h
+CAPITA  = ccc.h emitte.h scribo.h genera.h parser.h lexator.h liga.h biblio.h fluat.h
 
-CCC_OBJECTA = ccc.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o
+CCC_OBJECTA = ccc.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o fluat.o
 LDI_OBJECTA = ldi.o liga.o emitte.o scribo.o biblio.o
-OBJECTA     = ccc.o ldi.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o
+OBJECTA     = ccc.o ldi.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o fluat.o
 
 omnia: ccc ldi
 

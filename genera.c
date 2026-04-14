@@ -9,6 +9,8 @@
 #include "genera.h"
 #include "emitte.h"
 #include "scribo.h"
+#include "fluat.h"
+#include <string.h>
 
 /* acervus break/continue labels */
 static int break_labels[MAX_BREAK];
@@ -134,6 +136,86 @@ static int est_unsigned(typus_t *t)
         t->genus == TY_PTR || t->genus == TY_ARRAY;
 }
 
+/* §6.7.8: imple regionem memoriae cum zerīs.
+ * Cūrat nē extrā fīnēs scrībātur (ultima scrīptūra 4 vel 1 octetī). */
+static void emit_imple_zeris(int off_basis, int magnitudo)
+{
+    if (magnitudo <= 0)
+        return;
+    emit_movi(0, 0);
+    for (int z = 0; z < magnitudo; ) {
+        int rem = magnitudo - z;
+        emit_movi(17, -(off_basis + z));
+        emit_sub(17, FP, 17);
+        if (rem >= 8) {
+            emit_str64(0, 17, 0);
+            z += 8;
+        } else if (rem >= 4) {
+            emit_str32(0, 17, 0);
+            z += 4;
+        } else {
+            emit_strb(0, 17, 0);
+            z += 1;
+        }
+    }
+}
+
+/* ================================================================
+ * auxiliaria pro typis fluitantibus
+ *
+ * Strategia: idem reg_arm(slot) ūtitur, sed valor vivit in
+ * d-registrō (non x-registrō) cum typus fluitans est.
+ * ================================================================ */
+
+/* carrica constantem fluitantem in d-registrum —
+ * §6.4.4.2: per bit-pattern in registrum integrum, deinde FMOV */
+static void emit_fconst(int dreg, double val)
+{
+    long bits;
+    memcpy(&bits, &val, 8);
+    emit_movi(dreg, bits);       /* MOV Xn, #bits */
+    emit_fmov_dx(dreg, dreg);   /* FMOV Dn, Xn */
+}
+
+/* carrica valorem fluitantem ex adresse in memoria ad d-registrum */
+static void emit_fload_from_addr(int dreg, int addr_reg, typus_t *t)
+{
+    if (t && t->genus == TY_FLOAT) {
+        emit_fldr32(dreg, addr_reg, 0); /* LDR Sn, [Xaddr] */
+        emit_fcvt_ds(dreg, dreg);       /* §6.3.1.5: promove ad double */
+    } else {
+        emit_fldr64(dreg, addr_reg, 0); /* LDR Dn, [Xaddr] */
+    }
+}
+
+/* salva valorem fluitantem ex d-registrō in memoriam */
+static void emit_fstore_to_addr(int dreg, int addr_reg, typus_t *t)
+{
+    if (t && t->genus == TY_FLOAT) {
+        emit_fcvt_sd(dreg, dreg);       /* §6.3.1.5: demove ad float */
+        emit_fstr32(dreg, addr_reg, 0); /* STR Sn, [Xaddr] */
+    } else {
+        emit_fstr64(dreg, addr_reg, 0); /* STR Dn, [Xaddr] */
+    }
+}
+
+/* converte integrum in registrō Xn ad double in registrō Dn */
+static void emit_int_to_double(int reg, typus_t *src_type)
+{
+    /* §6.3.1.4¶2: integer → double */
+    if (est_unsigned(src_type))
+        emit_ucvtf_dx(reg, reg);    /* UCVTF Dn, Xn */
+    else
+        emit_scvtf_dx(reg, reg);    /* SCVTF Dn, Xn */
+}
+
+/* converte double in registrō Dn ad integrum in registrō Xn */
+static void emit_double_to_int(int reg)
+{
+    /* §6.3.1.4¶1: truncatio ad zero */
+    emit_fcvtzs_xd(reg, reg);      /* FCVTZS Xn, Dn */
+}
+
 /* carrica valorem ex l-valor adresse in dest */
 static void emit_load_from_addr(int dest, typus_t *t)
 {
@@ -154,7 +236,8 @@ static void genera_lval(nodus_t *n, int dest)
     int r = reg_arm(dest);
 
     switch (n->genus) {
-    case N_IDENT: {
+    case N_IDENT:
+        {
             symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
             if (!s)
                 erratum_ad(n->linea, "symbolum ignotum: %s", n->nomen);
@@ -189,7 +272,8 @@ static void genera_lval(nodus_t *n, int dest)
     case N_DEREF:
         genera_expr(n->sinister, dest);
         break;
-    case N_INDEX: {
+    case N_INDEX:
+        {
             genera_expr(n->sinister, dest);
             int r2 = reg_alloca();
             genera_expr(n->dexter, r2);
@@ -204,7 +288,8 @@ static void genera_lval(nodus_t *n, int dest)
             reg_libera(r2);
             break;
         }
-    case N_MEMBER: {
+    case N_MEMBER:
+        {
             genera_lval(n->sinister, dest);
             if (n->sinister->typus && n->sinister->typus->genus == TY_STRUCT) {
                 typus_t *st = n->sinister->typus;
@@ -218,7 +303,8 @@ static void genera_lval(nodus_t *n, int dest)
             }
             break;
         }
-    case N_ARROW: {
+    case N_ARROW:
+        {
             genera_expr(n->sinister, dest);
             if (
                 n->sinister->typus && n->sinister->typus->genus == TY_PTR &&
@@ -258,7 +344,13 @@ static void genera_expr(nodus_t *n, int dest)
         emit_movi(r, n->valor);
         break;
 
-    case N_STR: {
+    /* §6.4.4.2: constans fluitans — carrica bit-pattern, deinde FMOV */
+    case N_NUM_FLUAT:
+        emit_fconst(r, n->valor_f);
+        break;
+
+    case N_STR:
+        {
             int sid = chorda_adde(n->chorda, n->lon_chordae);
             emit_adrp_fixup(r, FIX_ADRP, sid);
             fixup_adde(FIX_ADD_LO12, codex_lon, sid, 0);
@@ -266,7 +358,8 @@ static void genera_expr(nodus_t *n, int dest)
             break;
         }
 
-    case N_IDENT: {
+    case N_IDENT:
+        {
             symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
             if (!s) {
             /* functio non declarata — pone GOT intransum */
@@ -304,13 +397,17 @@ static void genera_expr(nodus_t *n, int dest)
                     emit_ldr64(r, r, 0); /* §6.7.5.2: VLA — carrica indicem ex slot */
             } else if (s->typus && s->typus->genus == TY_STRUCT) {
             /* structura → adresse */
+            } else if (typus_est_fluat(s->typus)) {
+            /* §6.2.5¶10: typus fluitans — carrica in d-registrum */
+                emit_fload_from_addr(r, r, s->typus);
             } else {
                 emit_load_from_addr(r, s->typus);
             }
             break;
         }
 
-    case N_BINOP: {
+    case N_BINOP:
+        {
             /* §6.5.13, §6.5.14: short-circuit — dextrum non evaluatur
              * si sinistrum iam determinat resultatum */
             if (n->op == T_AMPAMP) {
@@ -346,6 +443,63 @@ static void genera_expr(nodus_t *n, int dest)
             genera_expr(n->dexter, r2);
             int ra = r, rb = reg_arm(r2);
 
+            /* §6.3.1.8: si unus operandus fluitans, via FP */
+            if (typus_est_fluat(n->sinister->typus) || typus_est_fluat(n->dexter->typus)) {
+                /* converte operandum integrum ad double si necesse */
+                if (!typus_est_fluat(n->sinister->typus))
+                    emit_int_to_double(ra, n->sinister->typus);
+                if (!typus_est_fluat(n->dexter->typus))
+                    emit_int_to_double(rb, n->dexter->typus);
+
+                /* §6.5.5, §6.5.6, Annex F §F.3: operationes FP */
+                switch (n->op) {
+                case T_PLUS:
+                    emit_fadd(ra, ra, rb);
+                    break;
+                case T_MINUS:
+                    emit_fsub(ra, ra, rb);
+                    break;
+                case T_STAR:
+                    emit_fmul(ra, ra, rb);
+                    break;
+                case T_SLASH:
+                    emit_fdiv(ra, ra, rb);
+                    break;
+
+                /* §6.5.8, §6.5.9: comparationes FP —
+                 * FCMP ponit NZCV, deinde CSET */
+
+                case T_EQEQ:
+                    emit_fcmp(ra, rb);
+                    emit_cset(ra, COND_EQ);
+                    break;
+                case T_BANGEQ:
+                    emit_fcmp(ra, rb);
+                    emit_cset(ra, COND_NE);
+                    break;
+                case T_LT:
+                    emit_fcmp(ra, rb);
+                    emit_cset(ra, COND_LT);
+                    break;
+                case T_GT:
+                    emit_fcmp(ra, rb);
+                    emit_cset(ra, COND_GT);
+                    break;
+                case T_LTEQ:
+                    emit_fcmp(ra, rb);
+                    emit_cset(ra, COND_LE);
+                    break;
+                case T_GTEQ:
+                    emit_fcmp(ra, rb);
+                    emit_cset(ra, COND_GE);
+                    break;
+                default:
+                    erratum("operator %d non sustentatur pro typis fluitantibus", n->op);
+                }
+                reg_libera(r2);
+                break;
+            }
+
             switch (n->op) {
             /* §6.5.6.8: ptr + int — scala integrum per magnitudinem elementi */
             case T_PLUS:
@@ -376,7 +530,10 @@ static void genera_expr(nodus_t *n, int dest)
                     }
                 }
                 break;
-            case T_STAR:    emit_mul(ra, ra, rb); break;
+            case T_STAR:
+                emit_mul(ra, ra, rb);
+                break;
+
             /* §6.5.5: / et % — unsigned vel signed secundum typum */
             case T_SLASH:
                 if (est_unsigned(n->typus))
@@ -392,10 +549,19 @@ static void genera_expr(nodus_t *n, int dest)
                 emit_mul(17, 17, rb);
                 emit_sub(ra, ra, 17);
                 break;
-            case T_AMP:     emit_and(ra, ra, rb); break;
-            case T_PIPE:    emit_orr(ra, ra, rb); break;
-            case T_CARET:   emit_eor(ra, ra, rb); break;
-            case T_LTLT:    emit_lsl(ra, ra, rb); break;
+            case T_AMP:
+                emit_and(ra, ra, rb);
+                break;
+            case T_PIPE:
+                emit_orr(ra, ra, rb);
+                break;
+            case T_CARET:
+                emit_eor(ra, ra, rb);
+                break;
+            case T_LTLT:
+                emit_lsl(ra, ra, rb);
+                break;
+
             /* §6.5.7: >> logicus pro unsigned, arithmeticus pro signed */
             case T_GTGT:
                 if (est_unsigned(n->sinister->typus))
@@ -403,12 +569,15 @@ static void genera_expr(nodus_t *n, int dest)
                 else
                     emit_asr(ra, ra, rb);
                 break;
-            case T_EQEQ:   emit_cmp(ra, rb);
+            case T_EQEQ:
+                emit_cmp(ra, rb);
                 emit_cset(ra, COND_EQ);
                 break;
-            case T_BANGEQ:  emit_cmp(ra, rb);
+            case T_BANGEQ:
+                emit_cmp(ra, rb);
                 emit_cset(ra, COND_NE);
                 break;
+
             /* §6.3.1.8: usual arithmetic conversions —
              * si uterque operandus unsigned, comparatio unsigned */
             case T_LT:
@@ -458,11 +627,20 @@ static void genera_expr(nodus_t *n, int dest)
             break;
         }
 
-    case N_UNOP: {
+    case N_UNOP:
+        {
             genera_expr(n->sinister, dest);
             switch (n->op) {
-            case T_MINUS: emit_neg(r, r); break;
-            case T_TILDE: emit_mvn(r, r); break;
+            case T_MINUS:
+                /* §6.5.3.3: negatio — FNEG pro fluitantibus, NEG pro integris */
+                if (typus_est_fluat(n->typus))
+                    emit_fneg(r, r);
+                else
+                    emit_neg(r, r);
+                break;
+            case T_TILDE:
+                emit_mvn(r, r);
+                break;
             case T_BANG:
                 emit_cmpi(r, 0);
                 emit_cset(r, COND_EQ);
@@ -506,7 +684,8 @@ static void genera_expr(nodus_t *n, int dest)
             break;
         }
 
-    case N_POSTOP: {
+    case N_POSTOP:
+        {
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);
             int mag = mag_typi(n->typus);
@@ -526,7 +705,8 @@ static void genera_expr(nodus_t *n, int dest)
             break;
         }
 
-    case N_ASSIGN: {
+    case N_ASSIGN:
+        {
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);
             genera_expr(n->dexter, dest);
@@ -546,6 +726,11 @@ static void genera_expr(nodus_t *n, int dest)
                         emit_strb(17, reg_arm(r2), i);
                     }
                 }
+            } else if (typus_est_fluat(n->sinister->typus)) {
+                /* §6.5.16.1: assignatio fluitans — converte si necesse, salva per FP STR */
+                if (!typus_est_fluat(n->dexter->typus))
+                    emit_int_to_double(r, n->dexter->typus);
+                emit_fstore_to_addr(r, reg_arm(r2), n->sinister->typus);
             } else {
                 emit_store(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
             }
@@ -554,64 +739,106 @@ static void genera_expr(nodus_t *n, int dest)
         }
 
     /* §6.5.16.2: assignatio composita — E1 op= E2 ≡ E1 = E1 op E2 */
-    case N_OPASSIGN: {
+    case N_OPASSIGN:
+        {
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);
             int mag = mag_typi(n->sinister->typus);
-            /* carrica valorem currentem */
-            if (est_unsigned(n->sinister->typus))
-                emit_load_unsigned(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
-            else
-                emit_load(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
-            int r3 = reg_alloca();
-            genera_expr(n->dexter, r3);
-            int rb = reg_arm(r3);
-            switch (n->op) {
-            case T_PLUSEQ:
-                if (typus_est_index(n->sinister->typus)) {
-                    int bm = mag_typi(typus_basis_indicis(n->sinister->typus));
-                    if (bm > 1) {
-                        emit_movi(17, bm);
-                        emit_mul(rb, rb, 17);
-                    }
+            if (typus_est_fluat(n->sinister->typus)) {
+                /* §6.5.16.2, Annex F §F.3: assignatio composita fluitans */
+                emit_fload_from_addr(r, reg_arm(r2), n->sinister->typus);
+                int r3 = reg_alloca();
+                genera_expr(n->dexter, r3);
+                int rb = reg_arm(r3);
+                if (!typus_est_fluat(n->dexter->typus))
+                    emit_int_to_double(rb, n->dexter->typus);
+                switch (n->op) {
+                case T_PLUSEQ:
+                    emit_fadd(r, r, rb);
+                    break;
+                case T_MINUSEQ:
+                    emit_fsub(r, r, rb);
+                    break;
+                case T_STAREQ:
+                    emit_fmul(r, r, rb);
+                    break;
+                case T_SLASHEQ:
+                    emit_fdiv(r, r, rb);
+                    break;
                 }
-                emit_add(r, r, rb);
-                break;
-            case T_MINUSEQ:
-                if (typus_est_index(n->sinister->typus)) {
-                    int bm = mag_typi(typus_basis_indicis(n->sinister->typus));
-                    if (bm > 1) {
-                        emit_movi(17, bm);
-                        emit_mul(rb, rb, 17);
-                    }
-                }
-                emit_sub(r, r, rb);
-                break;
-            case T_STAREQ:    emit_mul(r, r, rb); break;
-            case T_SLASHEQ:   emit_sdiv(r, r, rb); break;
-            case T_PERCENTEQ: emit_sdiv(17, r, rb);
-                emit_mul(17, 17, rb);
-                emit_sub(r, r, 17);
-                break;
-            case T_AMPEQ:     emit_and(r, r, rb); break;
-            case T_PIPEEQ:    emit_orr(r, r, rb); break;
-            case T_CARETEQ:   emit_eor(r, r, rb); break;
-            case T_LTLTEQ:    emit_lsl(r, r, rb); break;
-            /* §6.5.7: >>= logicus pro unsigned, arithmeticus pro signed */
-            case T_GTGTEQ:
+                reg_libera(r3);
+                emit_fstore_to_addr(r, reg_arm(r2), n->sinister->typus);
+            } else {
+                /* carrica valorem currentem */
                 if (est_unsigned(n->sinister->typus))
-                    emit_lsr(r, r, rb);
+                    emit_load_unsigned(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
                 else
-                    emit_asr(r, r, rb);
-                break;
+                    emit_load(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
+                int r3 = reg_alloca();
+                genera_expr(n->dexter, r3);
+                int rb = reg_arm(r3);
+                switch (n->op) {
+                case T_PLUSEQ:
+                    if (typus_est_index(n->sinister->typus)) {
+                        int bm = mag_typi(typus_basis_indicis(n->sinister->typus));
+                        if (bm > 1) {
+                            emit_movi(17, bm);
+                            emit_mul(rb, rb, 17);
+                        }
+                    }
+                    emit_add(r, r, rb);
+                    break;
+                case T_MINUSEQ:
+                    if (typus_est_index(n->sinister->typus)) {
+                        int bm = mag_typi(typus_basis_indicis(n->sinister->typus));
+                        if (bm > 1) {
+                            emit_movi(17, bm);
+                            emit_mul(rb, rb, 17);
+                        }
+                    }
+                    emit_sub(r, r, rb);
+                    break;
+                case T_STAREQ:
+                    emit_mul(r, r, rb);
+                    break;
+                case T_SLASHEQ:
+                    emit_sdiv(r, r, rb);
+                    break;
+                case T_PERCENTEQ:
+                    emit_sdiv(17, r, rb);
+                    emit_mul(17, 17, rb);
+                    emit_sub(r, r, 17);
+                    break;
+                case T_AMPEQ:
+                    emit_and(r, r, rb);
+                    break;
+                case T_PIPEEQ:
+                    emit_orr(r, r, rb);
+                    break;
+                case T_CARETEQ:
+                    emit_eor(r, r, rb);
+                    break;
+                case T_LTLTEQ:
+                    emit_lsl(r, r, rb);
+                    break;
+
+                /* §6.5.7: >>= logicus pro unsigned, arithmeticus pro signed */
+                case T_GTGTEQ:
+                    if (est_unsigned(n->sinister->typus))
+                        emit_lsr(r, r, rb);
+                    else
+                        emit_asr(r, r, rb);
+                    break;
+                }
+                reg_libera(r3);
+                emit_store(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
             }
-            reg_libera(r3);
-            emit_store(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
             reg_libera(r2);
             break;
         }
 
-    case N_TERNARY: {
+    case N_TERNARY:
+        {
             int l_false = label_novus(), l_end = label_novus();
             genera_expr(n->sinister, dest);
             emit_cbz_label(r, l_false);
@@ -635,7 +862,9 @@ static void genera_expr(nodus_t *n, int dest)
             for (int i = 0; i < salvati; i++)
                 emit_str64(reg_arm(i), FP, -(cur_frame_mag - 16 - i * 8));
 
-            /* evaluare argumenta et salvare in acervo temporario */
+            /* evaluare argumenta et salvare in acervo temporario.
+             * §6.5.2.2¶6: argumenta float promota ad double (default argument promotions).
+             * Valores fluitantes salvantur per FP STR (bit-pattern IEC 60559). */
             int nargs = n->num_membrorum;
             int arg_spill_base = cur_frame_mag - 16 - 15 * 8
                 + profunditas_vocationis * 8 * 8;
@@ -643,7 +872,16 @@ static void genera_expr(nodus_t *n, int dest)
             for (int i = 0; i < nargs; i++) {
                 reg_vertex = 0;
                 genera_expr(n->membra[i], 0);
-                emit_str64(0, FP, -(arg_spill_base + i * 8));
+                if (typus_est_fluat(n->membra[i]->typus)) {
+                    /* §6.5.2.2¶6: salva bit-pattern duplicis (IEC 60559) per FP STR.
+                     * Computa adresse quia FP STR non tractat offsets negativos. */
+                    int off = arg_spill_base + i * 8;
+                    emit_movi(17, off);
+                    emit_sub(17, FP, 17);
+                    emit_fstr64(0, 17, 0);
+                } else {
+                    emit_str64(0, FP, -(arg_spill_base + i * 8));
+                }
             }
 
             /* ABI Apple ARM64: argumenta variadica in acervo, non in registris.
@@ -663,12 +901,35 @@ static void genera_expr(nodus_t *n, int dest)
             if (num_nominati > nargs)
                 num_nominati = nargs;
 
-            /* nominati in registris x0-x7 */
-            int regs_usati = num_nominati < 8 ? num_nominati : 8;
-            for (int i = 0; i < regs_usati; i++)
-                emit_ldr64(i, FP, -(arg_spill_base + i * 8));
+            /* determinare typos parametrorum nominatorum */
+            int num_fp_regs = 0;  /* d-registra usata */
+            int num_gp_regs = 0;  /* x-registra usata */
 
-            /* si variadica: reliqua argumenta in acervo */
+            /* §6.5.2.2: nominati in registris x0-x7 (integri) vel d0-d7 (fluitantes) */
+            for (int i = 0; i < num_nominati && i < nargs; i++) {
+                typus_t *pt = NULL;
+                if (func_typ && i < func_typ->num_parametrorum)
+                    pt = func_typ->parametri[i];
+                if (!pt)
+                    pt = n->membra[i]->typus;
+                if (typus_est_fluat(pt)) {
+                    if (num_fp_regs < 8) {
+                        int off = arg_spill_base + i * 8;
+                        emit_movi(17, off);
+                        emit_sub(17, FP, 17);
+                        emit_fldr64(num_fp_regs, 17, 0);
+                    }
+                    num_fp_regs++;
+                } else {
+                    if (num_gp_regs < 8)
+                        emit_ldr64(num_gp_regs, FP, -(arg_spill_base + i * 8));
+                    num_gp_regs++;
+                }
+            }
+
+            /* si variadica: reliqua argumenta in acervo.
+             * §6.5.2.2¶6: float → double (default argument promotions).
+             * Omnia variadica per integer LDR/STR (bit-patterns). */
             int acervus_args = 0;
             if (est_variadica && nargs > num_nominati) {
                 acervus_args    = nargs - num_nominati;
@@ -679,9 +940,24 @@ static void genera_expr(nodus_t *n, int dest)
                     emit_str64(17, SP, i * 8);
                 }
             } else if (!est_variadica) {
-                /* non variadica: omnia in registris */
-                for (int i = regs_usati; i < nargs && i < 8; i++)
-                    emit_ldr64(i, FP, -(arg_spill_base + i * 8));
+                /* non variadica: superflua argumenta in registris vel acervo */
+                for (int i = num_nominati; i < nargs; i++) {
+                    typus_t *pt = n->membra[i]->typus;
+                    if (typus_est_fluat(pt)) {
+                        if (num_fp_regs < 8) {
+                            int off = arg_spill_base + i * 8;
+                            emit_movi(17, off);
+                            emit_sub(17, FP, 17);
+                            emit_fldr64(num_fp_regs, 17, 0);
+                            num_fp_regs++;
+                        }
+                    } else {
+                        if (num_gp_regs < 8) {
+                            emit_ldr64(num_gp_regs, FP, -(arg_spill_base + i * 8));
+                            num_gp_regs++;
+                        }
+                    }
+                }
                 /* superflua in acervo */
                 if (nargs > 8) {
                     int extra     = nargs - 8;
@@ -736,9 +1012,22 @@ static void genera_expr(nodus_t *n, int dest)
                 emit_addi(SP, SP, acervus_mag);
             }
 
-            /* resultatum in x0 — move ad dest primo */
-            if (r != 0)
-                emit_mov(r, 0);
+            /* resultatum: x0 pro integris, d0 pro fluitantibus */
+            {
+                typus_t *ret_typ = NULL;
+                if (func_typ)
+                    ret_typ = func_typ->reditus;
+                if (typus_est_fluat(ret_typ)) {
+                    /* d0 → d(dest) */
+                    if (r != 0) {
+                        /* FMOV Dd, D0 — codificatio: 0x1E604000 | (src << 5) | dest */
+                        emit32(0x1E604000 | (0 << 5) | r);
+                    }
+                } else {
+                    if (r != 0)
+                        emit_mov(r, 0);
+                }
+            }
 
             /* restitue registra — praetermitte dest ne resultatum deleatur */
             reg_vertex = salvati;
@@ -795,28 +1084,71 @@ static void genera_expr(nodus_t *n, int dest)
 
     case N_CAST:
         genera_expr(n->sinister, dest);
-        /* truncatio vel extensio */
         if (n->typus_decl) {
-            int tm = mag_typi(n->typus_decl);
-            int sm = n->sinister->typus ? mag_typi(n->sinister->typus) : 8;
-            if (tm < sm) {
-                switch (tm) {
-                case 1: if (est_unsigned(n->typus_decl))
-                        emit_uxtb(r, r);
-                    else
-                        emit_sxtb(r, r);
-                    break;
-                case 2: if (est_unsigned(n->typus_decl))
-                        emit_uxth(r, r);
-                    else
-                        emit_sxth(r, r);
-                    break;
-                case 4: if (!est_unsigned(n->typus_decl))
-                        emit_sxtw(r, r);
-                    break;
+            int dest_fluat = typus_est_fluat(n->typus_decl);
+            int src_fluat  = typus_est_fluat(n->sinister->typus);
+            if (dest_fluat && !src_fluat) {
+                /* §6.3.1.4¶2: integer → fluitans */
+                emit_int_to_double(r, n->sinister->typus);
+                if (n->typus_decl->genus == TY_FLOAT)
+                    emit_fcvt_sd(r, r);  /* §6.3.1.5: demove ad float */
+            } else if (!dest_fluat && src_fluat) {
+                /* §6.3.1.4¶1: fluitans → integer (truncatio) */
+                emit_double_to_int(r);
+                /* truncatio ad minorem typum integrum si necesse */
+                int tm = mag_typi(n->typus_decl);
+                if (tm < 8) {
+                    switch (tm) {
+                    case 1:
+                        if (est_unsigned(n->typus_decl))
+                            emit_uxtb(r, r);
+                        else
+                            emit_sxtb(r, r);
+                        break;
+                    case 2:
+                        if (est_unsigned(n->typus_decl))
+                            emit_uxth(r, r);
+                        else
+                            emit_sxth(r, r);
+                        break;
+                    case 4:
+                        if (!est_unsigned(n->typus_decl))
+                            emit_sxtw(r, r);
+                        break;
+                    }
                 }
-            } else if (tm > sm && sm == 4 && !est_unsigned(n->sinister->typus)) {
-                emit_sxtw(r, r);
+            } else if (dest_fluat && src_fluat) {
+                /* §6.3.1.5: inter typos fluitantes */
+                if (n->typus_decl->genus == TY_FLOAT && n->sinister->typus->genus == TY_DOUBLE)
+                    emit_fcvt_sd(r, r);
+                else if (n->typus_decl->genus == TY_DOUBLE && n->sinister->typus->genus == TY_FLOAT)
+                    emit_fcvt_ds(r, r);
+            } else {
+                /* truncatio vel extensio integra */
+                int tm = mag_typi(n->typus_decl);
+                int sm = n->sinister->typus ? mag_typi(n->sinister->typus) : 8;
+                if (tm < sm) {
+                    switch (tm) {
+                    case 1:
+                        if (est_unsigned(n->typus_decl))
+                            emit_uxtb(r, r);
+                        else
+                            emit_sxtb(r, r);
+                        break;
+                    case 2:
+                        if (est_unsigned(n->typus_decl))
+                            emit_uxth(r, r);
+                        else
+                            emit_sxth(r, r);
+                        break;
+                    case 4:
+                        if (!est_unsigned(n->typus_decl))
+                            emit_sxtw(r, r);
+                        break;
+                    }
+                } else if (tm > sm && sm == 4 && !est_unsigned(n->sinister->typus)) {
+                    emit_sxtw(r, r);
+                }
             }
         }
         break;
@@ -833,7 +1165,8 @@ static void genera_expr(nodus_t *n, int dest)
         break;
 
     /* va_start(ap, ultimum): ap = FP + 16 (argumenta variadica in acervo vocantis) */
-    case N_VA_START: {
+    case N_VA_START:
+        {
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);  /* &ap */
             emit_addi(r, FP, 16);          /* r = FP + 16 */
@@ -843,7 +1176,8 @@ static void genera_expr(nodus_t *n, int dest)
         }
 
     /* va_arg(ap, typus): reddit *(typus*)ap, deinde ap += 8 */
-    case N_VA_ARG: {
+    case N_VA_ARG:
+        {
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);      /* r2 = &ap */
             emit_ldr64(r, reg_arm(r2), 0);     /* r = ap */
@@ -882,7 +1216,8 @@ static void genera_sententia(nodus_t *n)
         return;
 
     switch (n->genus) {
-    case N_NOP: break;
+    case N_NOP:
+        break;
 
     case N_BLOCK:
         for (int i = 0; i < n->num_membrorum; i++)
@@ -949,18 +1284,9 @@ static void genera_sententia(nodus_t *n)
                     int elem_mag = typus_magnitudo(elem_typus);
                     if (elem_mag < 1)
                         elem_mag = 4;
-                    /* primo imple totam tabulam cum zeris */
                     int tot_mag = (s->typus && s->typus->genus == TY_ARRAY) ?
                         s->typus->magnitudo : mag_typi(s->typus);
-                    if (tot_mag > 0) {
-                        emit_movi(0, 0);
-                        for (int z = 0; z < tot_mag; z += 8) {
-                            int zo = off_basis + z;
-                            emit_movi(17, -zo);
-                            emit_sub(17, FP, 17);
-                            emit_str64(0, 17, 0);
-                        }
-                    }
+                    emit_imple_zeris(off_basis, tot_mag);
                     /* scribe singula elementa */
                     for (int i = 0; i < n->num_membrorum; i++) {
                         reg_vertex = 0;
@@ -985,13 +1311,7 @@ static void genera_sententia(nodus_t *n)
                     int off     = s->offset;
                     typus_t *st = n->sinister->typus;
                     int tot_mag = st->magnitudo > 0 ? st->magnitudo : mag_typi(st);
-                    /* primo imple cum zeris */
-                    emit_movi(0, 0);
-                    for (int z = 0; z < tot_mag; z += 8) {
-                        emit_movi(17, -(off + z));
-                        emit_sub(17, FP, 17);
-                        emit_str64(0, 17, 0);
-                    }
+                    emit_imple_zeris(off, tot_mag);
                     /* scribe singula elementa */
                     if (st->genus == TY_STRUCT && st->membra) {
                         for (int i = 0; i < n->sinister->num_membrorum && i < st->num_membrorum; i++) {
@@ -1032,13 +1352,7 @@ static void genera_sententia(nodus_t *n)
                 {
                     int off     = s->offset;
                     int arr_mag = s->typus->magnitudo;
-                    /* primo imple cum zeris */
-                    emit_movi(0, 0);
-                    for (int z = 0; z < arr_mag; z += 8) {
-                        emit_movi(17, -(off + z));
-                        emit_sub(17, FP, 17);
-                        emit_str64(0, 17, 0);
-                    }
+                    emit_imple_zeris(off, arr_mag);
                     /* deinde copia characteres chordae */
                     const char *str = n->sinister->chorda;
                     int slen        = n->sinister->lon_chordae;
@@ -1074,6 +1388,13 @@ static void genera_sententia(nodus_t *n)
                                 emit_strb(16, 17, i);
                             }
                         }
+                    } else if (typus_est_fluat(s->typus)) {
+                    /* §6.7.8, §6.3.1.4¶2: initiale fluitans — converte integer si necesse */
+                        if (!typus_est_fluat(n->sinister->typus))
+                            emit_int_to_double(0, n->sinister->typus);
+                        emit_movi(17, -off);
+                        emit_sub(17, FP, 17);
+                        emit_fstore_to_addr(0, 17, s->typus);
                     } else {
                         emit_movi(17, -off);
                         emit_sub(17, FP, 17);
@@ -1271,13 +1592,15 @@ static void genera_sententia(nodus_t *n)
             emit_b_label(continue_labels[break_vertex - 1]);
         break;
 
-    case N_GOTO: {
+    case N_GOTO:
+        {
             int lab = goto_label_quaere_vel_crea(n->nomen);
             emit_b_label(lab);
         }
         break;
 
-    case N_LABEL: {
+    case N_LABEL:
+        {
             int lab = goto_label_quaere_vel_crea(n->nomen);
             label_pone(lab);
             if (n->sinister)

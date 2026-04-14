@@ -46,7 +46,7 @@ enum {
     T_LPAREN, T_RPAREN, T_LBRACKET, T_RBRACKET, T_LBRACE, T_RBRACE,
     T_ELLIPSIS, T_HASH,
     /* litterae et nomina */
-    T_NUM, T_STR, T_CHARLIT, T_IDENT,
+    T_NUM, T_NUM_FLUAT, T_STR, T_CHARLIT, T_IDENT,
     T_NUM_SIGNORUM
 };
 
@@ -57,6 +57,7 @@ enum {
 typedef struct {
     int genus;
     long valor;             /* pro T_NUM, T_CHARLIT */
+    double valor_f;         /* pro T_NUM_FLUAT — §6.4.4.2 */
     char chorda[MAX_CHORDA]; /* pro T_STR, T_IDENT */
     int lon_chordae;        /* longitudo chordae pro T_STR */
     int linea;
@@ -115,7 +116,7 @@ struct typus {
  * ================================================================ */
 
 enum {
-    N_NUM, N_STR, N_CHARLIT, N_IDENT,
+    N_NUM, N_NUM_FLUAT, N_STR, N_CHARLIT, N_IDENT,
     N_BINOP, N_UNOP, N_POSTOP,
     N_ASSIGN, N_OPASSIGN,  /* = et +=, -=, etc. */
     N_TERNARY, N_COMMA_EXPR,
@@ -143,6 +144,7 @@ struct nodus {
     int linea;
     int op;                 /* operator (T_PLUS, etc.) */
     long valor;             /* valor numericus */
+    double valor_f;         /* valor fluitans — §6.4.4.2 */
     char *nomen;            /* nomen identificatoris */
     char *chorda;           /* chorda litteralis */
     int lon_chordae;        /* longitudo chordae */

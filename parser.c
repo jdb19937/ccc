@@ -7,6 +7,7 @@
 
 #include "ccc.h"
 #include "parser.h"
+#include "fluat.h"
 
 /* ================================================================
  * allocatores
@@ -158,7 +159,8 @@ int typus_est_index(typus_t *t)
 
 int typus_est_arithmeticus(typus_t *t)
 {
-    return typus_est_integer(t);
+    /* §6.2.5¶18: integer et real floating = typi arithmetici */
+    return typus_est_integer(t) || typus_est_fluat(t);
 }
 
 typus_t *typus_basis_indicis(typus_t *t)
@@ -339,13 +341,11 @@ static typus_t *parse_specifiers(
             lex_proximum();
             continue;
         case T_FLOAT:    lex_proximum();
-            t = ty_int;
+            t = ty_float;   /* §6.7.2: float — Annex F §F.2 */
             continue;
-            /* fictus */
         case T_DOUBLE:   lex_proximum();
-            t = ty_long;
+            t = ty_double;  /* §6.7.2: double — Annex F §F.2 */
             continue;
-            /* fictus */
         case T_STRUCT:
         case T_UNION:
             t = parse_struct_vel_union();
@@ -791,6 +791,14 @@ static nodus_t *parse_expr_primaria(void)
         lex_proximum();
         return n;
 
+    /* §6.4.4.2: constans fluitans — sine suffixo typus est double */
+    case T_NUM_FLUAT:
+        n          = nodus_novus(N_NUM_FLUAT);
+        n->valor_f = sig.valor_f;
+        n->typus   = ty_double;
+        lex_proximum();
+        return n;
+
     case T_CHARLIT:
         n        = nodus_novus(N_NUM);
         n->valor = sig.valor;
@@ -1176,7 +1184,7 @@ static nodus_t *parse_expr_binaria(int min_prec)
         n->sinister = sinister;
         n->dexter   = dexter;
 
-        /* determinatio typi */
+        /* determinatio typi — §6.3.1.8: conversiones arithmeticae usitae */
         if (typus_est_index(sinister->typus) || typus_est_index(dexter->typus)) {
             if (typus_est_index(sinister->typus))
                 n->typus = sinister->typus;
@@ -1188,6 +1196,9 @@ static nodus_t *parse_expr_binaria(int min_prec)
                 op == T_LTEQ || op == T_GTEQ || op == T_AMPAMP || op == T_PIPEPIPE
             )
                 n->typus = ty_int;
+        } else if (typus_est_fluat(sinister->typus) || typus_est_fluat(dexter->typus)) {
+            /* §6.3.1.8: si unus fluitans → typus communis fluitans */
+            n->typus = typus_communis_fluat(sinister->typus, dexter->typus);
         } else if (sinister->typus && sinister->typus->magnitudo >= 8)
             n->typus = sinister->typus;
         else if (dexter->typus && dexter->typus->magnitudo >= 8)
@@ -1815,6 +1826,7 @@ void parse_initia(void)
     cur_ambitus    = NULL;
 
     initia_typos();
+    fluat_initia();  /* §6.2.5¶10: ty_float, ty_double */
     ambitus_intra(); /* ambitus globalis */
 
     /* lege primum signum */

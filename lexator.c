@@ -730,12 +730,19 @@ inicio:
         goto inicio;
     }
 
-    /* numerus */
+    /* numerus — §6.4.4.1 (integer), §6.4.4.2 (fluitans) */
     if (c >= '0' && c <= '9') {
+        /* collige characteres numeri in alveo pro strtod si fluitans */
+        char num_buf[256];
+        int num_len      = 0;
+        int est_fluitans = 0;
+
         long val = 0;
+        num_buf[num_len++] = (char)c;
         if (c == '0') {
             c = lege_c();
             if (c == 'x' || c == 'X') {
+                num_buf[num_len++] = (char)c;
                 while ((c = lege_c()) != -1) {
                     if (c >= '0' && c <= '9')
                         val = val * 16 + (c - '0');
@@ -745,50 +752,74 @@ inicio:
                         val = val * 16 + (c - 'A' + 10);
                     else
                         break;
+                    num_buf[num_len++] = (char)c;
                 }
-            } else if (c >= '0' && c <= '7') {
+            } else if (c >= '0' && c <= '7' && c != '.') {
                 val = c - '0';
-                while ((c = lege_c()) != -1 && c >= '0' && c <= '7')
+                num_buf[num_len++] = (char)c;
+                while ((c = lege_c()) != -1 && c >= '0' && c <= '7') {
                     val = val * 8 + (c - '0');
+                    num_buf[num_len++] = (char)c;
+                }
             } else {
-                /* erat solum 0 */
+                /* erat solum 0 (vel 0. sequitur) */
             }
         } else {
             val = c - '0';
-            while ((c = lege_c()) != -1 && c >= '0' && c <= '9')
-                val = val * 10 + (c - '0');
-        }
-        /* tractatio numeri cum puncto (double/float → fictus ut long) */
-        if (c == '.') {
-            /* pars fractionalis — quia double est fictus, serva ut long */
-            /* sed mantissa truncatur ad integrum partiale */
-            long frac_part = 0;
-            long frac_div  = 1;
             while ((c = lege_c()) != -1 && c >= '0' && c <= '9') {
-                frac_part = frac_part * 10 + (c - '0');
-                frac_div *= 10;
+                val = val * 10 + (c - '0');
+                num_buf[num_len++] = (char)c;
             }
-            /* pro computatione ficta: valor = pars integra */
-            /* frac_part ignoratur (nulla arithmetica FP) */
-            (void)frac_part;
-            (void)frac_div;
         }
-        /* praetermitte suffixum (U, L, UL, ULL, f, F, etc.) */
-        while (
-            c == 'u' || c == 'U' || c == 'l' || c == 'L' ||
-            c == 'f' || c == 'F'
-        )
-            c = lege_c();
-        /* praetermitte exponentem (e, E) */
+        /* §6.4.4.2: punctum decimale → constans fluitans */
+        if (c == '.') {
+            est_fluitans       = 1;
+            num_buf[num_len++] = '.';
+            while ((c = lege_c()) != -1 && c >= '0' && c <= '9')
+                num_buf[num_len++] = (char)c;
+        }
+        /* §6.4.4.2: exponent e/E → constans fluitans */
         if (c == 'e' || c == 'E') {
+            est_fluitans = 1;
+            num_buf[num_len++] = (char)c;
             c = lege_c();
-            if (c == '+' || c == '-')
+            if (c == '+' || c == '-') {
+                num_buf[num_len++] = (char)c;
                 c = lege_c();
-            while (c >= '0' && c <= '9')
+            }
+            while (c >= '0' && c <= '9') {
+                num_buf[num_len++] = (char)c;
                 c = lege_c();
+            }
+        }
+        /* suffixum — §6.4.4.1: U, L pro integris; §6.4.4.2: f, F, l, L pro fluitantibus */
+        if (est_fluitans) {
+            if (c == 'f' || c == 'F') {
+                c = lege_c(); /* suffixum float — consumitur */
+            } else if (c == 'l' || c == 'L') {
+                c = lege_c(); /* suffixum long double — tractatur ut double */
+            }
+        } else {
+            while (
+                c == 'u' || c == 'U' || c == 'l' || c == 'L' ||
+                c == 'f' || c == 'F'
+            ) {
+                if (c == 'f' || c == 'F')
+                    est_fluitans = 1;
+                c = lege_c();
+            }
         }
         if (c != -1)
             repone_c();
+
+        if (est_fluitans) {
+            /* §6.4.4.2: converte per strtod */
+            num_buf[num_len] = '\0';
+            sig.genus        = T_NUM_FLUAT;
+            sig.valor_f      = strtod(num_buf, NULL);
+            sig.valor        = 0;
+            return T_NUM_FLUAT;
+        }
         sig.genus = T_NUM;
         sig.valor = val;
         return T_NUM;
