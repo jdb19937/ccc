@@ -1,0 +1,30 @@
+# Faceplica — aedificatio programmatum POSIX Latinorum
+#
+# Usus:
+#   make            — aedifica omnia
+#   make purga      — dele omnia aedificata
+#   make proba      — curre omnia programmata
+
+CC      ?= cc
+CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2 -pthread
+
+PROGRAMMATA = tubulus vigil scriba gemini nuntius horologium \
+              explorator catena fistula custos memoria nexus \
+              cursor speculator ambulator senator
+
+omnia: $(PROGRAMMATA)
+
+%: %.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+proba: $(PROGRAMMATA)
+	@for prog in $(PROGRAMMATA); do \
+		echo "=== $$prog ==="; \
+		./$$prog; \
+		echo; \
+	done
+
+purga:
+	rm -f $(PROGRAMMATA)
+
+.PHONY: omnia proba purga
