@@ -145,7 +145,11 @@ static const char caput_internum[] =
     "};\n"
     "int ioctl(int, unsigned long, ...);\n"
     "\n"
-    "/* stdarg — non plene supportatum, sed declarationes */\n"
+    "/* stdarg */\n"
+    "typedef char *va_list;\n"
+    "int vfprintf(void *, const char *, va_list);\n"
+    "int vsnprintf(char *, unsigned long, const char *, va_list);\n"
+    "int vsprintf(char *, const char *, va_list);\n"
 ;
 
 /* capita POSIX — separata ne chorda nimis longa sit */

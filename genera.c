@@ -826,6 +826,38 @@ static void genera_expr(nodus_t *n, int dest)
         );
         break;
 
+    /* va_start(ap, ultimum): ap = FP + 16 (argumenta variadica in acervo vocantis) */
+    case N_VA_START: {
+            int r2 = reg_alloca();
+            genera_lval(n->sinister, r2);  /* &ap */
+            emit_addi(r, FP, 16);          /* r = FP + 16 */
+            emit_str64(r, reg_arm(r2), 0); /* ap = r */
+            reg_libera(r2);
+            break;
+        }
+
+    /* va_arg(ap, typus): reddit *(typus*)ap, deinde ap += 8 */
+    case N_VA_ARG: {
+            int r2 = reg_alloca();
+            genera_lval(n->sinister, r2);      /* r2 = &ap */
+            emit_ldr64(r, reg_arm(r2), 0);     /* r = ap */
+            int r3 = reg_alloca();
+            emit_addi(reg_arm(r3), r, 8);      /* r3 = ap + 8 */
+            emit_str64(reg_arm(r3), reg_arm(r2), 0); /* ap = ap + 8 */
+            reg_libera(r3);
+            reg_libera(r2);
+            /* carrica valorem ex *ap */
+            if (n->typus_decl)
+                emit_load_from_addr(r, n->typus_decl);
+            else
+                emit_ldr64(r, r, 0);
+            break;
+        }
+
+    /* va_end(ap): nihil agit */
+    case N_VA_END:
+        break;
+
     case N_NOP:
         break;
 
@@ -890,8 +922,8 @@ static void genera_sententia(nodus_t *n)
                 reg_vertex = 0;
                 break;
             }
-            if (s && (s->est_globalis || s->est_staticus)) {
-            /* globalis/statica */
+            if (s && (s->est_globalis || s->est_staticus) && !s->est_externus) {
+            /* globalis/statica (non extern) */
                 if (s->globalis_index < 0) {
                     long val = 0;
                     if (n->sinister && n->sinister->genus == N_NUM)
@@ -1303,9 +1335,14 @@ static void genera_functio(nodus_t *n)
         }
     }
 
-    /* salva parametros in acervo */
-    for (int i = 0; i < nparams && i < 8; i++) {
-        emit_str64(i, FP, -(16 + (i + 1) * 8));
+    /* salva parametros in acervo.
+     * si functio variadica, salva omnes x0-x7 ut va_start operetur. */
+    {
+        int salva_n = nparams < 8 ? nparams : 8;
+        if (cur_func_typus && cur_func_typus->est_variadicus && salva_n < 8)
+            salva_n = 8;
+        for (int i = 0; i < salva_n; i++)
+            emit_str64(i, FP, -(16 + (i + 1) * 8));
     }
 
     /* genera corpus */
@@ -1343,10 +1380,10 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
     /* genera omnes functiones */
     int main_offset = -1;
 
-    /* prima passu: collige globales */
+    /* prima passu: collige globales (non extern — externae per GOT resolventur) */
     for (int i = 0; i < radix->num_membrorum; i++) {
         nodus_t *n = radix->membra[i];
-        if (n->genus == N_VAR_DECL) {
+        if (n->genus == N_VAR_DECL && !n->est_externus) {
             symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
             long val      = 0;
             if (n->sinister && n->sinister->genus == N_NUM)

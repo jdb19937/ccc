@@ -21,6 +21,9 @@ typedef struct {
     int valor;              /* offset in sectione */
     int obiectum;           /* index obiecti */
     int valor_globalis;     /* offset in codice finali */
+    int est_communis;       /* symbolum commune (variabilis globalis) */
+    int magnitudo_communis; /* magnitudo symboli communis */
+    int globalis_index;     /* index in tabula globalium (-1 si non) */
 } liga_sym_t;
 
 /* relocatio dilata — servatur pro passu secundo */
@@ -57,8 +60,11 @@ static int liga_sym_adde(const char *nomen)
         erratum("nimis multa symbola in ligatione");
     id = num_liga_sym++;
     strncpy(liga_syms[id].nomen, nomen, 259);
-    liga_syms[id].definita       = 0;
-    liga_syms[id].valor_globalis = -1;
+    liga_syms[id].definita         = 0;
+    liga_syms[id].valor_globalis   = -1;
+    liga_syms[id].est_communis     = 0;
+    liga_syms[id].magnitudo_communis = 0;
+    liga_syms[id].globalis_index   = -1;
     return id;
 }
 
@@ -186,6 +192,14 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                 liga_syms[id].valor          = (int)n_value;
                 liga_syms[id].obiectum       = oi;
                 liga_syms[id].valor_globalis = codex_bases[oi] + (int)n_value;
+            } else if ((n_type & 0x0E) == 0 && (n_type & N_EXT) && n_value > 0) {
+                /* symbolum commune — variabilis globalis */
+                if (
+                    !liga_syms[id].est_communis ||
+                    (int)n_value > liga_syms[id].magnitudo_communis
+                )
+                    liga_syms[id].magnitudo_communis = (int)n_value;
+                liga_syms[id].est_communis = 1;
             }
         }
 
@@ -236,6 +250,29 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
             num_chordarum++;
             pos += slon + 1;
         }
+    }
+
+    /* registra symbola communia (globales) */
+    for (int i = 0; i < num_liga_sym; i++) {
+        if (!liga_syms[i].est_communis)
+            continue;
+        /* nomen cum _ praefixo — remove praefixum */
+        const char *nom = liga_syms[i].nomen;
+        if (nom[0] == '_')
+            nom++;
+        int mag = liga_syms[i].magnitudo_communis;
+        if (num_globalium >= MAX_GLOBALES)
+            erratum("nimis multae globales in ligatione");
+        int gid = num_globalium++;
+        strncpy(globales[gid].nomen, nom, 255);
+        globales[gid].typus       = NULL;
+        globales[gid].magnitudo   = mag;
+        globales[gid].colineatio  = mag >= 8 ? 8 : (mag >= 4 ? 4 : 1);
+        globales[gid].est_bss     = 1;
+        globales[gid].est_staticus     = 0;
+        globales[gid].valor_initialis  = 0;
+        globales[gid].habet_valorem    = 0;
+        liga_syms[i].globalis_index = gid;
     }
 
     /* === passus secundus: processa relocationes === */
@@ -311,7 +348,29 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
         /* relocatio externa */
         int sid = liga_sym_quaere(r->sym_nomen);
 
-        if (sid >= 0 && liga_syms[sid].definita) {
+        if (sid >= 0 && liga_syms[sid].est_communis) {
+            /* symbolum commune — variabilis globalis → fixup ad BSS */
+            int gid = liga_syms[sid].globalis_index;
+            if (gid >= 0) {
+                if (r->r_type == 3)       /* PAGE21 */
+                    fixup_adde(FIX_ADRP_DATA, inst_off, gid, 0);
+                else if (r->r_type == 4)  /* PAGEOFF12 */
+                    fixup_adde(FIX_ADD_LO12_DATA, inst_off, gid, 0);
+                else if (r->r_type == 5)  /* GOT_LOAD_PAGE21 → ADRP ad BSS */
+                    fixup_adde(FIX_ADRP_DATA, inst_off, gid, 0);
+                else if (r->r_type == 6) {
+                    /* GOT_LOAD_PAGEOFF12 → converte LDR in ADD */
+                    uint32_t inst;
+                    memcpy(&inst, codex + inst_off, 4);
+                    int rd = inst & 0x1F;
+                    int rn = (inst >> 5) & 0x1F;
+                    /* rescribe ut ADD Xd, Xn, #0 (fixup implebit lo12) */
+                    inst = 0x91000000 | (rn << 5) | rd;
+                    memcpy(codex + inst_off, &inst, 4);
+                    fixup_adde(FIX_ADD_LO12_DATA, inst_off, gid, 0);
+                }
+            }
+        } else if (sid >= 0 && liga_syms[sid].definita) {
             int target = liga_syms[sid].valor_globalis;
 
             if (r->r_type == 2) {
@@ -319,6 +378,15 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                 int delta     = (target - inst_off) / 4;
                 uint32_t inst = 0x94000000 | (delta & 0x3FFFFFF);
                 memcpy(codex + inst_off, &inst, 4);
+            } else if (r->r_type == 3) {
+                /* PAGE21 ad symbolum definitum in codice (raro) */
+                /* NOP — adresse resolvitur per BL */
+                uint32_t nop = 0xD503201F;
+                memcpy(codex + inst_off, &nop, 4);
+            } else if (r->r_type == 4) {
+                /* PAGEOFF12 ad symbolum definitum in codice (raro) */
+                uint32_t nop = 0xD503201F;
+                memcpy(codex + inst_off, &nop, 4);
             } else if (r->r_type == 5 || r->r_type == 6) {
                 /* GOT_LOAD_PAGE21/PAGEOFF12 ad symbolum definitum:
                  * ADRP → NOP, LDR → NOP, BLR → BL */

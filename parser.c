@@ -814,6 +814,43 @@ static nodus_t *parse_expr_primaria(void)
             nomen[255] = '\0';
             lex_proximum();
 
+            /* va_start(ap, ultimum) */
+            if (strcmp(nomen, "va_start") == 0) {
+                expecta(T_LPAREN);
+                n = nodus_novus(N_VA_START);
+                n->sinister = parse_expr_assign();
+                expecta(T_COMMA);
+                parse_expr_assign();  /* ultimum — praetermittitur */
+                expecta(T_RPAREN);
+                n->typus = ty_void;
+                return n;
+            }
+
+            /* va_end(ap) */
+            if (strcmp(nomen, "va_end") == 0) {
+                expecta(T_LPAREN);
+                n = nodus_novus(N_VA_END);
+                n->sinister = parse_expr_assign();
+                expecta(T_RPAREN);
+                n->typus = ty_void;
+                return n;
+            }
+
+            /* va_arg(ap, typus) */
+            if (strcmp(nomen, "va_arg") == 0) {
+                expecta(T_LPAREN);
+                n = nodus_novus(N_VA_ARG);
+                n->sinister = parse_expr_assign();
+                expecta(T_COMMA);
+                int s_stat  = 0, s_ext = 0;
+                typus_t *tb = parse_specifiers(&s_stat, &s_ext, NULL);
+                char nom[256] = {0};
+                n->typus_decl = parse_declarator(tb, nom, 256);
+                n->typus      = n->typus_decl;
+                expecta(T_RPAREN);
+                return n;
+            }
+
             n        = nodus_novus(N_IDENT);
             n->nomen = strdup(nomen);
 

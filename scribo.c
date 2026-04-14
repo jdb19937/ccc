@@ -774,6 +774,32 @@ void scribo_obiectum(const char *plica_exitus)
         }
     }
 
+    /* globales → symbola communia (N_UNDF | N_EXT, valor = magnitudo) */
+    int glob_ad_sym[MAX_GLOBALES];
+    for (int i = 0; i < num_globalium; i++) {
+        glob_ad_sym[i] = -1;
+        char nn[260];
+        if (globales[i].est_staticus)
+            snprintf(nn, 260, "_L_%s.%d", globales[i].nomen, i);
+        else
+            snprintf(nn, 260, "_%s", globales[i].nomen);
+        /* proba si iam addita */
+        int iam = 0;
+        for (int j = 0; j < nsyms; j++)
+            if (strcmp(syms[j].nomen, nn) == 0) {
+            iam = 1;
+            glob_ad_sym[i] = j;
+            break;
+        }
+        if (!iam) {
+            glob_ad_sym[i] = nsyms;
+            strncpy(syms[nsyms].nomen, nn, 259);
+            syms[nsyms].sectio = 0; /* N_UNDF = communis */
+            syms[nsyms].valor  = globales[i].magnitudo > 0 ? globales[i].magnitudo : 8;
+            nsyms++;
+        }
+    }
+
     int i_undef = nsyms; /* index ubi externae incipiunt */
 
     /* symbola GOT non definita → undef */
@@ -913,10 +939,33 @@ void scribo_obiectum(const char *plica_exitus)
                 nrelocs++;
                 break;
             }
-        case FIX_ADRP_DATA: case FIX_ADD_LO12_DATA:
-        case FIX_LDR_LO12_DATA: case FIX_STR_LO12_DATA:
-            /* globales in BSS — resolventur a ligatore */
-            break;
+        case FIX_ADRP_DATA: {
+                int gid     = f->target;
+                int sym_idx = (gid >= 0 && gid < num_globalium) ? glob_ad_sym[gid] : -1;
+                if (sym_idx >= 0) {
+                    relocs[nrelocs].r_address = f->offset;
+                    relocs[nrelocs].r_info = (sym_idx & 0xFFFFFF) |
+                        (1 << 24) | (2 << 25) | (1 << 27) |
+                        ((uint32_t)ARM64_RELOC_PAGE21 << 28);
+                    nrelocs++;
+                }
+                inst = 0x90000000 | (inst & 0x1F); /* ADRP Xd, #0 */
+                break;
+            }
+        case FIX_ADD_LO12_DATA:
+        case FIX_LDR_LO12_DATA:
+        case FIX_STR_LO12_DATA: {
+                int gid     = f->target;
+                int sym_idx = (gid >= 0 && gid < num_globalium) ? glob_ad_sym[gid] : -1;
+                if (sym_idx >= 0) {
+                    relocs[nrelocs].r_address = f->offset;
+                    relocs[nrelocs].r_info = (sym_idx & 0xFFFFFF) |
+                        (0 << 24) | (2 << 25) | (1 << 27) |
+                        ((uint32_t)ARM64_RELOC_PAGEOFF12 << 28);
+                    nrelocs++;
+                }
+                break;
+            }
         default:
             break;
         }

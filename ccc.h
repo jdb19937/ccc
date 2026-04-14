@@ -128,6 +128,7 @@ enum {
     N_GOTO, N_LABEL,
     N_EXPR_STMT,
     N_VAR_DECL, N_FUNC_DEF,
+    N_VA_START, N_VA_ARG, N_VA_END,
     N_NOP,
 };
 
