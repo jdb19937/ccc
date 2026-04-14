@@ -18,7 +18,7 @@ void includ_adde(const char *via);
  * includ_quaere — quaerit plicam per vias -I.
  * reddit fontem (malloc) et *longitudo, vel NULL si non inventa.
  */
-char *includ_quaere(const char *nomen, int *longitudo);
+char *includ_quaere(const char *nomen, int *longitudo, char *via_inventa, int via_mag);
 
 /* ================================================================
  * viae bibliothecarum (-L)
@@ -28,6 +28,7 @@ extern char **viae_biblio;
 extern int    num_viarum_biblio;
 
 void biblio_via_adde(const char *via);
+void res_adde(const char *via, int genus);
 
 /* ================================================================
  * bibliothecae (-l)

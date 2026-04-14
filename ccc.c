@@ -16,7 +16,6 @@
  * status globalis
  * ================================================================ */
 
-char *fons_directorium = NULL;
 
 int optio_Wall     = 0;
 int optio_Wextra   = 0;
@@ -129,6 +128,12 @@ static int est_plica_objecti(const char *via)
     return lon > 2 && via[lon-2] == '.' && via[lon-1] == 'o';
 }
 
+static int est_plica_archivi(const char *via)
+{
+    int lon = (int)strlen(via);
+    return lon > 2 && via[lon-2] == '.' && via[lon-1] == 'a';
+}
+
 int main(int argc, char *argv[])
 {
     const char *plicae[256];
@@ -186,29 +191,40 @@ int main(int argc, char *argv[])
     if (num_plicarum == 0)
         usus();
 
-    /* si omnes plicae sunt .o → liga */
+    /* si omnes plicae sunt .o vel .a → liga */
     int omnes_objecti = 1;
     for (int i = 0; i < num_plicarum; i++)
-        if (!est_plica_objecti(plicae[i]))
+        if (!est_plica_objecti(plicae[i]) && !est_plica_archivi(plicae[i]))
             omnes_objecti = 0;
 
     if (omnes_objecti && !modus_objecti) {
         if (!plica_exitus)
             plica_exitus = "a.out";
 
+        /* adde .a plicae ad biblio_res ut extrahantur */
+        for (int i = 0; i < num_plicarum; i++)
+            if (est_plica_archivi(plicae[i]))
+                res_adde(plicae[i], BIBLIO_A);
+
         /* extrahe objecta ex archivis .a */
         int num_extractorum = 0;
         char **extractae    = biblio_extrahe_objecta(&num_extractorum);
 
-        /* compone tabulam omnium obiectorum */
-        int totum = num_plicarum + num_extractorum;
+        /* compone tabulam omnium obiectorum (.o solum) */
+        int num_obj = 0;
+        for (int i = 0; i < num_plicarum; i++)
+            if (est_plica_objecti(plicae[i]))
+                num_obj++;
+        int totum = num_obj + num_extractorum;
         const char **omnes = malloc(totum * sizeof(const char *));
         if (!omnes)
             erratum("memoria exhausta");
+        int oi = 0;
         for (int i = 0; i < num_plicarum; i++)
-            omnes[i] = plicae[i];
+            if (est_plica_objecti(plicae[i]))
+                omnes[oi++] = plicae[i];
         for (int i = 0; i < num_extractorum; i++)
-            omnes[num_plicarum + i] = extractae[i];
+            omnes[oi + i] = extractae[i];
 
         liga_objecta(totum, omnes, plica_exitus);
 
@@ -243,8 +259,6 @@ int main(int argc, char *argv[])
     /* lege fontem */
     int longitudo;
     char *fons       = lege_plicam(plica_fontis, &longitudo);
-    fons_directorium = via_directoria(plica_fontis);
-
     /* initia lexatorem */
     lex_initia(plica_fontis, fons, longitudo);
 
@@ -254,6 +268,11 @@ int main(int argc, char *argv[])
 
     /* genera codicem */
     genera_initia();
+
+    /* adde .a plicae ex argumentis ad biblio_res */
+    for (int i = 1; i < num_plicarum; i++)
+        if (est_plica_archivi(plicae[i]))
+            res_adde(plicae[i], BIBLIO_A);
 
     /* si .a archiva adsunt et non -c, compila ad .o temporarium, deinde liga */
     int num_extractorum = 0;
@@ -285,6 +304,5 @@ int main(int argc, char *argv[])
     }
 
     free(fons);
-    free(fons_directorium);
     return 0;
 }

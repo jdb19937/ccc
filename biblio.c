@@ -30,8 +30,10 @@ void includ_adde(const char *via)
     viae_includ[num_viarum_includ++] = strdup(via);
 }
 
-char *includ_quaere(const char *nomen, int *longitudo)
-{
+char *includ_quaere(
+    const char *nomen, int *longitudo,
+    char *via_inventa, int via_mag
+) {
     for (int i = 0; i < num_viarum_includ; i++) {
         char via_plena[1024];
         int n = snprintf(
@@ -54,6 +56,8 @@ char *includ_quaere(const char *nomen, int *longitudo)
         fclose(fp);
         if (longitudo)
             *longitudo = (int)mag;
+        if (via_inventa)
+            snprintf(via_inventa, via_mag, "%s", via_plena);
         return data;
     }
     return NULL;
@@ -96,7 +100,7 @@ static int plica_exstat(const char *via)
     return 0;
 }
 
-static void res_adde(const char *via, int genus)
+void res_adde(const char *via, int genus)
 {
     if (num_biblio_res >= cap_res) {
         cap_res    = cap_res ? cap_res * 2 : 8;

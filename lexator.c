@@ -356,7 +356,7 @@ void lex_registra_typedef(const char *nomen)
  * ================================================================ */
 
 typedef struct {
-    const char *nomen;
+    char *nomen;
     const char *fons;
     int longitudo;
     int positus;
@@ -367,7 +367,7 @@ static plica_ctx_t acervus_plicarum[MAX_PLICAE_ACERVUS];
 static int vertex_plicarum = 0;
 
 /* contextus currens */
-static const char *cur_nomen;
+static char *cur_nomen;
 static const char *cur_fons;
 static int cur_longitudo;
 static int cur_positus;
@@ -425,11 +425,12 @@ static int lege_c(void)
             return -1;
         vertex_plicarum--;
         plica_ctx_t *p = &acervus_plicarum[vertex_plicarum];
-        cur_nomen      = p->nomen;
-        cur_fons       = p->fons;
-        cur_longitudo  = p->longitudo;
-        cur_positus    = p->positus;
-        cur_linea      = p->linea;
+        free(cur_nomen);
+        cur_nomen     = p->nomen;
+        cur_fons      = p->fons;
+        cur_longitudo = p->longitudo;
+        cur_positus   = p->positus;
+        cur_linea     = p->linea;
     }
 }
 
@@ -556,7 +557,7 @@ static void praetermitte_lineam(void)
     while ((c = lege_c()) != -1 && c != '\n') {}
 }
 
-static void pelle_plicam(const char *nomen, const char *fons, int lon)
+static void pelle_plicam(char *nomen, const char *fons, int lon)
 {
     if (vertex_plicarum >= MAX_PLICAE_ACERVUS)
         erratum("nimis multae plicae inclusae");
@@ -596,28 +597,28 @@ static int tracta_directivam(void)
             via[i] = '\0';
             praetermitte_lineam();
 
-            /* proba plicam localem */
+            /* proba plicam localem (relativa ad plicam currentem) */
+            char *cur_dir = via_directoria(cur_nomen);
             char via_plena[1024];
-            snprintf(
-                via_plena, sizeof(via_plena), "%s%s",
-                fons_directorium ? fons_directorium : "./", via
-            );
+            snprintf(via_plena, sizeof(via_plena), "%s%s", cur_dir, via);
+            free(cur_dir);
             FILE *fp_proba = fopen(via_plena, "rb");
             if (fp_proba) {
                 fclose(fp_proba);
                 int lon;
                 char *fons = lege_plicam(via_plena, &lon);
-                pelle_plicam(via, fons, lon);
+                pelle_plicam(strdup(via_plena), fons, lon);
             } else {
                 /* quaere per vias -I */
                 int lon;
-                char *fons = includ_quaere(via, &lon);
+                char via_i[1024];
+                char *fons = includ_quaere(via, &lon, via_i, sizeof(via_i));
                 if (fons)
-                    pelle_plicam(via, fons, lon);
+                    pelle_plicam(strdup(via_i), fons, lon);
                 else {
                     /* ultima spes: lege ex via locali (erratum) */
                     fons = lege_plicam(via_plena, &lon);
-                    pelle_plicam(via, fons, lon);
+                    pelle_plicam(strdup(via_plena), fons, lon);
                 }
             }
         } else if (c == '<') {
@@ -629,13 +630,14 @@ static int tracta_directivam(void)
 
             /* proba vias -I primum */
             int lon_i;
-            char *fons_i = includ_quaere(via, &lon_i);
+            char via_i[1024];
+            char *fons_i = includ_quaere(via, &lon_i, via_i, sizeof(via_i));
             if (fons_i) {
-                pelle_plicam(via, fons_i, lon_i);
+                pelle_plicam(strdup(via_i), fons_i, lon_i);
             } else {
                 /* capita systematis interna */
-                pelle_plicam(via, caput_internum_posix, (int)strlen(caput_internum_posix));
-                pelle_plicam(via, caput_internum, (int)strlen(caput_internum));
+                pelle_plicam(strdup(via), caput_internum_posix, (int)strlen(caput_internum_posix));
+                pelle_plicam(strdup(via), caput_internum, (int)strlen(caput_internum));
             }
         }
         return 1;
@@ -1409,7 +1411,7 @@ static int habet_spectantem = 0;
 
 void lex_initia(const char *nomen, const char *fons, int longitudo)
 {
-    cur_nomen     = nomen;
+    cur_nomen     = strdup(nomen);
     cur_fons      = fons;
     cur_longitudo = longitudo;
     cur_positus   = 0;

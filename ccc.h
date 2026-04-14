@@ -207,8 +207,6 @@ void erratum_ad(int linea, const char *fmt, ...);
 char *lege_plicam(const char *via, int *longitudo);
 char *via_directoria(const char *via);
 
-extern char *fons_directorium;
-
 extern int optio_Wall;
 extern int optio_Wextra;
 extern int optio_pedantic;
