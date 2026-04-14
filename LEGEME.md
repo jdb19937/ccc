@@ -56,7 +56,6 @@ generationem, `codesign -s -` automatice vocatur.
 - Solum ARM64 macOS (Apple Silicon)
 - Nullum floating-point
 - Nullae uniones
-- Nullae function pointers ut valores
 - Optimizatio minima
 
 ## Licentia

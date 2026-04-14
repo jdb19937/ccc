@@ -733,7 +733,7 @@ void scribo_obiectum(const char *plica_exitus)
 
     typedef struct {
         char nomen[260];    /* _nomen */
-        int sectio;         /* 1 = __text, 0 = undef */
+        int sectio;         /* 1 = __text, 2 = __cstring, 0 = undef */
         int valor;          /* offset in sectione */
     } sym_obj_t;
 
@@ -861,7 +861,7 @@ void scribo_obiectum(const char *plica_exitus)
                 break;
             }
         case FIX_ADRP: {
-            /* ADRP ad chorda in __cstring — addr = codex_lon + chorda offset */
+            /* ADRP ad chorda in __cstring — resolve instructionem */
                 uint64_t target_addr = codex_lon + chordae[f->target].offset;
                 uint64_t pc = f->offset;
                 int64_t page_delta = (int64_t)((target_addr & ~0xFFFULL) - (pc & ~0xFFFULL));
@@ -870,6 +870,12 @@ void scribo_obiectum(const char *plica_exitus)
                 int immlo = (int)(imm & 3);
                 int immhi = (int)((imm >> 2) & 0x7FFFF);
                 inst = 0x90000000 | (immlo << 29) | (immhi << 5) | rd;
+                /* emitte relocationem non-externam pro ligatore */
+                relocs[nrelocs].r_address = f->offset;
+                relocs[nrelocs].r_info = (2 & 0xFFFFFF) | /* sectio 2 = __cstring */
+                    (1 << 24) | (2 << 25) | (0 << 27) |   /* pcrel=1, len=2, extern=0 */
+                    ((uint32_t)ARM64_RELOC_PAGE21 << 28);
+                nrelocs++;
                 break;
             }
         case FIX_ADD_LO12: {
@@ -878,6 +884,12 @@ void scribo_obiectum(const char *plica_exitus)
                 int rn = (inst >> 5) & 0x1F;
                 int lo12 = (int)(target_addr & 0xFFF);
                 inst = 0x91000000 | (lo12 << 10) | (rn << 5) | rd;
+                /* emitte relocationem non-externam pro ligatore */
+                relocs[nrelocs].r_address = f->offset;
+                relocs[nrelocs].r_info = (2 & 0xFFFFFF) | /* sectio 2 = __cstring */
+                    (0 << 24) | (2 << 25) | (0 << 27) |   /* pcrel=0, len=2, extern=0 */
+                    ((uint32_t)ARM64_RELOC_PAGEOFF12 << 28);
+                nrelocs++;
                 break;
             }
         case FIX_ADRP_GOT: {

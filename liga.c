@@ -27,8 +27,9 @@ typedef struct {
 typedef struct {
     int  obiectum;
     int  r_addr;
-    int  r_sym;         /* index symboli in obiecto */
+    int  r_sym;         /* index symboli in obiecto (extern) vel sectio (non-extern) */
     int  r_type;
+    int  r_extern;
     char sym_nomen[260];
 } liga_reloc_t;
 
@@ -88,7 +89,9 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
     int cap_relocs       = 0;
 
     int *codex_bases = malloc(num_obj * sizeof(int));
-    if (!codex_bases)
+    int *cstr_bases  = malloc(num_obj * sizeof(int));
+    int *text_mags   = malloc(num_obj * sizeof(int));
+    if (!codex_bases || !cstr_bases || !text_mags)
         erratum("memoria exhausta");
 
     /* === passus primus: lege objecta, collige symbola et codicem === */
@@ -151,6 +154,8 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
         }
 
         codex_bases[oi] = codex_lon;
+        text_mags[oi]   = text_mag;
+        cstr_bases[oi]  = chordae_lon;
 
         if (text_mag > 0) {
             if (codex_lon + text_mag > MAX_CODEX)
@@ -169,6 +174,7 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
             int noff         = symtab_off + si * 16;
             uint32_t n_strx  = lege32(data + noff);
             uint8_t  n_type  = data[noff + 4];
+            uint8_t  n_sect  = data[noff + 5];
             uint64_t n_value = lege64(data + noff + 8);
 
             const char *nomen = (const char *)(data + strtab_off + n_strx);
@@ -176,7 +182,7 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
 
             if ((n_type & 0x0E) == N_SECT) {
                 liga_syms[id].definita       = 1;
-                liga_syms[id].sectio         = 1;
+                liga_syms[id].sectio         = n_sect;
                 liga_syms[id].valor          = (int)n_value;
                 liga_syms[id].obiectum       = oi;
                 liga_syms[id].valor_globalis = codex_bases[oi] + (int)n_value;
@@ -189,17 +195,9 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
             uint32_t r_addr = lege32(data + roff);
             uint32_t r_info = lege32(data + roff + 4);
 
-            int r_extern = (r_info >> 27) & 1;
-            if (!r_extern)
-                continue;
-
+            int r_ext  = (r_info >> 27) & 1;
             int r_sym  = r_info & 0xFFFFFF;
             int r_type = (r_info >> 28) & 0xF;
-
-            /* resolve nomen symboli */
-            int sym_noff      = symtab_off + r_sym * 16;
-            uint32_t sym_strx = lege32(data + sym_noff);
-            const char *sym_nomen = (const char *)(data + strtab_off + sym_strx);
 
             /* serva relocationem */
             if (num_relocs >= cap_relocs) {
@@ -212,11 +210,32 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
             relocs[num_relocs].r_addr   = (int)r_addr;
             relocs[num_relocs].r_sym    = r_sym;
             relocs[num_relocs].r_type   = r_type;
-            strncpy(relocs[num_relocs].sym_nomen, sym_nomen, 259);
+            relocs[num_relocs].r_extern = r_ext;
+            if (r_ext) {
+                int sym_noff      = symtab_off + r_sym * 16;
+                uint32_t sym_strx = lege32(data + sym_noff);
+                const char *sym_nomen = (const char *)(data + strtab_off + sym_strx);
+                strncpy(relocs[num_relocs].sym_nomen, sym_nomen, 259);
+            } else {
+                relocs[num_relocs].sym_nomen[0] = '\0';
+            }
             num_relocs++;
         }
 
         free(data);
+    }
+
+    /* registra chordas ante processum relocationum */
+    if (chordae_lon > 0) {
+        int pos = 0;
+        while (pos < chordae_lon && num_chordarum < MAX_CHORDAE_LIT) {
+            chordae[num_chordarum].data      = (char *)&chordae_data[pos];
+            int slon = (int)strlen((char *)&chordae_data[pos]);
+            chordae[num_chordarum].longitudo = slon + 1;
+            chordae[num_chordarum].offset    = pos;
+            num_chordarum++;
+            pos += slon + 1;
+        }
     }
 
     /* === passus secundus: processa relocationes === */
@@ -224,7 +243,73 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
     for (int ri = 0; ri < num_relocs; ri++) {
         liga_reloc_t *r = &relocs[ri];
         int inst_off    = codex_bases[r->obiectum] + r->r_addr;
-        int sid         = liga_sym_quaere(r->sym_nomen);
+        int oi          = r->obiectum;
+
+        if (!r->r_extern) {
+            /* relocatio non-externa — sectio-relativa */
+            if (r->r_sym == 2 && (r->r_type == 3 || r->r_type == 4)) {
+                /* PAGE21/PAGEOFF12 ad __cstring — crea fixup pro scribo_macho */
+
+                /* decode ADRP+ADD ut chordam inveniamus */
+                int adrp_off = inst_off;
+                int add_off  = inst_off + 4;
+                if (r->r_type == 4) {
+                    adrp_off = inst_off - 4;
+                    add_off  = inst_off;
+                }
+                uint32_t adrp_inst;
+                memcpy(&adrp_inst, codex + adrp_off, 4);
+                int immhi = ((int)adrp_inst >> 5) & 0x7FFFF;
+                int immlo = ((int)adrp_inst >> 29) & 3;
+                int imm21 = (immhi << 2) | immlo;
+                if (imm21 & 0x100000)
+                    imm21 |= (int)0xFFE00000;
+                int64_t old_page_delta = (int64_t)imm21 << 12;
+
+                uint32_t add_inst;
+                memcpy(&add_inst, codex + add_off, 4);
+                int old_lo12 = ((int)add_inst >> 10) & 0xFFF;
+
+                int old_pc = r->r_addr;
+                if (r->r_type == 4)
+                    old_pc -= 4;
+                int old_target      = (int)((old_pc & ~0xFFF) + old_page_delta) + old_lo12;
+                int str_off_in_cstr = old_target - text_mags[oi];
+                int global_cstr_off = cstr_bases[oi] + str_off_in_cstr;
+
+                /* quaere indicem chordae */
+                int cid = -1;
+                for (int ci = 0; ci < num_chordarum; ci++) {
+                    if (chordae[ci].offset == global_cstr_off) {
+                        cid = ci;
+                        break;
+                    }
+                }
+                if (cid < 0) {
+                    /* chorda non exacte in initio — quaere proximam */
+                    for (int ci = 0; ci < num_chordarum; ci++) {
+                        if (
+                            chordae[ci].offset <= global_cstr_off &&
+                            global_cstr_off < chordae[ci].offset + chordae[ci].longitudo
+                        ) {
+                            cid = ci;
+                            break;
+                        }
+                    }
+                }
+
+                if (cid >= 0) {
+                    if (r->r_type == 3)
+                        fixup_adde(FIX_ADRP, adrp_off, cid, 0);
+                    else
+                        fixup_adde(FIX_ADD_LO12, add_off, cid, 0);
+                }
+            }
+            continue;
+        }
+
+        /* relocatio externa */
+        int sid = liga_sym_quaere(r->sym_nomen);
 
         if (sid >= 0 && liga_syms[sid].definita) {
             int target = liga_syms[sid].valor_globalis;
@@ -263,19 +348,6 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
 
     free(relocs);
 
-    /* registra chordas */
-    if (chordae_lon > 0) {
-        int pos = 0;
-        while (pos < chordae_lon && num_chordarum < MAX_CHORDAE_LIT) {
-            chordae[num_chordarum].data      = (char *)&chordae_data[pos];
-            int slon = (int)strlen((char *)&chordae_data[pos]);
-            chordae[num_chordarum].longitudo = slon + 1;
-            chordae[num_chordarum].offset    = pos;
-            num_chordarum++;
-            pos += slon + 1;
-        }
-    }
-
     /* quaere _main */
     int main_offset = -1;
     int mid         = liga_sym_quaere("_main");
@@ -285,6 +357,8 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
         erratum("symbolum _main non inventum in obiectis");
 
     free(codex_bases);
+    free(cstr_bases);
+    free(text_mags);
 
     /* scribo executabile */
     scribo_macho(plica_exitus, main_offset);

@@ -698,17 +698,24 @@ static void genera_expr(nodus_t *n, int dest)
                     /* vocationem directam per BL */
                     emit_bl_label(flabel);
                 } else {
-                    /* functio externa — per GOT */
                     symbolum_t *s = n->sinister->sym ? n->sinister->sym : ambitus_quaere_omnes(n->sinister->nomen);
-                    char got_nomen[260];
-                    snprintf(got_nomen, 260, "_%s", n->sinister->nomen);
-                    int gid = got_adde(got_nomen);
-                    if (s)
-                        s->got_index = gid;
-                    emit_adrp_fixup(16, FIX_ADRP_GOT, gid);
-                    fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
-                    emit_ldr64(16, 16, 0);
-                    emit_blr(16);
+                    if (s && s->genus != SYM_FUNC) {
+                        /* index functionis (function pointer) — carrica et voca indirecte */
+                        genera_expr(n->sinister, 0);
+                        emit_mov(16, 0);
+                        emit_blr(16);
+                    } else {
+                        /* functio externa — per GOT */
+                        char got_nomen[260];
+                        snprintf(got_nomen, 260, "_%s", n->sinister->nomen);
+                        int gid = got_adde(got_nomen);
+                        if (s)
+                            s->got_index = gid;
+                        emit_adrp_fixup(16, FIX_ADRP_GOT, gid);
+                        fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
+                        emit_ldr64(16, 16, 0);
+                        emit_blr(16);
+                    }
                 }
             } else {
                 genera_expr(n->sinister, 0);
