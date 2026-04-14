@@ -5,6 +5,7 @@
  */
 
 #include "ccc.h"
+#include "biblio.h"
 #include "parser.h"
 #include "genera.h"
 #include "liga.h"
@@ -93,7 +94,18 @@ char *via_directoria(const char *via)
 
 static void usus(void)
 {
-    fprintf(stderr, "usus: ccc [-o exitus] fons.c\n");
+    fprintf(
+        stderr,
+        "usus: ccc [optiones] plica.c [...]\n"
+        "\n"
+        "optiones:\n"
+        "  -o <plica>   plica exitus\n"
+        "  -c           compila solum (sine ligatione)\n"
+        "  -I <via>     adde viam inclusionis\n"
+        "  -L <via>     adde viam bibliothecarum\n"
+        "  -l <nomen>   liga cum bibliotheca\n"
+        "  -h, --help   monstra hunc nuntium\n"
+    );
     exit(1);
 }
 
@@ -121,8 +133,26 @@ int main(int argc, char *argv[])
             plica_exitus = argv[i];
         } else if (strcmp(argv[i], "-c") == 0) {
             modus_objecti = 1;
+        } else if (strncmp(argv[i], "-I", 2) == 0) {
+            /* -Ivia vel -I via */
+            const char *via = argv[i][2] ? argv[i] + 2 : (++i < argc ? argv[i] : NULL);
+            if (!via)
+                usus();
+            includ_adde(via);
+        } else if (strncmp(argv[i], "-L", 2) == 0) {
+            const char *via = argv[i][2] ? argv[i] + 2 : (++i < argc ? argv[i] : NULL);
+            if (!via)
+                usus();
+            biblio_via_adde(via);
+        } else if (strncmp(argv[i], "-l", 2) == 0) {
+            const char *nomen = argv[i][2] ? argv[i] + 2 : (++i < argc ? argv[i] : NULL);
+            if (!nomen)
+                usus();
+            biblio_adde(nomen);
+        } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            usus();
         } else if (argv[i][0] == '-') {
-            /* ignora vexilla ignota */
+            erratum("vexillum ignotum: %s", argv[i]);
         } else {
             if (num_plicarum < 256)
                 plicae[num_plicarum++] = argv[i];
@@ -141,7 +171,26 @@ int main(int argc, char *argv[])
     if (omnes_objecti && !modus_objecti) {
         if (!plica_exitus)
             plica_exitus = "a.out";
-        liga_objecta(num_plicarum, plicae, plica_exitus);
+
+        /* extrahe objecta ex archivis .a */
+        int num_extractorum = 0;
+        char **extractae    = biblio_extrahe_objecta(&num_extractorum);
+
+        /* compone tabulam omnium obiectorum */
+        int totum = num_plicarum + num_extractorum;
+        const char **omnes = malloc(totum * sizeof(const char *));
+        if (!omnes)
+            erratum("memoria exhausta");
+        for (int i = 0; i < num_plicarum; i++)
+            omnes[i] = plicae[i];
+        for (int i = 0; i < num_extractorum; i++)
+            omnes[num_plicarum + i] = extractae[i];
+
+        liga_objecta(totum, omnes, plica_exitus);
+
+        free(omnes);
+        if (extractae)
+            biblio_purga_temporarias(extractae, num_extractorum);
         return 0;
     }
 
@@ -181,7 +230,35 @@ int main(int argc, char *argv[])
 
     /* genera codicem */
     genera_initia();
-    genera_translatio(radix, plica_exitus, modus_objecti);
+
+    /* si .a archiva adsunt et non -c, compila ad .o temporarium, deinde liga */
+    int num_extractorum = 0;
+    char **extractae    = biblio_extrahe_objecta(&num_extractorum);
+
+    if (num_extractorum > 0 && !modus_objecti) {
+        /* compila ad .o temporarium */
+        const char *via_tmp = "/tmp/ccc_compilatum.o";
+        genera_translatio(radix, via_tmp, 1);
+
+        /* liga .o temporarium cum objectis ex .a */
+        int totum = 1 + num_extractorum;
+        const char **omnes = malloc(totum * sizeof(const char *));
+        if (!omnes)
+            erratum("memoria exhausta");
+        omnes[0] = via_tmp;
+        for (int i = 0; i < num_extractorum; i++)
+            omnes[1 + i] = extractae[i];
+
+        liga_objecta(totum, omnes, plica_exitus);
+
+        remove(via_tmp);
+        free(omnes);
+        biblio_purga_temporarias(extractae, num_extractorum);
+    } else {
+        genera_translatio(radix, plica_exitus, modus_objecti);
+        if (extractae)
+            biblio_purga_temporarias(extractae, num_extractorum);
+    }
 
     free(fons);
     free(fons_directorium);

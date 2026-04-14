@@ -7,12 +7,12 @@
 CC      ?= cc
 CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2
 
-FONTES  = ccc.c lexator.c parser.c genera.c emitte.c scribo.c liga.c
+FONTES  = ccc.c lexator.c parser.c genera.c emitte.c scribo.c liga.c biblio.c
 OBJECTA = $(FONTES:.c=.o)
 
 omnia: ccc
 
-CAPITA  = ccc.h emitte.h scribo.h genera.h parser.h liga.h
+CAPITA  = ccc.h emitte.h scribo.h genera.h parser.h lexator.h liga.h biblio.h
 
 %.o: %.c $(CAPITA)
 	$(CC) $(CFLAGS) -c $< -o $@

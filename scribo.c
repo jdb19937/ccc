@@ -6,7 +6,9 @@
  */
 
 #include "emitte.h"
+#include "scribo.h"
 #include "genera.h"
+#include "biblio.h"
 
 static void scribe8(FILE *fp, uint8_t v) { fwrite(&v, 1, 1, fp); }
 static void scribe16(FILE *fp, uint16_t v) { fwrite(&v, 2, 1, fp); }
@@ -76,10 +78,25 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     int lc_build     = 32;
     int lc_dylib     = (int)allinea(24 + 27, 8); /* "/usr/lib/libSystem.B.dylib\0" = 27 */
 
-    int ncmds = 11;
+    /* bibliothecae additionles ex -l (dylib solum) */
+    int num_dylib_add = biblio_num_dylib();
+    int *lc_dylib_add = NULL;
+    if (num_dylib_add > 0) {
+        lc_dylib_add = malloc(num_dylib_add * sizeof(int));
+        if (!lc_dylib_add)
+            erratum("memoria exhausta");
+        for (int i = 0; i < num_dylib_add; i++) {
+            const char *via = biblio_dylib_via(i);
+            lc_dylib_add[i] = (int)allinea(24 + strlen(via) + 1, 8);
+        }
+    }
+
+    int ncmds = 11 + num_dylib_add;
     int sizeofcmds = lc_pagezero + lc_text + lc_data + lc_linkedit +
         lc_dyld_info + lc_symtab + lc_dysymtab +
         lc_dylinker + lc_main + lc_build + lc_dylib;
+    for (int i = 0; i < num_dylib_add; i++)
+        sizeofcmds += lc_dylib_add[i];
     int header_size = 32 + sizeofcmds;
 
     /* relinque spatium pro codesign (LC_CODE_SIGNATURE = 16 octeti) */
@@ -599,6 +616,20 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     scribe32(fp, 0x010000);         /* compat_version */
     scribe_chorda(fp, "/usr/lib/libSystem.B.dylib");
     scribe_impletio(fp, lc_dylib - 24 - 27);
+
+    /* --- LC_LOAD_DYLIB additionles (-l) --- */
+    for (int i = 0; i < num_dylib_add; i++) {
+        const char *via = biblio_dylib_via(i);
+        int via_lon     = (int)strlen(via) + 1;
+        scribe32(fp, LC_LOAD_DYLIB);
+        scribe32(fp, lc_dylib_add[i]);
+        scribe32(fp, 24);               /* name offset */
+        scribe32(fp, 0);                /* timestamp */
+        scribe32(fp, 0x010000);         /* current_version */
+        scribe32(fp, 0x010000);         /* compat_version */
+        scribe_chorda(fp, via);
+        scribe_impletio(fp, lc_dylib_add[i] - 24 - via_lon);
+    }
 
     /* --- padding ad text section --- */
     int cur_pos = header_size;

@@ -11,6 +11,90 @@
 #include "ccc.h"
 
 /* ================================================================
+ * limites emissionis
+ * ================================================================ */
+
+#define MAX_CODEX       (4*1048576)
+#define MAX_DATA        (2*1048576)
+#define MAX_CHORDAE_LIT 16384
+#define MAX_GOT         512
+#define MAX_FIXUPS      262144
+#define MAX_LABELS      65536
+#define MAX_GLOBALES    4096
+
+/* ================================================================
+ * fixup (relocationes)
+ * ================================================================ */
+
+enum {
+    FIX_ADRP,              /* ADRP ad chorda/datum */
+    FIX_ADD_LO12,          /* ADD #lo12 ad chorda/datum */
+    FIX_ADRP_GOT,          /* ADRP ad intransum GOT */
+    FIX_LDR_GOT_LO12,     /* LDR [x, #lo12] ad intransum GOT */
+    FIX_BRANCH,            /* B ad label */
+    FIX_BCOND,             /* B.cond ad label */
+    FIX_BL,                /* BL ad label */
+    FIX_CBZ,               /* CBZ ad label */
+    FIX_CBNZ,              /* CBNZ ad label */
+    FIX_ADRP_DATA,         /* ADRP ad datum globale */
+    FIX_ADD_LO12_DATA,     /* ADD #lo12 ad datum globale */
+    FIX_LDR_LO12_DATA,    /* LDR [x, #lo12] ad datum globale */
+    FIX_STR_LO12_DATA,    /* STR [x, #lo12] ad datum globale */
+    FIX_ADR_LABEL,         /* ADR Xn, label (adresse codicis) */
+};
+
+typedef struct {
+    int genus;
+    int offset;             /* offset in codice */
+    int target;             /* label / chorda_id / got_id / glob_id */
+    int magnitudo_accessus; /* pro LDR/STR: 1,2,4,8 */
+} fixup_t;
+
+/* ================================================================
+ * intransus GOT
+ * ================================================================ */
+
+typedef struct {
+    char nomen[256];        /* nomen symboli (cum _ praefixo) */
+} got_intrans_t;
+
+/* ================================================================
+ * chorda litteralis
+ * ================================================================ */
+
+typedef struct {
+    char *data;
+    int longitudo;
+    int offset;             /* offset in sectione __cstring */
+} chorda_lit_t;
+
+/* ================================================================
+ * variabilis globalis
+ * ================================================================ */
+
+typedef struct {
+    char nomen[256];
+    typus_t *typus;
+    int magnitudo;
+    int colineatio;
+    int est_bss;
+    int bss_offset;
+    int data_offset;
+    int est_staticus;
+    long valor_initialis;   /* pro simplicibus initialibus */
+    int habet_valorem;
+} globalis_t;
+
+/* ================================================================
+ * registra ARM64
+ * ================================================================ */
+
+#define SP  31
+#define XZR 31
+#define FP  29
+#define LR  30
+
+/* ================================================================
  * alvei communes
  * ================================================================ */
 
@@ -113,12 +197,5 @@ void fixup_adde(int genus, int offset, int target, int mag);
 int  chorda_adde(const char *data, int lon);
 int  got_adde(const char *nomen);
 int  globalis_adde(const char *nomen, typus_t *typus, int est_staticus, long valor);
-
-/* ================================================================
- * declarationes — scribo.c
- * ================================================================ */
-
-void scribo_macho(const char *plica_exitus, int main_offset);
-void scribo_obiectum(const char *plica_exitus);
 
 #endif /* EMITTE_H */

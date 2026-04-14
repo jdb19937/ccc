@@ -7,6 +7,8 @@
  */
 
 #include "ccc.h"
+#include "lexator.h"
+#include "biblio.h"
 
 /* ================================================================
  * capita interna — omnia capita systematis in una chorda
@@ -600,9 +602,24 @@ static int tracta_directivam(void)
                 via_plena, sizeof(via_plena), "%s%s",
                 fons_directorium ? fons_directorium : "./", via
             );
-            int lon;
-            char *fons = lege_plicam(via_plena, &lon);
-            pelle_plicam(via, fons, lon);
+            FILE *fp_proba = fopen(via_plena, "rb");
+            if (fp_proba) {
+                fclose(fp_proba);
+                int lon;
+                char *fons = lege_plicam(via_plena, &lon);
+                pelle_plicam(via, fons, lon);
+            } else {
+                /* quaere per vias -I */
+                int lon;
+                char *fons = includ_quaere(via, &lon);
+                if (fons)
+                    pelle_plicam(via, fons, lon);
+                else {
+                    /* ultima spes: lege ex via locali (erratum) */
+                    fons = lege_plicam(via_plena, &lon);
+                    pelle_plicam(via, fons, lon);
+                }
+            }
         } else if (c == '<') {
             while ((c = lege_c()) != -1 && c != '>' && c != '\n')
                 if (i < 511)
@@ -610,9 +627,16 @@ static int tracta_directivam(void)
             via[i] = '\0';
             praetermitte_lineam();
 
-            /* omnia capita systematis -> capita interna */
-            pelle_plicam(via, caput_internum_posix, (int)strlen(caput_internum_posix));
-            pelle_plicam(via, caput_internum, (int)strlen(caput_internum));
+            /* proba vias -I primum */
+            int lon_i;
+            char *fons_i = includ_quaere(via, &lon_i);
+            if (fons_i) {
+                pelle_plicam(via, fons_i, lon_i);
+            } else {
+                /* capita systematis interna */
+                pelle_plicam(via, caput_internum_posix, (int)strlen(caput_internum_posix));
+                pelle_plicam(via, caput_internum, (int)strlen(caput_internum));
+            }
         }
         return 1;
     }
