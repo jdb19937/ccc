@@ -183,6 +183,8 @@ int main(int argc, char *argv[])
         plica_exitus = auto_exitus;
     }
 
+    lex_lege_capita(argv[0]);
+
     int longitudo;
     char *fons = lege_plicam(plica_fontis, &longitudo);
     lex_initia(plica_fontis, fons, longitudo);

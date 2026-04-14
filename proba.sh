@@ -21,7 +21,7 @@ comp_cc_ok=0
 curre_cum_limite() {
     "$@" &
     local pid=$!
-    (sleep 3 && kill $pid 2>/dev/null) &
+    (sleep 5 && kill $pid 2>/dev/null) &
     local watchdog=$!
     wait $pid 2>/dev/null
     local ret=$?

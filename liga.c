@@ -423,6 +423,36 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
     if (main_offset < 0)
         erratum("symbolum _main non inventum in obiectis");
 
+    /* si ___ccc_init adest, genera involucrum quod eam vocat ante _main */
+    int iid = liga_sym_quaere("___ccc_init");
+    if (iid >= 0 && liga_syms[iid].definita) {
+        int init_target = liga_syms[iid].valor_globalis;
+        int involucrum  = codex_lon;
+        /* STP x29, x30, [sp, #-32]! */
+        emit_stp_pre(FP, LR, SP, -32);
+        /* MOV x29, sp */
+        emit_addi(FP, SP, 0);
+        /* STP x19, x20, [x29, #16] — serva argc/argv */
+        emit_stp_pre(19, 20, FP, 16);
+        emit_mov(19, 0); /* x19 = argc */
+        emit_mov(20, 1); /* x20 = argv */
+        /* BL __ccc_init */
+        int delta_init = (init_target - codex_lon) / 4;
+        emit32(0x94000000 | (delta_init & 0x3FFFFFF));
+        /* restitue argc/argv */
+        emit_mov(0, 19);
+        emit_mov(1, 20);
+        /* BL _main */
+        int delta_main = (main_offset - codex_lon) / 4;
+        emit32(0x94000000 | (delta_main & 0x3FFFFFF));
+        /* LDP x19, x20, [x29, #16] */
+        emit_ldp_post(19, 20, FP, 16);
+        /* LDP x29, x30, [sp], #32 */
+        emit_ldp_post(FP, LR, SP, 32);
+        emit_ret();
+        main_offset = involucrum;
+    }
+
     free(codex_bases);
     free(cstr_bases);
     free(text_mags);

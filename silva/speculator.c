@@ -38,7 +38,7 @@ int main(void)
             char nuntius[64];
             snprintf(
                 nuntius, sizeof(nuntius),
-                "Nuntius a filio %d (PID %d)", i, (int)getpid()
+                "Nuntius a filio %d", i
             );
             write(tubuli[i][1], nuntius, strlen(nuntius));
             close(tubuli[i][1]);

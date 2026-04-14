@@ -40,7 +40,7 @@ int main(void)
     }
 
     pid_t ego = getpid();
-    printf("vigil (PID %d): mitto signa...\n", (int)ego);
+    printf("vigil: mitto signa...\n");
 
     kill(ego, SIGUSR1);
     kill(ego, SIGUSR2);

@@ -19,16 +19,12 @@ static long numerator        = 0;
 
 static void *opus_fili(void *argumentum)
 {
-    int index = *(int *)argumentum;
+    (void)argumentum;
     for (int i = 0; i < ITERATIONES; i++) {
         pthread_mutex_lock(&mutex);
         numerator++;
         pthread_mutex_unlock(&mutex);
     }
-    printf(
-        "  filum %d: %d iterationes perfectae\n",
-        index, ITERATIONES
-    );
     return NULL;
 }
 

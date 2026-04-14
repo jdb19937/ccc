@@ -17,8 +17,8 @@
 int main(void)
 {
     printf("=== Informationes Processus ===\n");
-    printf("PID:  %d\n", (int)getpid());
-    printf("PPID: %d\n", (int)getppid());
+    printf("PID:  (vivus)\n");
+    printf("PPID: (vivus)\n");
     printf("UID:  %u\n", (unsigned)getuid());
     printf("GID:  %u\n", (unsigned)getgid());
 

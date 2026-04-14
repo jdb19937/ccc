@@ -17,24 +17,17 @@
 
 static void opus_filii(int index)
 {
-    pid_t ego  = getpid();
     long summa = 0;
     for (long i = 1; i <= 10000L * (index + 1); i++)
         summa += i;
-    printf(
-        "  filius %d (PID %d): summa = %ld\n",
-        index, (int)ego, summa
-    );
+    printf("  filius %d: summa = %ld\n", index, summa);
 }
 
 int main(void)
 {
     pid_t filii[NUMERUS_FILIORUM];
 
-    printf(
-        "parens (PID %d): creo %d filios\n",
-        (int)getpid(), NUMERUS_FILIORUM
-    );
+    printf("parens: creo %d filios\n", NUMERUS_FILIORUM);
 
     for (int i = 0; i < NUMERUS_FILIORUM; i++) {
         filii[i] = fork();
@@ -53,8 +46,8 @@ int main(void)
         int status;
         waitpid(filii[i], &status, 0);
         printf(
-            "filius %d (PID %d) rediit cum statu %d\n",
-            i, (int)filii[i], WEXITSTATUS(status)
+            "filius %d rediit cum statu %d\n",
+            i, WEXITSTATUS(status)
         );
     }
 

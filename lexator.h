@@ -19,6 +19,7 @@
  * functiones
  * ================================================================ */
 
+void lex_lege_capita(const char *via_exec);
 void lex_initia(const char *nomen, const char *fons, int longitudo);
 void lex_proximum(void);
 int  lex_specta(void);

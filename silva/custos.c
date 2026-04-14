@@ -63,10 +63,7 @@ int main(void)
         info.l_len    = 0;
         if (fcntl(desc, F_GETLK, &info) == 0) {
             if (info.l_type != F_UNLCK)
-                printf(
-                    "  filius: claustrum tentum a PID %d\n",
-                    (int)info.l_pid
-                );
+                printf("  filius: claustrum tentum a parente\n");
         }
         close(desc);
         return 0;
