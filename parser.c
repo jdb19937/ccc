@@ -1762,7 +1762,30 @@ static nodus_t *parse_declaratio(int est_globalis)
                 }
             } else {
                 vd->sinister = parse_expr_assign();
+                /* §6.7.8p14: char a[] = "ABC" — defini magnitudinem ex chorda */
+                if (
+                    alloca_differtur &&
+                    vd->sinister && vd->sinister->genus == N_STR &&
+                    td->genus == TY_ARRAY && td->num_elementorum <= 0 &&
+                    td->basis && (td->basis->genus == TY_CHAR || td->basis->genus == TY_UCHAR)
+                ) {
+                    td->num_elementorum = vd->sinister->lon_chordae + 1;
+                    td->magnitudo       = td->num_elementorum;
+                }
             }
+        }
+
+        /* allocatio differata pro tabulis cum magnitudine iam nota */
+        if (alloca_differtur && td->magnitudo > 0) {
+            int mag = td->magnitudo;
+            int col = typus_colineatio(td);
+            if (col < 1)
+                col = 1;
+            int off = cur_ambitus->proximus_offset - mag;
+            off = off & ~(col - 1);
+            vs->offset = off;
+            cur_ambitus->proximus_offset = off;
+            alloca_differtur = 0;
         }
 
         decls[ndecl++] = vd;

@@ -476,7 +476,10 @@ static void genera_expr(nodus_t *n, int dest)
                     int inc = 1;
                     if (typus_est_index(n->typus))
                         inc = mag_typi(typus_basis_indicis(n->typus));
-                    emit_load_from_addr(r, n->typus);
+                    if (est_unsigned(n->typus))
+                        emit_load_unsigned(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
+                    else
+                        emit_load(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
                     emit_addi(r, r, inc);
                     emit_store(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
                     reg_libera(r2);
@@ -490,7 +493,10 @@ static void genera_expr(nodus_t *n, int dest)
                     int dec = 1;
                     if (typus_est_index(n->typus))
                         dec = mag_typi(typus_basis_indicis(n->typus));
-                    emit_load_from_addr(r, n->typus);
+                    if (est_unsigned(n->typus))
+                        emit_load_unsigned(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
+                    else
+                        emit_load(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
                     emit_subi(r, r, dec);
                     emit_store(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
                     reg_libera(r2);
