@@ -38,6 +38,12 @@ purga:
 	rm -f initia.fac reinitia.fac
 	rm -rf initia reinitia
 
+proba:
+	./proba_corpus.sh casus
+	./proba_corpus.sh silva
+	$(FACE) initia
+	# $(FACE) reinitia
+
 linte:
 	insinulint -c $(CAPITA)
 
@@ -60,4 +66,4 @@ reinitia:
 	rm -f $@.fac
 	$(FACE) $@.fac
 
-.PHONY: omnia colloca purga linte initia reinitia
+.PHONY: omnia colloca purga linte initia reinitia proba
