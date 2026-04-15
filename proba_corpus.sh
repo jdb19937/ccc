@@ -51,7 +51,7 @@ for fons in "$DIR"/*.c; do
 
     # compila cum ccc + ldi
     obj_ccc="$TMP/${nomen}_ccc.o"
-    $CCC -c -o "$obj_ccc" "$fons" >/dev/null 2>&1 && \
+    $CCC -Scapita -c -o "$obj_ccc" "$fons" >/dev/null 2>&1 && \
     $LDI -o "$bin_ccc" "$obj_ccc" >/dev/null 2>&1
     ccc_comp=$?
 

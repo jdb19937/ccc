@@ -11,22 +11,6 @@
 #include "biblio.h"
 
 /* ================================================================
- * capita interna — lecta ex capita.h
- * ================================================================ */
-
-static char *capita_fons = NULL;
-static int   capita_lon  = 0;
-
-void lex_lege_capita(const char *via_exec)
-{
-    char via[1024];
-    char *dir = via_directoria(via_exec);
-    snprintf(via, sizeof(via), "%scapita.inc", dir);
-    free(dir);
-    capita_fons = lege_plicam(via, &capita_lon);
-}
-
-/* ================================================================
  * vocabula clavis
  * ================================================================ */
 
@@ -388,11 +372,8 @@ static int tracta_directivam(void)
                 char *fons = includ_quaere(via, &lon, via_i, sizeof(via_i));
                 if (fons)
                     pelle_plicam(strdup(via_i), fons, lon);
-                else {
-                    /* ultima spes: lege ex via locali (erratum) */
-                    fons = lege_plicam(via_plena, &lon);
-                    pelle_plicam(strdup(via_plena), fons, lon);
-                }
+                else
+                    erratum("caput non inventum: \"%s\"", via);
             }
         } else if (c == '<') {
             while ((c = lege_c()) != -1 && c != '>' && c != '\n')
@@ -408,8 +389,7 @@ static int tracta_directivam(void)
             if (fons_i) {
                 pelle_plicam(strdup(via_i), fons_i, lon_i);
             } else {
-                /* capita systematis interna */
-                pelle_plicam(strdup(via), capita_fons, capita_lon);
+                erratum("caput non inventum: <%s>", via);
             }
         }
         return 1;

@@ -105,6 +105,7 @@ static void usus(void)
         "  -c           (ignoratur)\n"
         "  -o <plica>   plica exitus (defalta: nomen.o)\n"
         "  -I <via>     adde viam inclusionis\n"
+        "  -S <via>     via capitum systematis (defalta: /opt/apotheca/capita)\n"
         "  -Wall        activa monitiones omnes\n"
         "  -Wextra      activa monitiones extra\n"
         "  -pedantic    activa modum pedanticum\n"
@@ -129,6 +130,7 @@ int main(int argc, char *argv[])
 {
     const char *plica_fontis = NULL;
     const char *plica_exitus = NULL;
+    const char *via_capitum  = "/opt/apotheca/capita";
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0) {
@@ -156,6 +158,11 @@ int main(int argc, char *argv[])
             if (g < 0 || g > 3)
                 erratum("gradus optimizationis invalidus: %s", argv[i]);
             optio_O = g;
+        } else if (strncmp(argv[i], "-S", 2) == 0) {
+            const char *via = argv[i][2] ? argv[i] + 2 : (++i < argc ? argv[i] : NULL);
+            if (!via)
+                usus();
+            via_capitum = via;
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             usus();
         } else if (argv[i][0] == '-') {
@@ -183,7 +190,8 @@ int main(int argc, char *argv[])
         plica_exitus = auto_exitus;
     }
 
-    lex_lege_capita(argv[0]);
+    /* adde viam capitum systematis (post vias -I) */
+    includ_adde(via_capitum);
 
     int longitudo;
     char *fons = lege_plicam(plica_fontis, &longitudo);
