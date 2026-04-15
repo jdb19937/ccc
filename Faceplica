@@ -35,8 +35,29 @@ colloca: omnia
 
 purga:
 	rm -f $(OBJECTA) ccc ldi
+	rm -f initia.fac reinitia.fac
+	rm -rf initia reinitia
 
 linte:
 	insinulint -c $(CAPITA)
 
-.PHONY: omnia colloca purga linte
+initia.fac: ccc ldi
+	rm -rf initia
+	./initia.sh initia ../ccc ../ldi
+	$(FACE) -C initia
+	touch $@
+initia:
+	rm -f $@.fac
+	$(FACE) $@.fac
+
+
+reinitia.fac: initia.fac
+	rm -rf reinitia
+	./initia.sh reinitia ../initia/ccc ../initia/ldi
+	$(FACE) -C reinitia
+	touch $@
+reinitia:
+	rm -f $@.fac
+	$(FACE) $@.fac
+
+.PHONY: omnia colloca purga linte initia reinitia

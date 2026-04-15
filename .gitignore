@@ -1,3 +1,7 @@
 ccc
 ldi
 *.o
+initia/*
+reinitia/*
+initia.fac
+reinitia.fac
