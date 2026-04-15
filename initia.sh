@@ -43,14 +43,14 @@ OBJECTA     = ccc.o ldi.o lexator.o parser.o genera.o emitte.o scribo.o liga.o b
 omnia: ccc ldi
 
 %.o: %.c
-	\$(CCC) -S../capita -o \$@ -c \$<
+	\$(CCC) -S../capita \$<
 
 ccc: \$(CCC_OBJECTA)
-	\$(LDI) -o \$@ \$(CCC_OBJECTA)
+	\$(LDI) -o \$@ \$^
 	@echo "==> ccc initiatum"
 
 ldi: \$(LDI_OBJECTA)
-	\$(LDI) -o \$@ \$(LDI_OBJECTA)
+	\$(LDI) -o \$@ \$^
 	@echo "==> ldi initiatum"
 
 purga:
