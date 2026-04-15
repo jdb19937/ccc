@@ -1695,11 +1695,11 @@ static void genera_functio(nodus_t *n)
 void genera_initia(void)
 {
     emitte_initia();
-    break_vertex          = 0;
-    in_switch             = 0;
-    num_func_loc          = 0;
-    num_goto_labels       = 0;
-    reg_vertex            = 0;
+    break_vertex           = 0;
+    in_switch              = 0;
+    num_func_loc           = 0;
+    num_goto_labels        = 0;
+    reg_vertex             = 0;
     profunditas_vocationis = 0;
 }
 
@@ -1785,12 +1785,18 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
                     continue;
                 int gid = s->globalis_index;
                 if (n->num_membrorum > 0 && n->membra) {
-                    /* tabula cum initiatoribus */
+                    /* §6.7.8: tabula cum initiātōribus (complānātīs) */
                     typus_t *elem_t = (n->typus_decl && n->typus_decl->basis) ?
                         n->typus_decl->basis : ty_int;
                     int elem_mag = typus_magnitudo(elem_t);
                     if (elem_mag < 1)
                         elem_mag = 8;
+                    /* si elementum est structūra, iter per membra */
+                    int est_struct = (
+                        elem_t->genus == TY_STRUCT &&
+                        elem_t->membra && elem_t->num_membrorum > 0
+                    );
+                    int num_camp = est_struct ? elem_t->num_membrorum : 1;
                     for (int j = 0; j < n->num_membrorum; j++) {
                         nodus_t *elem = n->membra[j];
                         if (elem->genus == N_STR) {
@@ -1806,7 +1812,19 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
                         emit_adrp_fixup(17, FIX_ADRP_DATA, gid);
                         fixup_adde(FIX_ADD_LO12_DATA, codex_lon, gid, 0);
                         emit32(0x91000000 | (17 << 5) | 17);
-                        emit_store(0, 17, j * elem_mag, elem_mag);
+                        if (est_struct) {
+                            /* calcula offset per structūram et campum */
+                            int idx_struct = j / num_camp;
+                            int idx_camp   = j % num_camp;
+                            int off = idx_struct * elem_mag +
+                                elem_t->membra[idx_camp].offset;
+                            int mag = mag_typi(elem_t->membra[idx_camp].typus);
+                            if (mag < 1)
+                                mag = 4;
+                            emit_store(0, 17, off, mag);
+                        } else {
+                            emit_store(0, 17, j * elem_mag, elem_mag);
+                        }
                     }
                 } else if (
                     n->sinister && n->sinister->genus == N_STR &&
