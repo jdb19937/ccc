@@ -45,8 +45,8 @@ purga:
 	rm -rf initia reinitia
 
 proba:
-	./proba_corpus.sh casus
-	./proba_corpus.sh silva
+	./proba_corpus.py casus
+	./proba_corpus.py silva
 	$(FACE) initia
 	# $(FACE) reinitia
 
