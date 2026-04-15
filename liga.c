@@ -508,16 +508,10 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     fixup_adde(FIX_ADD_LO12_TEXT, inst_off, target, 0);
                 }
             }
-        } else {
-            /* symbolum externum — adde ad GOT */
-            int gid = got_adde(r->sym_nomen);
-
-            if (r->r_type == 5)
-                fixup_adde(FIX_ADRP_GOT, inst_off, gid, 0);
-            else if (r->r_type == 6)
-                fixup_adde(FIX_LDR_GOT_LO12, inst_off, gid, 8);
-            else if (r->r_type == 2) {
+        } else if (r->r_type == 2) {
+            {
                 /* BRANCH26 ad externum — crea truncum (stub) */
+                int gid = got_adde(r->sym_nomen);
                 if (stub_offsets[gid] < 0) {
                     stub_offsets[gid] = codex_lon;
                     /* ADRP x16, GOT@PAGE */
@@ -540,6 +534,8 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                 uint32_t inst = 0x94000000 | (delta & 0x3FFFFFF);
                 memcpy(codex + inst_off, &inst, 4);
             }
+        } else {
+            erratum("symbolum '%s' indefinitum", r->sym_nomen);
         }
     }
 
