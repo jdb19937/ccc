@@ -135,7 +135,7 @@ static void usus(void)
         "usus: ldi [-o executabile] [optiones] plica.o [...]\n"
         "\n"
         "optiones:\n"
-        "  -o <plica>   plica exitus (defalta: a.out)\n"
+        "  -o <plica>   plica exitus (defalta: prima plica sine .o/.a)\n"
         "  -L <via>     adde viam bibliothecarum\n"
         "  -l <nomen>   liga cum bibliotheca\n"
         "  -h, --help   monstra hunc nuntium\n"
@@ -200,8 +200,16 @@ int main(int argc, char *argv[])
         if (!est_plica_objecti(plicae[i]) && !est_plica_archivi(plicae[i]))
             erratum("plica '%s' non est .o neque .a", plicae[i]);
 
-    if (!plica_exitus)
-        plica_exitus = "a.out";
+    if (!plica_exitus) {
+        /* exue extensionem .o vel .a ex prima plica */
+        int lon       = (int)strlen(plicae[0]);
+        char *defalta = malloc(lon - 1);
+        if (!defalta)
+            erratum("memoria exhausta");
+        memcpy(defalta, plicae[0], lon - 2);
+        defalta[lon - 2] = '\0';
+        plica_exitus     = defalta;
+    }
 
     /* adde .a plicae ad biblio_res ut extrahantur */
     for (int i = 0; i < num_plicarum; i++)
