@@ -1148,6 +1148,29 @@ static void genera_expr(nodus_t *n, int dest)
                     }
                 } else if (tm > sm && sm == 4 && !est_unsigned(n->sinister->typus)) {
                     emit_sxtw(r, r);
+                } else if (
+                    tm == sm && tm < 8 &&
+                    est_unsigned(n->typus_decl) != est_unsigned(n->sinister->typus)
+                ) {
+                    /* eadem magnitudo, diversa signatura — re-extende */
+                    switch (tm) {
+                    case 1:
+                        if (est_unsigned(n->typus_decl))
+                            emit_uxtb(r, r);
+                        else
+                            emit_sxtb(r, r);
+                        break;
+                    case 2:
+                        if (est_unsigned(n->typus_decl))
+                            emit_uxth(r, r);
+                        else
+                            emit_sxth(r, r);
+                        break;
+                    case 4:
+                        if (!est_unsigned(n->typus_decl))
+                            emit_sxtw(r, r);
+                        break;
+                    }
                 }
             }
         }
