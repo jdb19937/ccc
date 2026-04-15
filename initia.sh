@@ -24,7 +24,7 @@ VIA_LDI="$3"
 mkdir -p "$DIR_INITIA"
 
 # copia plicas fontis
-cp *.c *.h capita.inc "$DIR_INITIA/"
+cp *.c *.h "$DIR_INITIA/"
 
 # scribe Faceplicam
 cat > "$DIR_INITIA/Faceplica" << FINIS
@@ -43,7 +43,7 @@ OBJECTA     = ccc.o ldi.o lexator.o parser.o genera.o emitte.o scribo.o liga.o b
 omnia: ccc ldi
 
 %.o: %.c
-	\$(CCC) -o \$@ -c \$<
+	\$(CCC) -S../capita -o \$@ -c \$<
 
 ccc: \$(CCC_OBJECTA)
 	\$(LDI) -o \$@ \$(CCC_OBJECTA)
