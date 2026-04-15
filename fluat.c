@@ -22,7 +22,7 @@
 
 #include "fluat.h"
 #include "emitte.h"
-#include "parser.h"
+#include "typus.h"
 
 /* ================================================================
  * typi praefiniti

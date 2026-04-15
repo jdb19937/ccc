@@ -6,7 +6,9 @@
 
 #include "ccc.h"
 #include "parser.h"
+#include "typus.h"
 #include "genera.h"
+#include "func.h"
 #include "emitte.h"
 #include "scribo.h"
 #include "fluat.h"
@@ -23,26 +25,6 @@ static int switch_num_casuum;
 static int switch_default_label;
 static int in_switch = 0;
 
-/* tabula functionum localium (nomen -> label) */
-func_loc_t func_loci[MAX_GLOBALES];
-int num_func_loc = 0;
-
-int func_loc_quaere(const char *nomen)
-{
-    for (int i = 0; i < num_func_loc; i++)
-        if (strcmp(func_loci[i].nomen, nomen) == 0)
-            return func_loci[i].label;
-    return -1;
-}
-
-int func_loc_adde(const char *nomen)
-{
-    int lab = label_novus();
-    strncpy(func_loci[num_func_loc].nomen, nomen, 255);
-    func_loci[num_func_loc].label = lab;
-    num_func_loc++;
-    return lab;
-}
 
 /* goto labels intra functionem */
 typedef struct {
@@ -869,6 +851,23 @@ static void genera_expr(nodus_t *n, int dest)
             int arg_spill_base = cur_frame_mag - 16 - 15 * 8
                 + profunditas_vocationis * 8 * 8;
             profunditas_vocationis++;
+
+            /* pro vocationibus indirectis: salva indicem functionis ante
+             * argumenta in registris carricantur, ne x0 cloberetur. */
+            int fptr_spill    = arg_spill_base + (nargs + 1) * 8;
+            int est_indirecta = 0;
+            if (n->sinister->genus == N_IDENT) {
+                symbolum_t *si = n->sinister->sym ? n->sinister->sym : ambitus_quaere_omnes(n->sinister->nomen);
+                if (si && si->genus != SYM_FUNC && func_loc_quaere(n->sinister->nomen) < 0)
+                    est_indirecta = 1;
+            } else {
+                est_indirecta = 1;
+            }
+            if (est_indirecta) {
+                reg_vertex = 0;
+                genera_expr(n->sinister, 0);
+                emit_str64(0, FP, -(fptr_spill));
+            }
             for (int i = 0; i < nargs; i++) {
                 reg_vertex = 0;
                 genera_expr(n->membra[i], 0);
@@ -982,9 +981,8 @@ static void genera_expr(nodus_t *n, int dest)
                 } else {
                     symbolum_t *s = n->sinister->sym ? n->sinister->sym : ambitus_quaere_omnes(n->sinister->nomen);
                     if (s && s->genus != SYM_FUNC) {
-                        /* index functionis (function pointer) — carrica et voca indirecte */
-                        genera_expr(n->sinister, 0);
-                        emit_mov(16, 0);
+                        /* index functionis — carrica ex spill (iam salvatum ante args) */
+                        emit_ldr64(16, FP, -(fptr_spill));
                         emit_blr(16);
                     } else {
                         /* functio externa — per GOT */
@@ -1000,8 +998,8 @@ static void genera_expr(nodus_t *n, int dest)
                     }
                 }
             } else {
-                genera_expr(n->sinister, 0);
-                emit_mov(16, 0);
+                /* expressio indirecta — carrica ex spill */
+                emit_ldr64(16, FP, -(fptr_spill));
                 emit_blr(16);
             }
 
@@ -1296,29 +1294,45 @@ static void genera_sententia(nodus_t *n)
                     s->globalis_index = gid;
                 }
             } else if (n->num_membrorum > 0 && n->membra) {
-            /* §6.7.8: initiale tabulae { expr, expr, ... } */
+            /* §6.7.8: initiale tabulae vel structurae { expr, expr, ... } */
                 if (s) {
                     int off_basis = s->offset;
-                    /* typus folii — pro tabulis 2D, descende ad scalarum */
-                    typus_t *elem_typus = (s->typus && s->typus->genus == TY_ARRAY) ?
-                        s->typus->basis : ty_int;
-                    while (elem_typus && elem_typus->genus == TY_ARRAY)
-                        elem_typus = elem_typus->basis;
-                    int elem_mag = typus_magnitudo(elem_typus);
-                    if (elem_mag < 1)
-                        elem_mag = 4;
                     int tot_mag = (s->typus && s->typus->genus == TY_ARRAY) ?
                         s->typus->magnitudo : mag_typi(s->typus);
                     emit_imple_zeris(off_basis, tot_mag);
-                    /* scribe singula elementa */
-                    for (int i = 0; i < n->num_membrorum; i++) {
-                        reg_vertex = 0;
-                        genera_expr(n->membra[i], 0);
-                        int elem_off = off_basis + i * elem_mag;
-                        emit_movi(17, -elem_off);
-                        emit_sub(17, FP, 17);
-                        emit_store(0, 17, 0, elem_mag);
-                        reg_vertex = 0;
+                    if (
+                        s->typus && s->typus->genus == TY_STRUCT &&
+                        s->typus->membra && s->typus->num_membrorum > 0
+                    ) {
+                        /* structura: utere offset et magnitudine cuiusque campi */
+                        for (int i = 0; i < n->num_membrorum && i < s->typus->num_membrorum; i++) {
+                            reg_vertex = 0;
+                            genera_expr(n->membra[i], 0);
+                            int moff = off_basis + s->typus->membra[i].offset;
+                            int mmag = mag_typi(s->typus->membra[i].typus);
+                            emit_movi(17, -moff);
+                            emit_sub(17, FP, 17);
+                            emit_store(0, 17, 0, mmag);
+                            reg_vertex = 0;
+                        }
+                    } else {
+                        /* tabula: elementa eiusdem magnitudinis */
+                        typus_t *elem_typus = (s->typus && s->typus->genus == TY_ARRAY) ?
+                            s->typus->basis : ty_int;
+                        while (elem_typus && elem_typus->genus == TY_ARRAY)
+                            elem_typus = elem_typus->basis;
+                        int elem_mag = typus_magnitudo(elem_typus);
+                        if (elem_mag < 1)
+                            elem_mag = 4;
+                        for (int i = 0; i < n->num_membrorum; i++) {
+                            reg_vertex = 0;
+                            genera_expr(n->membra[i], 0);
+                            int elem_off = off_basis + i * elem_mag;
+                            emit_movi(17, -elem_off);
+                            emit_sub(17, FP, 17);
+                            emit_store(0, 17, 0, elem_mag);
+                            reg_vertex = 0;
+                        }
                     }
                 }
             } else if (
@@ -1688,13 +1702,30 @@ static void genera_functio(nodus_t *n)
     }
 
     /* salva parametros in acervo.
-     * si functio variadica, salva omnes x0-x7 ut va_start operetur. */
+     * si functio variadica, salva omnes x0-x7 ut va_start operetur.
+     * §5.4.2 AAPCS64: fluitantes in d0-d7, integri in x0-x7 (separatim). */
     {
         int salva_n = nparams < 8 ? nparams : 8;
         if (cur_func_typus && cur_func_typus->est_variadicus && salva_n < 8)
             salva_n = 8;
-        for (int i = 0; i < salva_n; i++)
-            emit_str64(i, FP, -(16 + (i + 1) * 8));
+        int gp_reg = 0;  /* x-registrum proximum */
+        int fp_reg = 0;  /* d-registrum proximum */
+        for (int i = 0; i < salva_n; i++) {
+            int dest_off = -(16 + (i + 1) * 8);
+            typus_t *pt  = NULL;
+            if (cur_func_typus && i < cur_func_typus->num_parametrorum)
+                pt = cur_func_typus->parametri[i];
+            if (pt && typus_est_fluat(pt)) {
+                /* parametrus fluitans: salva ex d-registro */
+                emit_movi(17, -dest_off);
+                emit_sub(17, FP, 17);
+                emit_fstr64(fp_reg, 17, 0);
+                fp_reg++;
+            } else {
+                emit_str64(gp_reg, FP, dest_off);
+                gp_reg++;
+            }
+        }
     }
 
     /* genera corpus */
@@ -1750,7 +1781,7 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
     for (int i = 0; i < radix->num_membrorum; i++) {
         nodus_t *n = radix->membra[i];
         if (n->genus == N_FUNC_DEF)
-            func_loc_adde(n->nomen);
+            func_loc_adde(n->nomen, n->est_staticus);
     }
 
     /* tertia passu: genera functiones */
@@ -1788,7 +1819,7 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
             int init_offset = codex_lon;
             if (modus_objecti) {
                 /* in modō obiectī: functio __ccc_init simplex */
-                func_loc_adde("__ccc_init");
+                func_loc_adde("__ccc_init", 0);
                 label_pone(func_loc_quaere("__ccc_init"));
             }
             /* prologus */

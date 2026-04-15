@@ -72,6 +72,7 @@ char *strstr(const char *, const char *);
 char *strncpy(char *, const char *, unsigned long);
 char *strcpy(char *, const char *);
 char *strcat(char *, const char *);
+double strtod(const char *nptr, char **endptr);
 
 /* ctype */
 int isspace(int);

@@ -41,6 +41,12 @@ enum {
     FIX_LDR_LO12_DATA,    /* LDR [x, #lo12] ad datum globale */
     FIX_STR_LO12_DATA,    /* STR [x, #lo12] ad datum globale */
     FIX_ADR_LABEL,         /* ADR Xn, label (adresse codicis) */
+    FIX_ADRP_TEXT,         /* ADRP ad offset in __text (target = codex offset) */
+    FIX_ADD_LO12_TEXT,     /* ADD #lo12 ad offset in __text */
+    FIX_ADRP_IDATA,        /* ADRP ad datum initiatum (target = offset in init_data) */
+    FIX_ADD_LO12_IDATA,    /* ADD #lo12 ad datum initiatum */
+    FIX_LDR_LO12_IDATA,    /* LDR [x, #lo12] ad datum initiatum */
+    FIX_STR_LO12_IDATA,    /* STR [x, #lo12] ad datum initiatum */
 };
 
 typedef struct {
@@ -101,6 +107,9 @@ typedef struct {
 extern uint8_t *codex;
 extern int codex_lon;
 extern int data_lon;
+
+extern uint8_t *init_data;
+extern int init_data_lon;
 
 extern chorda_lit_t *chordae;
 extern int num_chordarum;

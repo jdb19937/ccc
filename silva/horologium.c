@@ -33,13 +33,13 @@ int main(void)
     }
 
     printf("horologium: exspecto tres pulsus...\n");
-    alarm(1);
+    ualarm(100000, 0);  /* 100 ms */
 
     while (pulsus < 3) {
         pause();
         printf("  pulsus %d receptus\n", (int)pulsus);
         if (pulsus < 3)
-            alarm(1);
+            ualarm(100000, 0);
     }
 
     printf("horologium: tres pulsus recepti, finis\n");

@@ -8,7 +8,6 @@
 #include "ccc.h"
 #include "biblio.h"
 #include "liga.h"
-#include "genera.h"
 
 #include <errno.h>
 
@@ -20,39 +19,6 @@ int optio_Wall     = 0;
 int optio_Wextra   = 0;
 int optio_pedantic = 0;
 int optio_O        = 0;
-
-/* ================================================================
- * substituta pro modulis non ligatis
- *
- * scribo.c refert func_loci et func_loc_quaere ex genera.c,
- * emitte.c refert typus_magnitudo et typus_colineatio ex parser.c.
- * In ligatore haec non necessaria sunt — substituta vacua sufficiunt.
- * ================================================================ */
-
-func_loc_t func_loci[1];
-int num_func_loc = 0;
-
-int func_loc_quaere(const char *nomen)
-{
-    (void)nomen;
-    return -1;
-}
-
-int func_loc_adde(const char *nomen)
-{
-    (void)nomen;
-    return -1;
-}
-
-int typus_magnitudo(typus_t *t)
-{
-    return t ? t->magnitudo : 0;
-}
-
-int typus_colineatio(typus_t *t)
-{
-    return t ? t->colineatio : 1;
-}
 
 /* ================================================================
  * errores

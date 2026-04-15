@@ -105,7 +105,8 @@ static void usus(void)
         "  -c           (ignoratur)\n"
         "  -o <plica>   plica exitus (defalta: nomen.o)\n"
         "  -I <via>     adde viam inclusionis\n"
-        "  -S <via>     via capitum systematis (defalta: /opt/apotheca/capita)\n"
+        "  -S <via>     via capitum systematis\n"
+        "               (defalta: /opt/apotheca/var/ccc/capita)\n"
         "  -Wall        activa monitiones omnes\n"
         "  -Wextra      activa monitiones extra\n"
         "  -pedantic    activa modum pedanticum\n"
@@ -130,7 +131,7 @@ int main(int argc, char *argv[])
 {
     const char *plica_fontis = NULL;
     const char *plica_exitus = NULL;
-    const char *via_capitum  = "/opt/apotheca/capita";
+    const char *via_capitum  = "/opt/apotheca/var/ccc/capita";
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0) {

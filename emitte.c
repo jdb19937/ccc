@@ -6,7 +6,7 @@
  */
 
 #include "emitte.h"
-#include "parser.h"
+#include "typus.h"
 
 /* ================================================================
  * alvei et status
@@ -16,6 +16,9 @@ uint8_t *codex;
 int codex_lon = 0;
 
 int data_lon = 0;
+
+uint8_t *init_data = NULL;
+int init_data_lon  = 0;
 
 chorda_lit_t *chordae;
 int num_chordarum = 0;
@@ -144,8 +147,11 @@ void emitte_initia(void)
         labels       = malloc(MAX_LABELS * sizeof(int));
     if (!globales)
         globales     = malloc(MAX_GLOBALES * sizeof(globalis_t));
+    if (!init_data)
+        init_data    = malloc(MAX_DATA);
     codex_lon     = 0;
     data_lon      = 0;
+    init_data_lon = 0;
     chordae_lon   = 0;
     num_chordarum = 0;
     num_got       = 0;
