@@ -101,10 +101,11 @@ static void usus(void)
         "usus: ldi [-o executabile] [optiones] plica.o [...]\n"
         "\n"
         "optiones:\n"
-        "  -o <plica>   plica exitus (defalta: prima plica sine .o/.a)\n"
-        "  -L <via>     adde viam bibliothecarum\n"
-        "  -l <nomen>   liga cum bibliotheca\n"
-        "  -h, --help   monstra hunc nuntium\n"
+        "  -o <plica>          plica exitus (defalta: prima plica sine .o/.a)\n"
+        "  -L <via>            adde viam bibliothecarum\n"
+        "  -l <nomen>          liga cum bibliotheca\n"
+        "  -framework <nomen>  liga cum framework\n"
+        "  -h, --help          monstra hunc nuntium\n"
     );
     exit(1);
 }
@@ -146,6 +147,10 @@ int main(int argc, char *argv[])
             if (!nomen)
                 usus();
             biblio_adde(nomen);
+        } else if (strcmp(argv[i], "-framework") == 0) {
+            if (++i >= argc)
+                usus();
+            biblio_framework_adde(argv[i]);
         } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
             usus();
         } else if (argv[i][0] == '-') {

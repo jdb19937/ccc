@@ -151,6 +151,16 @@ void biblio_adde(const char *nomen)
     erratum("bibliotheca non inventa: -l%s", nomen);
 }
 
+void biblio_framework_adde(const char *nomen)
+{
+    char via[1024];
+
+    /* proba /System/Library/Frameworks/Name.framework/Name */
+    snprintf(via, sizeof(via),
+             "/System/Library/Frameworks/%s.framework/%s", nomen, nomen);
+    res_adde(via, BIBLIO_DYLIB);
+}
+
 int biblio_num_dylib(void)
 {
     int n = 0;

@@ -33,9 +33,11 @@ colloca: omnia
 	install -m 755 ccc $(PREFIX)/bin/
 	install -m 755 ldi $(PREFIX)/bin/
 	install -d $(PREFIX)/var/ccc/capita/sys
+	install -d $(PREFIX)/var/ccc/capita/objc
 	install -m 644 capita/capitum.h $(PREFIX)/var/ccc/capita/
 	for f in capita/*.h; do install -m 644 $$f $(PREFIX)/var/ccc/capita/; done
 	for f in capita/sys/*.h; do install -m 644 $$f $(PREFIX)/var/ccc/capita/sys/; done
+	for f in capita/objc/*.h; do install -m 644 $$f $(PREFIX)/var/ccc/capita/objc/; done
 
 purga:
 	rm -f $(OBJECTA) ccc ldi

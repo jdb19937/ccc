@@ -48,6 +48,9 @@ extern int            num_biblio_res;
 /* resolve -l nomen, adde ad biblio_res */
 void biblio_adde(const char *nomen);
 
+/* resolve -framework nomen, adde ad biblio_res */
+void biblio_framework_adde(const char *nomen);
+
 /*
  * biblio_extrahe_objecta — extrahit .o ex archivis .a,
  * scribit in plicas temporarias.

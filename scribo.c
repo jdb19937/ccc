@@ -298,7 +298,11 @@ void scribo_macho(const char *plica_exitus, int main_offset)
 
     if (num_got > 0) {
         /* data segment index = 2 (after PAGEZERO=0, TEXT=1) */
-        bind_info[bind_lon++] = BIND_OPCODE_SET_DYLIB_ORDINAL_IMM | 1;
+        if (biblio_num_dylib() > 0)
+            /* dynamic lookup: dyld quaerit per omnia libraria onerata */
+            bind_info[bind_lon++] = BIND_OPCODE_SET_DYLIB_SPECIAL_IMM | 0x0E;
+        else
+            bind_info[bind_lon++] = BIND_OPCODE_SET_DYLIB_ORDINAL_IMM | 1;
         bind_info[bind_lon++] = BIND_OPCODE_SET_TYPE_IMM | BIND_TYPE_POINTER;
 
         for (int i = 0; i < num_got; i++) {
@@ -401,7 +405,7 @@ void scribo_macho(const char *plica_exitus, int main_offset)
         strtab_lon += strlen(got[i].nomen) + 1;
         nl->n_type  = N_EXT; /* external, undefined */
         nl->n_sect  = 0;
-        nl->n_desc  = 0x0100; /* dylib ordinal 1 */
+        nl->n_desc  = biblio_num_dylib() > 0 ? 0xFE00 : 0x0100;
         nl->n_value = 0;
     }
     int nundefsym = nsyms - iundefsym;
