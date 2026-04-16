@@ -37,6 +37,9 @@ int num_labels = 0;
 globalis_t *globales;
 int num_globalium = 0;
 
+data_reloc_t *data_relocs;
+int num_data_relocs = 0;
+
 /* ================================================================
  * labels
  * ================================================================ */
@@ -135,6 +138,16 @@ void fixup_adde(int genus, int offset, int target, int mag)
     num_fixups++;
 }
 
+void data_reloc_adde(int idata_offset, int genus, int target)
+{
+    if (num_data_relocs >= MAX_DATA_RELOCS)
+        erratum("nimis multae relocātiōnēs datōrum");
+    data_relocs[num_data_relocs].idata_offset = idata_offset;
+    data_relocs[num_data_relocs].genus        = genus;
+    data_relocs[num_data_relocs].target       = target;
+    num_data_relocs++;
+}
+
 /* ================================================================ */
 
 void emitte_initia(void)
@@ -179,15 +192,21 @@ void emitte_initia(void)
         if (!init_data)
             erratum("memoria exhausta");
     }
-    codex_lon     = 0;
-    data_lon      = 0;
-    init_data_lon = 0;
-    chordae_lon   = 0;
-    num_chordarum = 0;
-    num_got       = 0;
-    num_fixups    = 0;
-    num_labels    = 0;
-    num_globalium = 0;
+    if (!data_relocs) {
+        data_relocs = malloc(MAX_DATA_RELOCS * sizeof(data_reloc_t));
+        if (!data_relocs)
+            erratum("memoria exhausta");
+    }
+    codex_lon       = 0;
+    data_lon        = 0;
+    init_data_lon   = 0;
+    chordae_lon     = 0;
+    num_chordarum   = 0;
+    num_got         = 0;
+    num_fixups      = 0;
+    num_labels      = 0;
+    num_globalium   = 0;
+    num_data_relocs = 0;
 }
 
 void emit32(uint32_t inst)

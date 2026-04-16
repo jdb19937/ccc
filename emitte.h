@@ -59,6 +59,32 @@ typedef struct {
 } fixup_t;
 
 /* ================================================================
+ * relocātiōnēs datōrum (indicēs in init_data quī adressēs continent)
+ *
+ * ARM64_RELOC_UNSIGNED in sectiōnibus __data/__const:
+ * octō octeti in init_data quī adressam fīnālem continēre dēbent.
+ * ================================================================ */
+
+enum {
+    DR_CSTRING,     /* scopus in __cstring */
+    DR_TEXT,        /* scopus in __text */
+    DR_IDATA,       /* scopus in init_data */
+};
+
+typedef struct {
+    int idata_offset;   /* offset in init_data ubi 8 octeti scrībendī sunt */
+    int genus;          /* DR_CSTRING, DR_TEXT, DR_IDATA */
+    int target;         /* offset in sectiōne scopī */
+} data_reloc_t;
+
+#define MAX_DATA_RELOCS 4096
+
+extern data_reloc_t *data_relocs;
+extern int num_data_relocs;
+
+void data_reloc_adde(int idata_offset, int genus, int target);
+
+/* ================================================================
  * intransus GOT
  * ================================================================ */
 

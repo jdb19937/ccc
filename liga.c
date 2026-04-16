@@ -147,9 +147,11 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
         int cstr_vma     = 0, data_vma = 0;
         int sect_counter = 0;
         /* temporanea pro sectiones extra (__const, __bss) */
-        int sect_file_offs[MAX_SECT] = {0};
-        int sect_mags[MAX_SECT]      = {0};
-        int sect_is_bss[MAX_SECT]    = {0};
+        int sect_file_offs[MAX_SECT]  = {0};
+        int sect_mags[MAX_SECT]       = {0};
+        int sect_is_bss[MAX_SECT]     = {0};
+        int sect_reloc_offs[MAX_SECT] = {0};
+        int sect_nrelocs[MAX_SECT]    = {0};
 
         for (uint32_t ci = 0; ci < ncmds; ci++) {
             uint32_t cmd  = lege32(data + cmd_off);
@@ -174,6 +176,8 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                         sect_idata_vmas[si_idx] = (int)s_addr;
                         sect_file_offs[sect_counter] = s_off;
                         sect_mags[sect_counter] = (int)s_size;
+                        sect_reloc_offs[sect_counter] = s_reloff;
+                        sect_nrelocs[sect_counter] = s_nreloc;
                     }
 
                     if (strcmp(sectname, "__text") == 0) {
@@ -200,8 +204,10 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     } else if (strcmp(sectname, "__const") == 0) {
                         if (sect_counter < MAX_SECT)
                             sect_genera[oi * MAX_SECT + sect_counter] = 3;
-                    } else if (strcmp(sectname, "__bss") == 0
-                               || strcmp(sectname, "__common") == 0) {
+                    } else if (
+                        strcmp(sectname, "__bss") == 0
+                        || strcmp(sectname, "__common") == 0
+                    ) {
                         if (sect_counter < MAX_SECT) {
                             sect_genera[oi * MAX_SECT + sect_counter] = 3;
                             sect_is_bss[sect_counter] = 1;
@@ -265,8 +271,10 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                 if (sect_is_bss[sn])
                     memset(init_data + init_data_lon, 0, sect_mags[sn]);
                 else
-                    memcpy(init_data + init_data_lon, data + sect_file_offs[sn],
-                           sect_mags[sn]);
+                    memcpy(
+                        init_data + init_data_lon, data + sect_file_offs[sn],
+                        sect_mags[sn]
+                    );
                 init_data_lon += sect_mags[sn];
             }
         }
@@ -343,6 +351,95 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
             num_relocs++;
         }
 
+        /* collige relocātiōnēs datōrum (ARM64_RELOC_UNSIGNED in sectiōnibus datōrum) */
+        for (int sn = 1; sn <= sect_counter && sn < MAX_SECT; sn++) {
+            int si_idx = oi * MAX_SECT + sn;
+            if (sect_genera[si_idx] != 3) /* sōlum sectiōnēs datōrum */
+                continue;
+            int s_reloff = sect_reloc_offs[sn];
+            int s_nreloc = sect_nrelocs[sn];
+
+            for (int ri = 0; ri < s_nreloc; ri++) {
+                int roff        = s_reloff + ri * 8;
+                uint32_t r_addr = lege32(data + roff);
+                uint32_t r_info = lege32(data + roff + 4);
+
+                int r_ext  = (r_info >> 27) & 1;
+                int r_sym  = r_info & 0xFFFFFF;
+                int r_type = (r_info >> 28) & 0xF;
+
+                if (r_type != 0) /* sōlum ARM64_RELOC_UNSIGNED (typus 0) */
+                    continue;
+
+                /* computa offset in init_data */
+                int patch_off = sect_idata_bases[si_idx] + (int)r_addr;
+
+                if (r_ext) {
+                    int sym_noff       = symtab_off + r_sym * 16;
+                    uint8_t  sym_nsect = data[sym_noff + 5];
+                    uint64_t sym_nval  = lege64(data + sym_noff + 8);
+
+                    if (cstr_sectnum > 0 && sym_nsect == cstr_sectnum) {
+                        int cstr_target = cstr_bases[oi]
+                            + (int)sym_nval - cstr_vma;
+                        data_reloc_adde(patch_off, DR_CSTRING, cstr_target);
+                    } else if (sym_nsect == 1) {
+                        int text_target = codex_bases[oi] + (int)sym_nval;
+                        data_reloc_adde(patch_off, DR_TEXT, text_target);
+                    } else if (sym_nsect > 0 && sym_nsect < MAX_SECT) {
+                        int tsi = oi * MAX_SECT + sym_nsect;
+                        int sg  = sect_genera[tsi];
+                        if (sg == 2) {
+                            int cstr_target = cstr_bases[oi]
+                                + (int)sym_nval - cstr_vma;
+                            data_reloc_adde(
+                                patch_off, DR_CSTRING,
+                                cstr_target
+                            );
+                        } else if (sg == 3) {
+                            int idata_target = sect_idata_bases[tsi]
+                                + (int)sym_nval
+                                - sect_idata_vmas[tsi];
+                            data_reloc_adde(
+                                patch_off, DR_IDATA,
+                                idata_target
+                            );
+                        } else {
+                            erratum(
+                                "ARM64_RELOC_UNSIGNED: sectiō %d "
+                                "genus %d nōn sustenta",
+                                sym_nsect, sg
+                            );
+                        }
+                    } else {
+                        erratum(
+                            "ARM64_RELOC_UNSIGNED: sectiō %d invalida",
+                            sym_nsect
+                        );
+                    }
+                } else {
+                    /* relocātiō nōn-externa — sectiō-relātīva */
+                    int sect_num      = r_sym;
+                    uint64_t addendum = 0;
+                    memcpy(&addendum, init_data + patch_off, 8);
+
+                    if (cstr_sectnum > 0 && sect_num == cstr_sectnum) {
+                        int cstr_target = cstr_bases[oi]
+                            + (int)addendum - cstr_vma;
+                        data_reloc_adde(patch_off, DR_CSTRING, cstr_target);
+                    } else if (sect_num == 1) {
+                        int text_target = codex_bases[oi] + (int)addendum;
+                        data_reloc_adde(patch_off, DR_TEXT, text_target);
+                    } else {
+                        erratum(
+                            "ARM64_RELOC_UNSIGNED nōn-externa: "
+                            "sectiō %d nōn sustenta", sect_num
+                        );
+                    }
+                }
+            }
+        }
+
         free(data);
     }
 
@@ -398,8 +495,10 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
 
         if (!r->r_extern) {
             /* relocatio non-externa — sectio-relativa */
-            if (cstr_sectnums[oi] > 0 && r->r_sym == cstr_sectnums[oi]
-                && (r->r_type == 3 || r->r_type == 4)) {
+            if (
+                cstr_sectnums[oi] > 0 && r->r_sym == cstr_sectnums[oi]
+                && (r->r_type == 3 || r->r_type == 4)
+            ) {
                 /* PAGE21/PAGEOFF12 ad __cstring — crea fixup pro scribo_macho */
 
                 /* decode ADRP+ADD ut chordam inveniamus */
@@ -525,7 +624,7 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
             int sym_oi   = liga_syms[sid].obiectum;
             int sym_sect = liga_syms[sid].sectio;
             int sg = (sym_sect > 0 && sym_sect < MAX_SECT)
-                     ? sect_genera[sym_oi * MAX_SECT + sym_sect] : 0;
+                ? sect_genera[sym_oi * MAX_SECT + sym_sect] : 0;
 
             if (sg == 3) {
                 /* symbolum in sectione dati (__data, __const, __bss) */
@@ -572,8 +671,10 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     fixup_adde(FIX_ADD_LO12_TEXT, inst_off, target, 0);
                 }
             } else {
-                erratum("symbolum '%s' in sectione ignota (genus %d)",
-                        r->sym_nomen, sg);
+                erratum(
+                    "symbolum '%s' in sectione ignota (genus %d)",
+                    r->sym_nomen, sg
+                );
             }
         } else if (sid < 0 && r->sym_sect > 0) {
             /* symbolum locale (non N_EXT) in obiecto — resolve per sectionem */
@@ -593,28 +694,34 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     if (r->r_type == 6) {
                         uint32_t li;
                         memcpy(&li, codex + inst_off, 4);
-                        int rd = li & 0x1F;
-                        int rn = (li >> 5) & 0x1F;
+                        int rd      = li & 0x1F;
+                        int rn      = (li >> 5) & 0x1F;
                         uint32_t ai = 0x91000000 | (rn << 5) | rd;
                         memcpy(codex + inst_off, &ai, 4);
                     }
                     fixup_adde(FIX_ADD_LO12_TEXT, inst_off, target, 0);
                 } else {
-                    erratum("relocatio non sustenta (typus %d) ad '%s' in __text",
-                            r->r_type, r->sym_nomen);
+                    erratum(
+                        "relocatio non sustenta (typus %d) ad '%s' in __text",
+                        r->r_type, r->sym_nomen
+                    );
                 }
             } else {
                 /* in __const, __data, vel __bss — quaere in tabula sectionum */
                 if (sym_sect_num >= MAX_SECT)
-                    erratum("symbolum '%s' in sectione %d ultra limitem",
-                            r->sym_nomen, sym_sect_num);
+                    erratum(
+                        "symbolum '%s' in sectione %d ultra limitem",
+                        r->sym_nomen, sym_sect_num
+                    );
                 int si_idx = oi * MAX_SECT + sym_sect_num;
-                int sg = sect_genera[si_idx];
+                int sg     = sect_genera[si_idx];
                 if (sg != 3)
-                    erratum("symbolum '%s' in sectione ignota %d (genus %d)",
-                            r->sym_nomen, sym_sect_num, sg);
+                    erratum(
+                        "symbolum '%s' in sectione ignota %d (genus %d)",
+                        r->sym_nomen, sym_sect_num, sg
+                    );
                 int idata_off = sect_idata_bases[si_idx]
-                                + (r->sym_valor - sect_idata_vmas[si_idx]);
+                    + (r->sym_valor - sect_idata_vmas[si_idx]);
 
                 if (r->r_type == 3 || r->r_type == 5) {
                     fixup_adde(FIX_ADRP_IDATA, inst_off, idata_off, 0);
@@ -622,15 +729,17 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     if (r->r_type == 6) {
                         uint32_t li;
                         memcpy(&li, codex + inst_off, 4);
-                        int rd = li & 0x1F;
-                        int rn = (li >> 5) & 0x1F;
+                        int rd      = li & 0x1F;
+                        int rn      = (li >> 5) & 0x1F;
                         uint32_t ai = 0x91000000 | (rn << 5) | rd;
                         memcpy(codex + inst_off, &ai, 4);
                     }
                     fixup_adde(FIX_ADD_LO12_IDATA, inst_off, idata_off, 0);
                 } else {
-                    erratum("relocatio non sustenta (typus %d) ad '%s' in datis",
-                            r->r_type, r->sym_nomen);
+                    erratum(
+                        "relocatio non sustenta (typus %d) ad '%s' in datis",
+                        r->r_type, r->sym_nomen
+                    );
                 }
             }
         } else {

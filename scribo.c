@@ -67,8 +67,8 @@ static uint32_t applica_adrp(uint32_t inst, uint64_t target_addr, uint64_t pc)
 static uint32_t applica_add_lo12(uint32_t inst, uint64_t target_addr)
 {
     int lo12 = (int)(target_addr & 0xFFF);
-    int rd = inst & 0x1F;
-    int rn = (inst >> 5) & 0x1F;
+    int rd   = inst & 0x1F;
+    int rn   = (inst >> 5) & 0x1F;
     return 0x91000000 | (lo12 << 10) | (rn << 5) | rd;
 }
 
@@ -208,17 +208,17 @@ void scribo_macho(const char *plica_exitus, int main_offset)
             }
         case FIX_ADRP: {
                 uint64_t ta = cstring_vmaddr + chordae[f->target].offset;
-                inst = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
+                inst        = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
                 break;
             }
         case FIX_ADD_LO12: {
                 uint64_t ta = cstring_vmaddr + chordae[f->target].offset;
-                inst = applica_add_lo12(inst, ta);
+                inst        = applica_add_lo12(inst, ta);
                 break;
             }
         case FIX_ADRP_GOT: {
                 uint64_t ta = got_vmaddr + f->target * 8;
-                inst = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
+                inst        = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
                 break;
             }
         case FIX_LDR_GOT_LO12: {
@@ -232,27 +232,27 @@ void scribo_macho(const char *plica_exitus, int main_offset)
             }
         case FIX_ADRP_DATA: {
                 uint64_t ta = bss_vmaddr + globales[f->target].bss_offset;
-                inst = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
+                inst        = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
                 break;
             }
         case FIX_ADD_LO12_DATA: {
                 uint64_t ta = bss_vmaddr + globales[f->target].bss_offset;
-                inst = applica_add_lo12(inst, ta);
+                inst        = applica_add_lo12(inst, ta);
                 break;
             }
         case FIX_ADRP_TEXT: {
                 uint64_t ta = text_sect_vmaddr + f->target;
-                inst = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
+                inst        = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
                 break;
             }
         case FIX_ADD_LO12_TEXT: {
                 uint64_t ta = text_sect_vmaddr + f->target;
-                inst = applica_add_lo12(inst, ta);
+                inst        = applica_add_lo12(inst, ta);
                 break;
             }
         case FIX_ADRP_IDATA: {
                 uint64_t ta = idata_vmaddr + f->target;
-                inst = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
+                inst        = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
                 break;
             }
         case FIX_ADD_LO12_IDATA:
@@ -273,6 +273,28 @@ void scribo_macho(const char *plica_exitus, int main_offset)
             }
         }
         memcpy(&codex[f->offset], &inst, 4);
+    }
+
+    /* ================================================================
+     * applica relocātiōnēs datōrum (ARM64_RELOC_UNSIGNED in init_data)
+     * ================================================================ */
+
+    for (int i = 0; i < num_data_relocs; i++) {
+        data_reloc_t *dr = &data_relocs[i];
+        uint64_t addr;
+        switch (dr->genus) {
+        case DR_CSTRING: addr = cstring_vmaddr + dr->target; break;
+        case DR_TEXT:    addr = text_sect_vmaddr + dr->target; break;
+        case DR_IDATA:   addr = idata_vmaddr + dr->target; break;
+        default:
+            erratum("data_reloc genus invalidum: %d", dr->genus);
+        }
+        if (dr->idata_offset + 8 > init_data_lon)
+            erratum(
+                "data_reloc offset %d extrā init_data (lon %d)",
+                dr->idata_offset, init_data_lon
+            );
+        memcpy(init_data + dr->idata_offset, &addr, 8);
     }
 
     /* ================================================================
@@ -389,7 +411,7 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     for (int i = 0; i < num_got; i++) {
         nlist64_t *nl = &symtab_entries[nsyms++];
         nl->n_strx    = strtab_lon;
-        int glen = strlen(got[i].nomen);
+        int glen      = strlen(got[i].nomen);
         if (strtab_lon + glen + 1 > (int)sizeof(strtab))
             erratum("strtab nimis magna (> %d octeti)", (int)sizeof(strtab));
         memcpy(&strtab[strtab_lon], got[i].nomen, glen + 1);
@@ -408,9 +430,42 @@ void scribo_macho(const char *plica_exitus, int main_offset)
 
     strtab_lon = (int)allinea(strtab_lon, 8);
 
+    /* ================================================================
+     * construere rebase info (prō indicibus in init_data)
+     *
+     * Rebase info dīcit dyld quōs octō-octetōs in segmentō __DATA
+     * ASLR slide addere dēbeat.
+     * ================================================================ */
+
+    uint8_t rebase_info[65536];
+    int rebase_lon = 0;
+
+    if (num_data_relocs > 0) {
+        /* typus = pointer */
+        rebase_info[rebase_lon++] = REBASE_OPCODE_SET_TYPE_IMM
+            | REBASE_TYPE_POINTER;
+
+        /* sortēmus offsets ut contigua rebase efficiāmus */
+        /* (simpliciter: emit singulōs — opcode per quemque) */
+        for (int i = 0; i < num_data_relocs; i++) {
+            /* offset in segmentō __DATA = idata_sect_off + dr->idata_offset */
+            uint64_t seg_off = idata_sect_off + data_relocs[i].idata_offset;
+            if (rebase_lon + 12 > (int)sizeof(rebase_info))
+                erratum("rebase info nimis magna (> %d octeti)",
+                        (int)sizeof(rebase_info));
+            rebase_info[rebase_lon++] =
+                REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 2;
+            rebase_lon += encode_uleb128(&rebase_info[rebase_lon], seg_off);
+            rebase_info[rebase_lon++] =
+                REBASE_OPCODE_DO_REBASE_IMM_TIMES | 1;
+        }
+    }
+    rebase_info[rebase_lon++] = REBASE_OPCODE_DONE;
+    rebase_lon = (int)allinea(rebase_lon, 8);
+
     /* linkedit layout */
     int rebase_off  = linkedit_fileoff;
-    int rebase_size = 8; /* minimal: just DONE opcode */
+    int rebase_size = rebase_lon;
 
     int bind_off  = rebase_off + rebase_size;
     int bind_size = bind_lon;
@@ -706,10 +761,7 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     scribe_impletio(fp, linkedit_fileoff - cur_pos);
 
     /* --- rebase info --- */
-    {
-        uint8_t rb[8] = {REBASE_OPCODE_DONE, 0, 0, 0, 0, 0, 0, 0};
-        fwrite(rb, 1, rebase_size, fp);
-    }
+    fwrite(rebase_info, 1, rebase_size, fp);
 
     /* --- bind info --- */
     fwrite(bind_info, 1, bind_size, fp);

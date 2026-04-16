@@ -54,7 +54,13 @@
 
 #define BIND_TYPE_POINTER   1
 
-#define REBASE_OPCODE_DONE  0x00
+#define REBASE_OPCODE_DONE                        0x00
+#define REBASE_OPCODE_SET_TYPE_IMM                0x10
+#define REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB 0x20
+#define REBASE_OPCODE_DO_REBASE_IMM_TIMES         0x50
+#define REBASE_OPCODE_DO_REBASE_ULEB_TIMES_SKIP   0x60
+
+#define REBASE_TYPE_POINTER 1
 
 #define N_EXT               0x01
 #define N_UNDF              0x0
