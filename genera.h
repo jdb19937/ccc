@@ -5,14 +5,14 @@
 #ifndef GENERA_H
 #define GENERA_H
 
-#include "ccc.h"
+#include "parser.h"
 
 /* ================================================================
  * limites generantis
  * ================================================================ */
 
-#define MAX_CASUS 512
-#define MAX_BREAK 256
+#define MAX_CASUS 1024  /* §5.2.4.1: minimum 1023 case labels */
+#define MAX_BREAK 256   /* §5.2.4.1: minimum 127 nesting levels */
 
 /* ================================================================
  * conditiones ARM64

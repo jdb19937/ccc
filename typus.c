@@ -2,7 +2,7 @@
  * typus.c — utilia typorum
  */
 
-#include "ccc.h"
+#include "utilia.h"
 #include "typus.h"
 #include "fluat.h"
 
@@ -98,6 +98,8 @@ typus_t *typus_indicem(typus_t *basis)
 
 typus_t *typus_tabulam(typus_t *basis, int num)
 {
+    if (!basis)
+        erratum("typus_tabulam: basis nulla");
     typus_t *t = typus_novus(TY_ARRAY);
     t->basis = basis;
     t->num_elementorum = num;

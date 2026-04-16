@@ -5,9 +5,8 @@
  * Tractat declarationes, sententias, expressiones C99.
  */
 
-#include "ccc.h"
+#include "utilia.h"
 #include "parser.h"
-#include "typus.h"
 #include "fluat.h"
 
 /* ================================================================
@@ -220,10 +219,9 @@ static typus_t *parse_specifiers(
         case T_IDENT:
             if (lex_est_typus(sig.chorda)) {
                 symbolum_t *sym = ambitus_quaere(sig.chorda, SYM_TYPEDEF);
-                if (sym && sym->typus)
-                    t = sym->typus;
-                else
-                    t = ty_int;
+                if (!sym || !sym->typus)
+                    erratum_ad(sig_linea, "typedef '%s' sine typo", sig.chorda);
+                t = sym->typus;
                 lex_proximum();
                 continue;
             }
@@ -308,7 +306,9 @@ static typus_t *parse_struct_vel_union(void)
 
     if (sig.genus == T_LBRACE) {
         lex_proximum();
-        t->membra        = calloc(MAX_MEMBRA, sizeof(membrum_t));
+        t->membra = calloc(MAX_MEMBRA, sizeof(membrum_t));
+        if (!t->membra)
+            erratum("memoria exhausta");
         t->num_membrorum = 0;
         int offset       = 0;
 
@@ -347,12 +347,12 @@ static typus_t *parse_struct_vel_union(void)
                 if (col > 0)
                     offset = (offset + col - 1) & ~(col - 1);
 
-                if (t->num_membrorum < MAX_MEMBRA) {
-                    membrum_t *mem = &t->membra[t->num_membrorum++];
-                    strncpy(mem->nomen, nom_mem, 127);
-                    mem->typus  = typ_mem;
-                    mem->offset = offset;
-                }
+                if (t->num_membrorum >= MAX_MEMBRA)
+                    erratum_ad(sig_linea, "nimis multa membra in structura");
+                membrum_t *mem = &t->membra[t->num_membrorum++];
+                strncpy(mem->nomen, nom_mem, 127);
+                mem->typus  = typ_mem;
+                mem->offset = offset;
                 offset += typus_magnitudo(typ_mem);
 
                 if (sig.genus == T_COMMA)
@@ -426,8 +426,12 @@ static typus_t *parse_enum(void)
                     lex_proximum();
                 } else if (sig.genus == T_IDENT) {
                     symbolum_t *cs = ambitus_quaere(sig.chorda, SYM_ENUM_CONST);
-                    if (cs)
-                        val = cs->valor_enum;
+                    if (!cs)
+                        erratum_ad(
+                            sig_linea,
+                            "constans enum ignota: '%s'", sig.chorda
+                        );
+                    val = cs->valor_enum;
                     lex_proximum();
                     /* supporta expressiones simplices: IDENT | NUM */
                     if (sig.genus == T_PIPE) {
@@ -530,11 +534,11 @@ static typus_t *parse_declarator(typus_t *basis, char *nomen, int max_nomen)
                     ve = e; /* VLA — expressio non constans */
             }
             expecta(T_RBRACKET);
-            if (ndims < 64) {
-                dims[ndims]     = num;
-                vla_expr[ndims] = ve;
-                ndims++;
-            }
+            if (ndims >= 64)
+                erratum_ad(sig_linea, "nimis multae dimensiones tabulae");
+            dims[ndims]     = num;
+            vla_expr[ndims] = ve;
+            ndims++;
         }
         for (int i = ndims - 1; i >= 0; i--)
             t = typus_tabulam(t, dims[i]);
@@ -558,14 +562,18 @@ static typus_t *parse_parametros(
     typus_t *reditus,
     symbolum_t ***param_sym, int *num_param
 ) {
-    typus_t *tf = typus_novus(TY_FUNC);
-    tf->reditus = reditus;
-    tf->magnitudo = 8;
+    typus_t *tf    = typus_novus(TY_FUNC);
+    tf->reditus    = reditus;
+    tf->magnitudo  = 8;
     tf->colineatio = 8;
-    tf->parametri = calloc(MAX_PARAM, sizeof(typus_t *));
+    tf->parametri  = calloc(MAX_PARAM, sizeof(typus_t *));
+    if (!tf->parametri)
+        erratum("memoria exhausta");
     tf->nomina_param = calloc(MAX_PARAM, sizeof(char *));
+    if (!tf->nomina_param)
+        erratum("memoria exhausta");
     tf->num_parametrorum = 0;
-    tf->est_variadicus = 0;
+    tf->est_variadicus   = 0;
 
     expecta(T_LPAREN);
 
@@ -600,18 +608,18 @@ static typus_t *parse_parametros(
         if (tp->genus == TY_ARRAY)
             tp = typus_indicem(tp->basis);
 
-        if (tf->num_parametrorum < MAX_PARAM) {
-            tf->parametri[tf->num_parametrorum]    = tp;
-            tf->nomina_param[tf->num_parametrorum] = nomen[0] ? strdup(nomen) : NULL;
+        if (tf->num_parametrorum >= MAX_PARAM)
+            erratum_ad(sig_linea, "nimis multi parametri");
+        tf->parametri[tf->num_parametrorum]    = tp;
+        tf->nomina_param[tf->num_parametrorum] = nomen[0] ? strdup(nomen) : NULL;
 
-            if (nomen[0]) {
-                symbolum_t *ps = ambitus_adde(nomen, SYM_VAR);
-                ps->typus = tp;
-                ps->est_parametrus = 1;
-                param_syms[np++] = ps;
-            }
-            tf->num_parametrorum++;
+        if (nomen[0]) {
+            symbolum_t *ps = ambitus_adde(nomen, SYM_VAR);
+            ps->typus = tp;
+            ps->est_parametrus = 1;
+            param_syms[np++] = ps;
         }
+        tf->num_parametrorum++;
 
         if (sig.genus == T_COMMA)
             lex_proximum();
@@ -738,8 +746,7 @@ static nodus_t *parse_expr_primaria(void)
                     n->sym   = s;
                 }
             } else {
-            /* functio non declarata — praesume int f(...) */
-                n->typus = ty_int;
+                erratum_ad(n->linea, "symbolum non declaratum: '%s'", nomen);
             }
             return n;
         }
@@ -1271,9 +1278,18 @@ static nodus_t *parse_sententia(void)
                 lex_proximum();
             } else if (sig.genus == T_IDENT) {
                 symbolum_t *s = ambitus_quaere(sig.chorda, SYM_ENUM_CONST);
-                if (s)
-                    n->valor = s->valor_enum;
+                if (!s)
+                    erratum_ad(
+                        sig_linea,
+                        "constans ignota in case: '%s'", sig.chorda
+                    );
+                n->valor = s->valor_enum;
                 lex_proximum();
+            } else {
+                erratum_ad(
+                    sig_linea,
+                    "valor constans expectabatur in case"
+                );
             }
             expecta(T_COLON);
         /* non recursive — si proximus est case/default, dexter = NOP */

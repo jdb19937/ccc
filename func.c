@@ -2,7 +2,7 @@
  * func.c — tabula functionum localium
  */
 
-#include "ccc.h"
+#include <string.h>
 #include "func.h"
 
 func_loc_t func_loci[MAX_GLOBALES];

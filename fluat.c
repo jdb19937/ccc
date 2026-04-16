@@ -20,9 +20,9 @@
  *   Annex F       — IEC 60559 vinculum
  */
 
+#include <stddef.h>
 #include "fluat.h"
 #include "emitte.h"
-#include "typus.h"
 
 /* ================================================================
  * typi praefiniti

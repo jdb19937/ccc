@@ -5,6 +5,7 @@
  * Post scripturam, codesign -s - vocat ad signandum.
  */
 
+#include "utilia.h"
 #include "emitte.h"
 #include "scribo.h"
 #include "func.h"

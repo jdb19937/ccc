@@ -6,7 +6,7 @@
  * termios, etc.) inclusa sunt.
  */
 
-#include "ccc.h"
+#include "utilia.h"
 #include "lexator.h"
 #include "biblio.h"
 
@@ -47,7 +47,7 @@ typedef struct {
     int activa;
     int est_functionalis;       /* 1 si macra functionalis */
     int num_parametrorum;
-    char parametri[16][128];    /* nomina parametrorum */
+    char parametri[MAX_PARAM_MACRAE][MAX_NOMEN_PARAM];
 } macra_t;
 
 static macra_t macrae[MAX_MACRAE];
@@ -406,7 +406,7 @@ static int tracta_directivam(void)
         int c_peek = lege_c();
         if (c_peek == '(') {
             /* macra functionalis — lege parametros */
-            char param_nomina[16][128];
+            char param_nomina[MAX_PARAM_MACRAE][MAX_NOMEN_PARAM];
             int nparam = 0;
             for (;;) {
                 char pn[128];
@@ -425,8 +425,12 @@ static int tracta_directivam(void)
                         pn[pi++] = pc;
                 }
                 pn[pi] = '\0';
-                if (nparam < 16)
-                    strncpy(param_nomina[nparam++], pn, 127);
+                if (nparam >= MAX_PARAM_MACRAE)
+                    erratum_ad(
+                        cur_linea,
+                        "nimis multi parametri in macra"
+                    );
+                strncpy(param_nomina[nparam++], pn, MAX_NOMEN_PARAM - 1);
                 if (pc == ')')
                     break;
             }
@@ -436,7 +440,7 @@ static int tracta_directivam(void)
             m->est_functionalis = 1;
             m->num_parametrorum = nparam;
             for (int i = 0; i < nparam; i++)
-                strncpy(m->parametri[i], param_nomina[i], 127);
+                strncpy(m->parametri[i], param_nomina[i], MAX_NOMEN_PARAM - 1);
         } else {
             repone_c();
             char valor[MAX_CHORDA];
@@ -603,9 +607,19 @@ static int tracta_directivam(void)
         return 1;
     }
 
+    /* §6.10.5: #error — nuntium diagnosticum et cessatio */
+    if (strcmp(directiva, "error") == 0) {
+        if (cond_activa()) {
+            char nuntium[MAX_CHORDA];
+            lege_residuum_lineae(nuntium, sizeof(nuntium));
+            erratum_ad(cur_linea, "#error %s", nuntium);
+        }
+        praetermitte_lineam();
+        return 1;
+    }
+
     if (
         strcmp(directiva, "pragma") == 0 ||
-        strcmp(directiva, "error") == 0 ||
         strcmp(directiva, "warning") == 0 ||
         strcmp(directiva, "line") == 0 ||
         directiva[0] == '\0'
@@ -614,7 +628,9 @@ static int tracta_directivam(void)
         return 1;
     }
 
-    /* directiva ignota — praetermitte */
+    /* §6.10: directiva ignota */
+    if (cond_activa())
+        erratum_ad(cur_linea, "directiva ignota: #%s", directiva);
     praetermitte_lineam();
     return 1;
 }
@@ -805,14 +821,18 @@ inicio:
         return T_NUM;
     }
 
-    /* chorda */
+    /* chorda — §6.4.5 */
     if (c == '"') {
         int i = 0;
         while ((c = lege_c()) != -1 && c != '"') {
             if (c == '\\')
                 c = lege_effugium();
-            if (i < MAX_CHORDA - 1)
-                sig.chorda[i++] = c;
+            if (i >= MAX_CHORDA - 1)
+                erratum_ad(
+                    cur_linea,
+                    "chorda litteralis nimis longa (max %d)", MAX_CHORDA - 1
+                );
+            sig.chorda[i++] = c;
         }
         sig.chorda[i]   = '\0';
         sig.lon_chordae = i;
@@ -831,8 +851,13 @@ inicio:
                 while ((c = lege_c()) != -1 && c != '"') {
                     if (c == '\\')
                         c = lege_effugium();
-                    if (i < MAX_CHORDA - 1)
-                        sig.chorda[i++] = c;
+                    if (i >= MAX_CHORDA - 1)
+                        erratum_ad(
+                            cur_linea,
+                            "chorda litteralis nimis longa (max %d)",
+                            MAX_CHORDA - 1
+                        );
+                    sig.chorda[i++] = c;
                 }
                 sig.chorda[i]   = '\0';
                 sig.lon_chordae = i;
@@ -845,13 +870,18 @@ inicio:
         return T_STR;
     }
 
-    /* character */
+    /* character — §6.4.4.4 */
     if (c == '\'') {
         c = lege_c();
         if (c == '\\')
             c = lege_effugium();
         sig.valor = c;
-        c         = lege_c(); /* praetermitte ' conclusivum */
+        c         = lege_c();
+        if (c != '\'')
+            erratum_ad(
+                cur_linea,
+                "character litteralis non clausum: expectabatur '"
+            );
         sig.genus = T_CHARLIT;
         return T_CHARLIT;
     }
@@ -865,8 +895,9 @@ inicio:
                 (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
                 (c >= '0' && c <= '9') || c == '_'
             ) {
-                if (i < MAX_CHORDA - 1)
-                    sig.chorda[i++] = c;
+                if (i >= MAX_CHORDA - 1)
+                    erratum_ad(cur_linea, "identificator nimis longus");
+                sig.chorda[i++] = c;
             } else {
                 repone_c();
                 break;
@@ -893,36 +924,71 @@ inicio:
                 pc = lege_c();
             }
             if (pc == '(') {
-                char args[16][MAX_CHORDA];
+                /* alveus planus pro argumentis — acervus pro casu communi,
+                 * malloc si excedit */
+                char arg_buf_acervus[MAX_CHORDA];
+                char *arg_buf   = arg_buf_acervus;
+                int arg_buf_cap = MAX_CHORDA;
+                int arg_buf_pos = 0;
+                int arg_initia[MAX_ARG_MACRAE];
                 int nargs   = 0;
                 int profund = 0;
-                int ai      = 0;
+
+                arg_initia[0] = 0;
                 for (;;) {
                     pc = lege_c();
                     if (pc == -1)
                         break;
                     if (pc == '(') {
                         profund++;
-                        if (ai < MAX_CHORDA - 1)
-                            args[nargs][ai++] = pc;
                     } else if (pc == ')') {
                         if (profund == 0) {
-                            args[nargs][ai] = '\0';
-                            if (ai > 0 || nargs > 0)
+                            if (arg_buf_pos >= arg_buf_cap)
+                                erratum_ad(
+                                    cur_linea,
+                                    "argumenta macrae nimis longa"
+                                );
+                            arg_buf[arg_buf_pos++] = '\0';
+                            if ((arg_buf_pos - 1) > arg_initia[nargs] || nargs > 0) {
+                                if (nargs >= MAX_ARG_MACRAE)
+                                    erratum_ad(
+                                        cur_linea,
+                                        "nimis multa argumenta in macra"
+                                    );
                                 nargs++;
+                            }
                             break;
                         }
                         profund--;
-                        if (ai < MAX_CHORDA - 1)
-                            args[nargs][ai++] = pc;
                     } else if (pc == ',' && profund == 0) {
-                        args[nargs][ai] = '\0';
+                        if (arg_buf_pos >= arg_buf_cap)
+                            erratum_ad(
+                                cur_linea,
+                                "argumenta macrae nimis longa"
+                            );
+                        arg_buf[arg_buf_pos++] = '\0';
+                        if (nargs >= MAX_ARG_MACRAE - 1)
+                            erratum_ad(
+                                cur_linea,
+                                "nimis multa argumenta in macra"
+                            );
                         nargs++;
-                        ai = 0;
-                    } else {
-                        if (ai < MAX_CHORDA - 1)
-                            args[nargs][ai++] = pc;
+                        arg_initia[nargs] = arg_buf_pos;
+                        continue;
                     }
+                    /* cresc alveum si opus est */
+                    if (arg_buf_pos >= arg_buf_cap) {
+                        int nova_cap = arg_buf_cap * 2;
+                        char *novus  = malloc(nova_cap);
+                        if (!novus)
+                            erratum("memoria exhausta");
+                        memcpy(novus, arg_buf, arg_buf_pos);
+                        if (arg_buf != arg_buf_acervus)
+                            free(arg_buf);
+                        arg_buf     = novus;
+                        arg_buf_cap = nova_cap;
+                    }
+                    arg_buf[arg_buf_pos++] = pc;
                 }
                 /* substitue parametros in corpore macrae */
                 static char expansio_alvei[8][MAX_CHORDA * 2];
@@ -939,7 +1005,7 @@ inicio:
                         (corpus[ci] >= 'A' && corpus[ci] <= 'Z') ||
                         corpus[ci] == '_'
                     ) {
-                        char tok[128];
+                        char tok[256];
                         int ti = 0;
                         while (
                             ci < clon && (
@@ -949,7 +1015,7 @@ inicio:
                                 corpus[ci] == '_'
                             )
                         ) {
-                            if (ti < 127)
+                            if (ti < 255)
                                 tok[ti++] = corpus[ci];
                             ci++;
                         }
@@ -959,7 +1025,7 @@ inicio:
                         for (int pi = 0; pi < m->num_parametrorum; pi++) {
                             if (strcmp(tok, m->parametri[pi]) == 0 && pi < nargs) {
                                 /* substitue argumentum */
-                                const char *arg = args[pi];
+                                const char *arg = arg_buf + arg_initia[pi];
                                 while (*arg && ei < MAX_CHORDA * 2 - 1)
                                     expansio[ei++] = *arg++;
                                 invenit = 1;
@@ -977,6 +1043,8 @@ inicio:
                     }
                 }
                 expansio[ei] = '\0';
+                if (arg_buf != arg_buf_acervus)
+                    free(arg_buf);
                 pelle_expansionem(expansio, ei);
                 goto inicio;
             } else {

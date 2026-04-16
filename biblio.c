@@ -5,7 +5,7 @@
  * legit archiva .a et extrahit objecta.
  */
 
-#include "ccc.h"
+#include "utilia.h"
 #include "biblio.h"
 #include "scribo.h"
 
@@ -27,7 +27,10 @@ void includ_adde(const char *via)
         if (!viae_includ)
             erratum("memoria exhausta");
     }
-    viae_includ[num_viarum_includ++] = strdup(via);
+    char *copia = strdup(via);
+    if (!copia)
+        erratum("memoria exhausta");
+    viae_includ[num_viarum_includ++] = copia;
 }
 
 char *includ_quaere(
@@ -79,7 +82,10 @@ void biblio_via_adde(const char *via)
         if (!viae_biblio)
             erratum("memoria exhausta");
     }
-    viae_biblio[num_viarum_biblio++] = strdup(via);
+    char *copia = strdup(via);
+    if (!copia)
+        erratum("memoria exhausta");
+    viae_biblio[num_viarum_biblio++] = copia;
 }
 
 /* ================================================================
@@ -108,7 +114,10 @@ void res_adde(const char *via, int genus)
         if (!biblio_res)
             erratum("memoria exhausta");
     }
-    biblio_res[num_biblio_res].via   = strdup(via);
+    char *copia = strdup(via);
+    if (!copia)
+        erratum("memoria exhausta");
+    biblio_res[num_biblio_res].via   = copia;
     biblio_res[num_biblio_res].genus = genus;
     num_biblio_res++;
 }
@@ -156,8 +165,10 @@ void biblio_framework_adde(const char *nomen)
     char via[1024];
 
     /* proba /System/Library/Frameworks/Name.framework/Name */
-    snprintf(via, sizeof(via),
-             "/System/Library/Frameworks/%s.framework/%s", nomen, nomen);
+    snprintf(
+        via, sizeof(via),
+        "/System/Library/Frameworks/%s.framework/%s", nomen, nomen
+    );
     res_adde(via, BIBLIO_DYLIB);
 }
 
@@ -230,7 +241,10 @@ char **biblio_extrahe_objecta(int *numerum)
         while (pos + 60 <= ar_lon) {
             const uint8_t *caput = ar + pos;
             if (caput[58] != '`' || caput[59] != '\n')
-                break;
+                erratum(
+                    "'%s': caput membri ar malformatum",
+                    biblio_res[bi].via
+                );
 
             int mag      = ar_numerus(caput + 48, 10);
             int data_pos = pos + 60;

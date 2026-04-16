@@ -36,9 +36,9 @@ cat > "$DIR_INITIA/Faceplica" << FINIS
 CCC     = $VIA_CCC
 LDI     = $VIA_LDI
 
-CCC_OBJECTA = ccc.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
-LDI_OBJECTA = ldi.o liga.o emitte.o scribo.o biblio.o typus.o func.o fluat.o
-OBJECTA     = ccc.o ldi.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o fluat.o typus.o func.o
+CCC_OBJECTA = ccc.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o fluat.o typus.o func.o utilia.o
+LDI_OBJECTA = ldi.o liga.o emitte.o scribo.o biblio.o typus.o func.o fluat.o utilia.o
+OBJECTA     = ccc.o ldi.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o fluat.o typus.o func.o utilia.o
 
 omnia: ccc ldi
 

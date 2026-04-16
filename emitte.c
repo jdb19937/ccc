@@ -5,8 +5,8 @@
  * Functiones emissionis pro omnibus instructionibus ARM64.
  */
 
+#include "utilia.h"
 #include "emitte.h"
-#include "typus.h"
 
 /* ================================================================
  * alvei et status
@@ -51,6 +51,8 @@ int label_novus(void)
 
 void label_pone(int id)
 {
+    if (id < 0 || id >= num_labels)
+        erratum("label invalidum: %d", id);
     labels[id] = codex_lon;
 }
 
@@ -60,6 +62,10 @@ void label_pone(int id)
 
 int chorda_adde(const char *data, int lon)
 {
+    if (num_chordarum >= MAX_CHORDAE_LIT)
+        erratum("nimis multae chordae litterales");
+    if (chordae_lon + lon + 1 > MAX_DATA)
+        erratum("data chordarum nimis magna");
     int id = num_chordarum;
     chordae[id].data = (char *)&chordae_data[chordae_lon];
     memcpy(&chordae_data[chordae_lon], data, lon);
@@ -133,22 +139,46 @@ void fixup_adde(int genus, int offset, int target, int mag)
 
 void emitte_initia(void)
 {
-    if (!codex)
-        codex        = malloc(MAX_CODEX);
-    if (!chordae)
-        chordae      = malloc(MAX_CHORDAE_LIT * sizeof(chorda_lit_t));
-    if (!chordae_data)
+    if (!codex) {
+        codex = malloc(MAX_CODEX);
+        if (!codex)
+            erratum("memoria exhausta");
+    }
+    if (!chordae) {
+        chordae = malloc(MAX_CHORDAE_LIT * sizeof(chorda_lit_t));
+        if (!chordae)
+            erratum("memoria exhausta");
+    }
+    if (!chordae_data) {
         chordae_data = malloc(MAX_DATA);
-    if (!got)
-        got          = malloc(MAX_GOT * sizeof(got_intrans_t));
-    if (!fixups)
-        fixups       = malloc(MAX_FIXUPS * sizeof(fixup_t));
-    if (!labels)
-        labels       = malloc(MAX_LABELS * sizeof(int));
-    if (!globales)
-        globales     = malloc(MAX_GLOBALES * sizeof(globalis_t));
-    if (!init_data)
-        init_data    = malloc(MAX_DATA);
+        if (!chordae_data)
+            erratum("memoria exhausta");
+    }
+    if (!got) {
+        got = malloc(MAX_GOT * sizeof(got_intrans_t));
+        if (!got)
+            erratum("memoria exhausta");
+    }
+    if (!fixups) {
+        fixups = malloc(MAX_FIXUPS * sizeof(fixup_t));
+        if (!fixups)
+            erratum("memoria exhausta");
+    }
+    if (!labels) {
+        labels = malloc(MAX_LABELS * sizeof(int));
+        if (!labels)
+            erratum("memoria exhausta");
+    }
+    if (!globales) {
+        globales = malloc(MAX_GLOBALES * sizeof(globalis_t));
+        if (!globales)
+            erratum("memoria exhausta");
+    }
+    if (!init_data) {
+        init_data = malloc(MAX_DATA);
+        if (!init_data)
+            erratum("memoria exhausta");
+    }
     codex_lon     = 0;
     data_lon      = 0;
     init_data_lon = 0;
@@ -612,7 +642,7 @@ void emit_load(int rd, int rn, int offset, int mag)
     case 2: emit_ldrsh(rd, rn, offset); break;
     case 4: emit_ldrsw(rd, rn, offset); break;
     case 8: emit_ldr64(rd, rn, offset); break;
-    default: emit_ldr64(rd, rn, offset); break;
+    default: erratum("emit_load: magnitudo invalida: %d", mag);
     }
 }
 
@@ -623,7 +653,7 @@ void emit_load_unsigned(int rd, int rn, int offset, int mag)
     case 2: emit_ldrh(rd, rn, offset); break;
     case 4: emit_ldr32(rd, rn, offset); break;
     case 8: emit_ldr64(rd, rn, offset); break;
-    default: emit_ldr64(rd, rn, offset); break;
+    default: erratum("emit_load_unsigned: magnitudo invalida: %d", mag);
     }
 }
 
@@ -634,6 +664,6 @@ void emit_store(int rt, int rn, int offset, int mag)
     case 2: emit_strh(rt, rn, offset); break;
     case 4: emit_str32(rt, rn, offset); break;
     case 8: emit_str64(rt, rn, offset); break;
-    default: emit_str64(rt, rn, offset); break;
+    default: erratum("emit_store: magnitudo invalida: %d", mag);
     }
 }

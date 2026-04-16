@@ -8,7 +8,9 @@
 #ifndef EMITTE_H
 #define EMITTE_H
 
-#include "ccc.h"
+#include <stdint.h>
+
+#include "typus.h"
 
 /* ================================================================
  * limites emissionis
@@ -20,7 +22,7 @@
 #define MAX_GOT         512
 #define MAX_FIXUPS      262144
 #define MAX_LABELS      65536
-#define MAX_GLOBALES    4096
+#define MAX_GLOBALES    4096  /* §5.2.4.1: minimum 4095 external identifiers */
 
 /* ================================================================
  * fixup (relocationes)

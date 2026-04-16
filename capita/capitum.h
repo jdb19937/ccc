@@ -11,8 +11,8 @@
 
 typedef unsigned long __ccc_size_t;
 typedef long __ccc_ssize_t;
-#define size_t __ccc_size_t
-#define ssize_t __ccc_ssize_t
+typedef unsigned long size_t;
+typedef long ssize_t;
 #define NULL ((void *)0)
 typedef int _Bool;
 typedef int pid_t;
@@ -27,6 +27,7 @@ typedef char int8_t;
 typedef short int16_t;
 typedef int int32_t;
 typedef long int64_t;
+typedef unsigned int useconds_t;
 #define EOF (-1)
 #define SEEK_SET 0
 #define SEEK_CUR 1
@@ -35,7 +36,10 @@ typedef long int64_t;
 /* stdio */
 typedef struct __sFILE FILE;
 FILE *fopen(const char *, const char *);
+FILE *fdopen(int fildes, const char *mode);
+FILE *popen(const char *command, const char *mode);
 int fclose(FILE *);
+int pclose(FILE *stream);
 unsigned long fwrite(const void *, unsigned long, unsigned long, FILE *);
 int snprintf(char *, unsigned long, const char *, ...);
 int sprintf(char *, const char *, ...);
@@ -97,6 +101,7 @@ char *strerror(int);
 int *__error(void);
 #define errno (*__error())
 #define EAGAIN 35
+#define EWOULDBLOCK EAGAIN
 #define EINTR 4
 
 /* termios */
@@ -115,6 +120,7 @@ int *__error(void);
 #define VMIN    16
 #define VTIME   17
 #define TCSAFLUSH 2
+#define TCSANOW 0
 struct termios {
     unsigned long c_iflag;
     unsigned long c_oflag;
@@ -128,7 +134,8 @@ int tcgetattr(int, struct termios *);
 int tcsetattr(int, int, const struct termios *);
 
 /* sys/ioctl */
-#define TIOCGWINSZ 1074295912
+#define TIOCGWINSZ 0x40087468
+#define TIOCSWINSZ 0x80087467
 struct winsize {
     unsigned short ws_row;
     unsigned short ws_col;
@@ -197,9 +204,11 @@ int mkfifo(const char *, unsigned short);
 #define O_RDONLY 0
 #define O_WRONLY 1
 #define O_RDWR   2
+#define O_NONBLOCK 4
 #define O_CREAT  512
 #define O_TRUNC  1024
 #define O_APPEND 8
+#define O_NOCTTY 0x00020000
 #define F_DUPFD  0
 #define F_GETFD  1
 #define F_SETFD  2
@@ -272,6 +281,7 @@ int access(const char *, int);
 #define R_OK 4
 int isatty(int);
 int putchar(int);
+int fputc(int c, FILE *stream);
 int fputs(const char *, void *);
 int fflush(void *);
 int fileno(void *);
@@ -352,5 +362,19 @@ typedef struct {
 #define FD_CLR(fd, s) ((s)->fds_bits[(fd)/32] &= ~(1 << ((fd) % 32)))
 #define FD_ISSET(fd, s) ((s)->fds_bits[(fd)/32] & (1 << ((fd) % 32)))
 int select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
+
+int system(const char *command);
+int remove(const char *path);
+pid_t wait(int *stat_loc);
+int mkstemp(char *template);
+useconds_t ualarm(useconds_t useconds, useconds_t interval);
+pid_t setsid(void);
+
+int posix_openpt(int oflag);
+int grantpt(int fildes);
+int unlockpt(int fildes);
+char *ptsname(int fildes);
+
+int execlp(const char *file, const char *arg0, ...);
 
 #endif

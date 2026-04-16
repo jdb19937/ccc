@@ -15,7 +15,7 @@
 #ifndef FLUAT_H
 #define FLUAT_H
 
-#include "ccc.h"
+#include "typus.h"
 
 /* ================================================================
  * typi praefiniti — float et double

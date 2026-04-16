@@ -5,7 +5,7 @@
  * resolvit symbola, et scribit executabile per scribo_macho.
  */
 
-#include "ccc.h"
+#include "utilia.h"
 #include "emitte.h"
 #include "scribo.h"
 
@@ -103,7 +103,19 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
     int *data_sectnums = malloc(num_obj * sizeof(int));
     int *cstr_vmaddrs  = malloc(num_obj * sizeof(int));
     int *data_vmaddrs  = malloc(num_obj * sizeof(int));
-    if (!codex_bases || !cstr_bases || !data_bases || !text_mags)
+
+    /* tabula sectionum generalis pro resolutione symbolorum localium */
+    #define MAX_SECT 32
+    /* genus: 0=ignota, 1=textus, 2=chordae, 3=idata (__data/__const/__bss) */
+    int *sect_genera      = calloc(num_obj * MAX_SECT, sizeof(int));
+    int *sect_idata_bases = calloc(num_obj * MAX_SECT, sizeof(int));
+    int *sect_idata_vmas  = calloc(num_obj * MAX_SECT, sizeof(int));
+
+    if (
+        !codex_bases || !cstr_bases || !data_bases || !text_mags ||
+        !cstr_sectnums || !data_sectnums || !cstr_vmaddrs || !data_vmaddrs ||
+        !sect_genera || !sect_idata_bases || !sect_idata_vmas
+    )
         erratum("memoria exhausta");
 
     /* === passus primus: lege objecta, collige symbola et codicem === */
@@ -134,6 +146,10 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
         int cstr_sectnum = -1, data_sectnum = -1;
         int cstr_vma     = 0, data_vma = 0;
         int sect_counter = 0;
+        /* temporanea pro sectiones extra (__const, __bss) */
+        int sect_file_offs[MAX_SECT] = {0};
+        int sect_mags[MAX_SECT]      = {0};
+        int sect_is_bss[MAX_SECT]    = {0};
 
         for (uint32_t ci = 0; ci < ncmds; ci++) {
             uint32_t cmd  = lege32(data + cmd_off);
@@ -152,21 +168,44 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     uint32_t s_nreloc = lege32(data + sect_off + 60);
                     sect_counter++; /* Mach-O sections 1-indexed */
 
+                    /* registra in tabula sectionum */
+                    if (sect_counter < MAX_SECT) {
+                        int si_idx = oi * MAX_SECT + sect_counter;
+                        sect_idata_vmas[si_idx] = (int)s_addr;
+                        sect_file_offs[sect_counter] = s_off;
+                        sect_mags[sect_counter] = (int)s_size;
+                    }
+
                     if (strcmp(sectname, "__text") == 0) {
                         text_off  = s_off;
                         text_mag  = (int)s_size;
                         reloc_off = s_reloff;
                         nrelocs   = s_nreloc;
+                        if (sect_counter < MAX_SECT)
+                            sect_genera[oi * MAX_SECT + sect_counter] = 1;
                     } else if (strcmp(sectname, "__cstring") == 0) {
                         cstr_off     = s_off;
                         cstr_mag     = (int)s_size;
                         cstr_sectnum = sect_counter;
                         cstr_vma     = (int)s_addr;
+                        if (sect_counter < MAX_SECT)
+                            sect_genera[oi * MAX_SECT + sect_counter] = 2;
                     } else if (strcmp(sectname, "__data") == 0) {
                         idata_off    = s_off;
                         idata_mag    = (int)s_size;
                         data_sectnum = sect_counter;
                         data_vma     = (int)s_addr;
+                        if (sect_counter < MAX_SECT)
+                            sect_genera[oi * MAX_SECT + sect_counter] = 3;
+                    } else if (strcmp(sectname, "__const") == 0) {
+                        if (sect_counter < MAX_SECT)
+                            sect_genera[oi * MAX_SECT + sect_counter] = 3;
+                    } else if (strcmp(sectname, "__bss") == 0
+                               || strcmp(sectname, "__common") == 0) {
+                        if (sect_counter < MAX_SECT) {
+                            sect_genera[oi * MAX_SECT + sect_counter] = 3;
+                            sect_is_bss[sect_counter] = 1;
+                        }
                     }
                     sect_off += 80;
                 }
@@ -195,6 +234,8 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
         }
 
         if (cstr_mag > 0) {
+            if (chordae_lon + cstr_mag > MAX_DATA)
+                erratum("chordae nimis magnae in ligatione");
             memcpy(chordae_data + chordae_lon, data + cstr_off, cstr_mag);
             chordae_lon += cstr_mag;
         }
@@ -204,6 +245,30 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                 erratum("data nimis magna in ligatione");
             memcpy(init_data + init_data_lon, data + idata_off, idata_mag);
             init_data_lon += idata_mag;
+        }
+        /* registra __data basis in tabula sectionum */
+        if (data_sectnum > 0 && data_sectnum < MAX_SECT)
+            sect_idata_bases[oi * MAX_SECT + data_sectnum] = data_bases[oi];
+
+        /* __const et __bss sectiones → funde in init_data */
+        for (int sn = 1; sn <= sect_counter && sn < MAX_SECT; sn++) {
+            int si_idx = oi * MAX_SECT + sn;
+            if (sect_genera[si_idx] != 3)
+                continue;
+            /* __data iam processata supra */
+            if (data_sectnum > 0 && sn == data_sectnum)
+                continue;
+            sect_idata_bases[si_idx] = init_data_lon;
+            if (sect_mags[sn] > 0) {
+                if (init_data_lon + sect_mags[sn] > MAX_DATA)
+                    erratum("data nimis magna in ligatione");
+                if (sect_is_bss[sn])
+                    memset(init_data + init_data_lon, 0, sect_mags[sn]);
+                else
+                    memcpy(init_data + init_data_lon, data + sect_file_offs[sn],
+                           sect_mags[sn]);
+                init_data_lon += sect_mags[sn];
+            }
         }
 
         /* lege symbola */
@@ -284,7 +349,9 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
     /* registra chordas ante processum relocationum */
     if (chordae_lon > 0) {
         int pos = 0;
-        while (pos < chordae_lon && num_chordarum < MAX_CHORDAE_LIT) {
+        while (pos < chordae_lon) {
+            if (num_chordarum >= MAX_CHORDAE_LIT)
+                erratum("nimis multae chordae litterales in ligatione");
             chordae[num_chordarum].data      = (char *)&chordae_data[pos];
             int slon = (int)strlen((char *)&chordae_data[pos]);
             chordae[num_chordarum].longitudo = slon + 1;
@@ -331,7 +398,8 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
 
         if (!r->r_extern) {
             /* relocatio non-externa — sectio-relativa */
-            if (r->r_sym == 2 && (r->r_type == 3 || r->r_type == 4)) {
+            if (cstr_sectnums[oi] > 0 && r->r_sym == cstr_sectnums[oi]
+                && (r->r_type == 3 || r->r_type == 4)) {
                 /* PAGE21/PAGEOFF12 ad __cstring — crea fixup pro scribo_macho */
 
                 /* decode ADRP+ADD ut chordam inveniamus */
@@ -456,21 +524,17 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
         } else if (sid >= 0 && liga_syms[sid].definita) {
             int sym_oi   = liga_syms[sid].obiectum;
             int sym_sect = liga_syms[sid].sectio;
-            int in_data  = (
-                data_sectnums[sym_oi] > 0 &&
-                sym_sect == data_sectnums[sym_oi]
-            );
+            int sg = (sym_sect > 0 && sym_sect < MAX_SECT)
+                     ? sect_genera[sym_oi * MAX_SECT + sym_sect] : 0;
 
-            if (in_data) {
-                /* symbolum in __data */
-                int off_in_data = liga_syms[sid].valor - data_vmaddrs[sym_oi];
-                int idata_off   = data_bases[sym_oi] + off_in_data;
+            if (sg == 3) {
+                /* symbolum in sectione dati (__data, __const, __bss) */
+                int si_idx    = sym_oi * MAX_SECT + sym_sect;
+                int off       = liga_syms[sid].valor - sect_idata_vmas[si_idx];
+                int idata_off = sect_idata_bases[si_idx] + off;
 
                 if (r->r_type == 3 || r->r_type == 5) {
                     fixup_adde(FIX_ADRP_IDATA, inst_off, idata_off, 0);
-                    if (r->r_type == 5) {
-                        /* GOT_LOAD → converte ADRP (iam emissa) */
-                    }
                 } else if (r->r_type == 4 || r->r_type == 6) {
                     if (r->r_type == 6) {
                         /* GOT_LOAD_PAGEOFF12 → converte LDR in ADD */
@@ -483,7 +547,7 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     }
                     fixup_adde(FIX_ADD_LO12_IDATA, inst_off, idata_off, 0);
                 }
-            } else {
+            } else if (sg == 1) {
                 /* symbolum in __text */
                 int target = liga_syms[sid].valor_globalis;
 
@@ -507,6 +571,67 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     memcpy(codex + inst_off, &add_inst, 4);
                     fixup_adde(FIX_ADD_LO12_TEXT, inst_off, target, 0);
                 }
+            } else {
+                erratum("symbolum '%s' in sectione ignota (genus %d)",
+                        r->sym_nomen, sg);
+            }
+        } else if (sid < 0 && r->sym_sect > 0) {
+            /* symbolum locale (non N_EXT) in obiecto — resolve per sectionem */
+            int sym_sect_num = r->sym_sect;
+
+            if (sym_sect_num == 1) {
+                /* in __text */
+                int target = codex_bases[oi] + r->sym_valor;
+
+                if (r->r_type == 2) {
+                    int delta     = (target - inst_off) / 4;
+                    uint32_t inst = 0x94000000 | (delta & 0x3FFFFFF);
+                    memcpy(codex + inst_off, &inst, 4);
+                } else if (r->r_type == 3 || r->r_type == 5) {
+                    fixup_adde(FIX_ADRP_TEXT, inst_off, target, 0);
+                } else if (r->r_type == 4 || r->r_type == 6) {
+                    if (r->r_type == 6) {
+                        uint32_t li;
+                        memcpy(&li, codex + inst_off, 4);
+                        int rd = li & 0x1F;
+                        int rn = (li >> 5) & 0x1F;
+                        uint32_t ai = 0x91000000 | (rn << 5) | rd;
+                        memcpy(codex + inst_off, &ai, 4);
+                    }
+                    fixup_adde(FIX_ADD_LO12_TEXT, inst_off, target, 0);
+                } else {
+                    erratum("relocatio non sustenta (typus %d) ad '%s' in __text",
+                            r->r_type, r->sym_nomen);
+                }
+            } else {
+                /* in __const, __data, vel __bss — quaere in tabula sectionum */
+                if (sym_sect_num >= MAX_SECT)
+                    erratum("symbolum '%s' in sectione %d ultra limitem",
+                            r->sym_nomen, sym_sect_num);
+                int si_idx = oi * MAX_SECT + sym_sect_num;
+                int sg = sect_genera[si_idx];
+                if (sg != 3)
+                    erratum("symbolum '%s' in sectione ignota %d (genus %d)",
+                            r->sym_nomen, sym_sect_num, sg);
+                int idata_off = sect_idata_bases[si_idx]
+                                + (r->sym_valor - sect_idata_vmas[si_idx]);
+
+                if (r->r_type == 3 || r->r_type == 5) {
+                    fixup_adde(FIX_ADRP_IDATA, inst_off, idata_off, 0);
+                } else if (r->r_type == 4 || r->r_type == 6) {
+                    if (r->r_type == 6) {
+                        uint32_t li;
+                        memcpy(&li, codex + inst_off, 4);
+                        int rd = li & 0x1F;
+                        int rn = (li >> 5) & 0x1F;
+                        uint32_t ai = 0x91000000 | (rn << 5) | rd;
+                        memcpy(codex + inst_off, &ai, 4);
+                    }
+                    fixup_adde(FIX_ADD_LO12_IDATA, inst_off, idata_off, 0);
+                } else {
+                    erratum("relocatio non sustenta (typus %d) ad '%s' in datis",
+                            r->r_type, r->sym_nomen);
+                }
             }
         } else {
             /* symbolum externum — adde ad GOT */
@@ -519,6 +644,8 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
             else if (r->r_type == 2) {
                 /* BRANCH26 ad externum — crea truncum (stub) */
                 if (stub_offsets[gid] < 0) {
+                    if (codex_lon + 12 > MAX_CODEX)
+                        erratum("codex nimis longus (truncus)");
                     stub_offsets[gid] = codex_lon;
                     /* ADRP x16, GOT@PAGE */
                     uint32_t adrp = 0x90000000 | 16;
@@ -585,7 +712,15 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
 
     free(codex_bases);
     free(cstr_bases);
+    free(data_bases);
     free(text_mags);
+    free(cstr_sectnums);
+    free(data_sectnums);
+    free(cstr_vmaddrs);
+    free(data_vmaddrs);
+    free(sect_genera);
+    free(sect_idata_bases);
+    free(sect_idata_vmas);
 
     /* scribo executabile */
     scribo_macho(plica_exitus, main_offset);

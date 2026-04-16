@@ -4,9 +4,8 @@
  * Generat instructiones ARM64 directe in alveum.
  */
 
-#include "ccc.h"
+#include "utilia.h"
 #include "parser.h"
-#include "typus.h"
 #include "genera.h"
 #include "func.h"
 #include "emitte.h"
@@ -40,6 +39,8 @@ static int goto_label_quaere_vel_crea(const char *nomen)
     for (int i = 0; i < num_goto_labels; i++)
         if (strcmp(goto_labels[i].nomen, nomen) == 0)
             return goto_labels[i].label;
+    if (num_goto_labels >= 256)
+        erratum("nimis multa goto labels");
     int lab = label_novus();
     strncpy(goto_labels[num_goto_labels].nomen, nomen, 255);
     goto_labels[num_goto_labels].label = lab;
@@ -312,10 +313,9 @@ static void genera_lval(nodus_t *n, int dest)
 /* genera expressionem, resultatum in dest */
 static void genera_expr(nodus_t *n, int dest)
 {
-    if (!n) {
-        emit_movi(reg_arm(dest), 0);
-        return;
-    }
+    if (!n)
+        erratum("genera_expr: nodus nullus");
+
     /* cura ut reg_vertex superet dest, ne allocator eum redat */
     if (dest >= reg_vertex)
         reg_vertex = dest + 1;
@@ -343,16 +343,8 @@ static void genera_expr(nodus_t *n, int dest)
     case N_IDENT:
         {
             symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
-            if (!s) {
-            /* functio non declarata — pone GOT intransum */
-                char got_nomen[260];
-                snprintf(got_nomen, 260, "_%s", n->nomen);
-                int gid = got_adde(got_nomen);
-                emit_adrp_fixup(r, FIX_ADRP_GOT, gid);
-                fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
-                emit_ldr64(r, r, 0); /* placeholder — fixup patches offset */
-                break;
-            }
+            if (!s)
+                erratum_ad(n->linea, "symbolum ignotum: '%s'", n->nomen);
             if (s->genus == SYM_FUNC) {
                 /* proba si functio est localis */
                 int flabel = func_loc_quaere(s->nomen);
@@ -604,6 +596,8 @@ static void genera_expr(nodus_t *n, int dest)
                     label_pone(l_end);
                     break;
                 }
+            default:
+                erratum_ad(n->linea, "operator binarius %d non sustentatur", n->op);
             }
             reg_libera(r2);
             break;
@@ -662,6 +656,8 @@ static void genera_expr(nodus_t *n, int dest)
                     reg_libera(r2);
                     break;
                 }
+            default:
+                erratum_ad(n->linea, "operator unarius %d non sustentatur", n->op);
             }
             break;
         }
@@ -747,6 +743,11 @@ static void genera_expr(nodus_t *n, int dest)
                 case T_SLASHEQ:
                     emit_fdiv(r, r, rb);
                     break;
+                default:
+                    erratum_ad(
+                        n->linea,
+                        "operator %d non sustentatur pro typis fluitantibus", n->op
+                    );
                 }
                 reg_libera(r3);
                 emit_fstore_to_addr(r, reg_arm(r2), n->sinister->typus);
@@ -1464,7 +1465,9 @@ static void genera_sententia(nodus_t *n)
         {
             int l_cond = label_novus(), l_end = label_novus();
             int l_cont = l_cond;
-            break_labels[break_vertex] = l_end;
+            if (break_vertex >= MAX_BREAK)
+                erratum("nimis profunda nidificatio iterationum");
+            break_labels[break_vertex]    = l_end;
             continue_labels[break_vertex] = l_cont;
             break_vertex++;
             label_pone(l_cond);
@@ -1482,7 +1485,9 @@ static void genera_sententia(nodus_t *n)
     case N_DOWHILE:
         {
             int l_top = label_novus(), l_cond = label_novus(), l_end = label_novus();
-            break_labels[break_vertex] = l_end;
+            if (break_vertex >= MAX_BREAK)
+                erratum("nimis profunda nidificatio iterationum");
+            break_labels[break_vertex]    = l_end;
             continue_labels[break_vertex] = l_cond;
             break_vertex++;
             label_pone(l_top);
@@ -1499,7 +1504,9 @@ static void genera_sententia(nodus_t *n)
     case N_FOR:
         {
             int l_cond = label_novus(), l_inc = label_novus(), l_end = label_novus();
-            break_labels[break_vertex] = l_end;
+            if (break_vertex >= MAX_BREAK)
+                erratum("nimis profunda nidificatio iterationum");
+            break_labels[break_vertex]    = l_end;
             continue_labels[break_vertex] = l_inc;
             break_vertex++;
             if (n->sinister) {
@@ -1540,6 +1547,8 @@ static void genera_sententia(nodus_t *n)
             switch_default_label = -1;
             in_switch = 1;
 
+            if (break_vertex >= MAX_BREAK)
+                erratum("nimis profunda nidificatio iterationum");
             break_labels[break_vertex] = l_end;
             continue_labels[break_vertex] = break_vertex > 0 ?
                 continue_labels[break_vertex - 1] : l_end;
@@ -1587,11 +1596,12 @@ static void genera_sententia(nodus_t *n)
     case N_CASE:
         {
             int l = label_novus();
-            if (switch_num_casuum < MAX_CASUS) {
-                switch_casus[switch_num_casuum].valor = n->valor;
-                switch_casus[switch_num_casuum].label = l;
-                switch_num_casuum++;
-            }
+            /* §5.2.4.1: 1023 case labels maximum */
+            if (switch_num_casuum >= MAX_CASUS)
+                erratum_ad(n->linea, "nimis multi casus in switch");
+            switch_casus[switch_num_casuum].valor = n->valor;
+            switch_casus[switch_num_casuum].label = l;
+            switch_num_casuum++;
             label_pone(l);
             if (n->dexter)
                 genera_sententia(n->dexter);
@@ -1619,14 +1629,18 @@ static void genera_sententia(nodus_t *n)
         emit_ret();
         break;
 
+    /* §6.8.6.3: "shall appear only in or as a switch body or loop body" */
     case N_BREAK:
-        if (break_vertex > 0)
-            emit_b_label(break_labels[break_vertex - 1]);
+        if (break_vertex <= 0)
+            erratum_ad(n->linea, "break extra iterationem vel switch");
+        emit_b_label(break_labels[break_vertex - 1]);
         break;
 
+    /* §6.8.6.2: "shall appear only in or as a loop body" */
     case N_CONTINUE:
-        if (break_vertex > 0)
-            emit_b_label(continue_labels[break_vertex - 1]);
+        if (break_vertex <= 0)
+            erratum_ad(n->linea, "continue extra iterationem");
+        emit_b_label(continue_labels[break_vertex - 1]);
         break;
 
     case N_GOTO:

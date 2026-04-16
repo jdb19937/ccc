@@ -2,15 +2,13 @@
  * ccc.c — CCC compilator principale
  *
  * Compilat unam plicam .c in plicam .o.
- * Functio main(), lectio plicarum, nuntii errorum.
+ * Functio main(), lectio plicarum.
  */
 
-#include "ccc.h"
+#include "utilia.h"
 #include "biblio.h"
 #include "parser.h"
 #include "genera.h"
-
-#include <errno.h>
 
 /* ================================================================
  * status globalis
@@ -20,76 +18,6 @@ int optio_Wall     = 0;
 int optio_Wextra   = 0;
 int optio_pedantic = 0;
 int optio_O        = 0;   /* gradus optimizationis (0, 1, 2, 3) */
-
-/* ================================================================
- * errores
- * ================================================================ */
-
-void erratum(const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    fprintf(stderr, "ccc: erratum: ");
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
-    va_end(ap);
-    exit(1);
-}
-
-void erratum_ad(int linea, const char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-    fprintf(stderr, "ccc:%d: erratum: ", linea);
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
-    va_end(ap);
-    exit(1);
-}
-
-/* ================================================================
- * lectio plicae
- * ================================================================ */
-
-char *lege_plicam(const char *via, int *longitudo)
-{
-    FILE *fp = fopen(via, "rb");
-    if (!fp) {
-        fprintf(
-            stderr, "ccc: non possum aperire '%s': %s\n",
-            via, strerror(errno)
-        );
-        exit(1);
-    }
-
-    fseek(fp, 0, SEEK_END);
-    long mag = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
-
-    char *data = malloc(mag + 1);
-    if (!data)
-        erratum("memoria exhausta");
-    fread(data, 1, mag, fp);
-    data[mag] = '\0';
-    fclose(fp);
-
-    if (longitudo)
-        *longitudo = (int)mag;
-    return data;
-}
-
-char *via_directoria(const char *via)
-{
-    char *copia = strdup(via);
-    char *ult   = strrchr(copia, '/');
-    if (ult) {
-        *(ult + 1) = '\0';
-    } else {
-        free(copia);
-        copia = strdup("./");
-    }
-    return copia;
-}
 
 /* ================================================================
  * usus
