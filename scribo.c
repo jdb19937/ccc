@@ -11,6 +11,11 @@
 #include "func.h"
 #include "biblio.h"
 
+#include <errno.h>
+#include <sys/stat.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
 static void scribe8(FILE *fp, uint8_t v) { fwrite(&v, 1, 1, fp); }
 static void scribe16(FILE *fp, uint16_t v) { fwrite(&v, 2, 1, fp); }
 static void scribe32(FILE *fp, uint32_t v) { fwrite(&v, 4, 1, fp); }
@@ -764,15 +769,23 @@ void scribo_macho(const char *plica_exitus, int main_offset)
 
     fclose(fp);
 
-    /* signa ad-hoc */
+    /* fac executābilem et signa ad-hoc */
+    if (chmod(plica_exitus, 0755) != 0)
+        erratum("chmod '%s' dēfēcit: %s", plica_exitus, strerror(errno));
     {
-        char cmd[1024];
-        snprintf(
-            cmd, sizeof(cmd),
-            "chmod +x '%s' && codesign -s - '%s' 2>/dev/null",
-            plica_exitus, plica_exitus
-        );
-        system(cmd);
+        pid_t pid = fork();
+        if (pid < 0)
+            erratum("fork dēfēcit: %s", strerror(errno));
+        if (pid == 0) {
+            /* prōcessus fīlius: codesign */
+            execlp("codesign", "codesign", "-s", "-", plica_exitus, NULL);
+            _exit(1); /* sī execlp dēfēcit */
+        }
+        int status;
+        if (waitpid(pid, &status, 0) < 0)
+            erratum("waitpid dēfēcit: %s", strerror(errno));
+        if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+            erratum("codesign '%s' dēfēcit", plica_exitus);
     }
 
     printf(
