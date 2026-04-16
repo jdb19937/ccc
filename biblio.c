@@ -21,12 +21,7 @@ static int cap_includ    = 0;
 
 void includ_adde(const char *via)
 {
-    if (num_viarum_includ >= cap_includ) {
-        cap_includ  = cap_includ ? cap_includ * 2 : 8;
-        viae_includ = realloc(viae_includ, cap_includ * sizeof(char *));
-        if (!viae_includ)
-            erratum("memoria exhausta");
-    }
+    CRESC_SERIEM(viae_includ, num_viarum_includ, cap_includ, char *);
     char *copia = strdup(via);
     if (!copia)
         erratum("memoria exhausta");
@@ -76,12 +71,7 @@ static int cap_biblio    = 0;
 
 void biblio_via_adde(const char *via)
 {
-    if (num_viarum_biblio >= cap_biblio) {
-        cap_biblio  = cap_biblio ? cap_biblio * 2 : 8;
-        viae_biblio = realloc(viae_biblio, cap_biblio * sizeof(char *));
-        if (!viae_biblio)
-            erratum("memoria exhausta");
-    }
+    CRESC_SERIEM(viae_biblio, num_viarum_biblio, cap_biblio, char *);
     char *copia = strdup(via);
     if (!copia)
         erratum("memoria exhausta");
@@ -108,12 +98,7 @@ static int plica_exstat(const char *via)
 
 void res_adde(const char *via, int genus)
 {
-    if (num_biblio_res >= cap_res) {
-        cap_res    = cap_res ? cap_res * 2 : 8;
-        biblio_res = realloc(biblio_res, cap_res * sizeof(biblio_res_t));
-        if (!biblio_res)
-            erratum("memoria exhausta");
-    }
+    CRESC_SERIEM(biblio_res, num_biblio_res, cap_res, biblio_res_t);
     char *copia = strdup(via);
     if (!copia)
         erratum("memoria exhausta");

@@ -356,8 +356,7 @@ static void genera_expr(nodus_t *n, int dest)
                     /* functio externa — per GOT */
                     char got_nomen[260];
                     snprintf(got_nomen, 260, "_%s", s->nomen);
-                    int gid      = got_adde(got_nomen);
-                    s->got_index = gid;
+                    int gid = got_adde(got_nomen);
                     emit_adrp_fixup(r, FIX_ADRP_GOT, gid);
                     fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
                     emit_ldr64(r, r, 0);
@@ -990,8 +989,6 @@ static void genera_expr(nodus_t *n, int dest)
                         char got_nomen[260];
                         snprintf(got_nomen, 260, "_%s", n->sinister->nomen);
                         int gid = got_adde(got_nomen);
-                        if (s)
-                            s->got_index = gid;
                         emit_adrp_fixup(16, FIX_ADRP_GOT, gid);
                         fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
                         emit_ldr64(16, 16, 0);
@@ -1679,10 +1676,8 @@ static void genera_sententia(nodus_t *n)
 static void genera_functio(nodus_t *n)
 {
     /* computare magnitudinem frame */
-    int nparams    = (int)n->sinister->valor;
-    int locals_mag = 0;
+    int nparams = (int)n->sinister->valor;
 
-    /* scan corpus pro variabilibus localibus */
     /* usamus offset iam computatos a parsore */
     /* invenire minimum offset (maximus negativus) */
     /* simpliciter: frame = parametri + 128 spill + 256 extra */
@@ -1692,7 +1687,6 @@ static void genera_functio(nodus_t *n)
     cur_frame_mag    = (cur_frame_mag + 15) & ~15;
     cur_param_num    = nparams;
     cur_func_typus   = n->typus;
-    (void)locals_mag;
 
     /* label pro functione (iam allocatum in genera_translatio) */
     int func_label = func_loc_quaere(n->nomen);

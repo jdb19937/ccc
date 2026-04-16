@@ -87,7 +87,6 @@ symbolum_t *ambitus_adde(const char *nomen, int genus)
     memset(s, 0, sizeof(symbolum_t));
     strncpy(s->nomen, nomen, 255);
     s->genus = genus;
-    s->got_index = -1;
     s->globalis_index = -1;
     s->proximus = cur_ambitus->symbola;
     cur_ambitus->symbola = s;
@@ -267,7 +266,6 @@ static typus_t *parse_struct_vel_union(void)
 {
     int est_struct = (sig.genus == T_STRUCT);
     lex_proximum(); /* consume struct/union */
-    (void)est_struct;
 
     char nomen_tag[128] = {0};
     if (sig.genus == T_IDENT) {
@@ -342,9 +340,9 @@ static typus_t *parse_struct_vel_union(void)
                     typ_mem = typus_tabulam(typ_mem, num);
                 }
 
-                /* colineatio */
+                /* colineatio — §6.7.2.1 */
                 int col = typus_colineatio(typ_mem);
-                if (col > 0)
+                if (est_struct && col > 0)
                     offset = (offset + col - 1) & ~(col - 1);
 
                 if (t->num_membrorum >= MAX_MEMBRA)
@@ -352,8 +350,11 @@ static typus_t *parse_struct_vel_union(void)
                 membrum_t *mem = &t->membra[t->num_membrorum++];
                 strncpy(mem->nomen, nom_mem, 127);
                 mem->typus  = typ_mem;
-                mem->offset = offset;
-                offset += typus_magnitudo(typ_mem);
+                mem->offset = est_struct ? offset : 0;
+                if (est_struct)
+                    offset += typus_magnitudo(typ_mem);
+                else if (typus_magnitudo(typ_mem) > offset)
+                    offset = typus_magnitudo(typ_mem);
 
                 if (sig.genus == T_COMMA)
                     lex_proximum();

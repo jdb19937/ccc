@@ -204,6 +204,13 @@ void emit32(uint32_t inst)
  * instructiones ARM64 — helpers
  * ================================================================ */
 
+/* macro prō instructiōnibus tribus registrīs: op Xd, Xn, Xm */
+#define EMIT_REG3(nomen, opcode)                            \
+    void nomen(int rd, int rn, int rm)                      \
+    {                                                       \
+        emit32((opcode) | (rm << 16) | (rn << 5) | rd);    \
+    }
+
 /* MOV Xd, Xn (= ORR Xd, XZR, Xn) */
 void emit_mov(int rd, int rn)
 {
@@ -269,10 +276,7 @@ void emit_addi(int rd, int rn, int imm);
 void emit_subi(int rd, int rn, int imm);
 
 /* ADD Xd, Xn, Xm */
-void emit_add(int rd, int rn, int rm)
-{
-    emit32(0x8B000000 | (rm << 16) | (rn << 5) | rd);
-}
+EMIT_REG3(emit_add, 0x8B000000)
 
 /* ADD Xd, Xn, #imm12 */
 void emit_addi(int rd, int rn, int imm)
@@ -290,10 +294,7 @@ void emit_addi(int rd, int rn, int imm)
 }
 
 /* SUB Xd, Xn, Xm */
-void emit_sub(int rd, int rn, int rm)
-{
-    emit32(0xCB000000 | (rm << 16) | (rn << 5) | rd);
-}
+EMIT_REG3(emit_sub, 0xCB000000)
 
 /* SUB Xd, Xn, #imm12 */
 void emit_subi(int rd, int rn, int imm)
@@ -311,58 +312,23 @@ void emit_subi(int rd, int rn, int imm)
 }
 
 /* MUL Xd, Xn, Xm */
-void emit_mul(int rd, int rn, int rm)
-{
-    emit32(0x9B007C00 | (rm << 16) | (rn << 5) | rd);
-}
-
+EMIT_REG3(emit_mul,  0x9B007C00)
 /* SDIV Xd, Xn, Xm */
-void emit_sdiv(int rd, int rn, int rm)
-{
-    emit32(0x9AC00C00 | (rm << 16) | (rn << 5) | rd);
-}
-
+EMIT_REG3(emit_sdiv, 0x9AC00C00)
 /* UDIV Xd, Xn, Xm */
-void emit_udiv(int rd, int rn, int rm)
-{
-    emit32(0x9AC00800 | (rm << 16) | (rn << 5) | rd);
-}
-
+EMIT_REG3(emit_udiv, 0x9AC00800)
 /* AND Xd, Xn, Xm */
-void emit_and(int rd, int rn, int rm)
-{
-    emit32(0x8A000000 | (rm << 16) | (rn << 5) | rd);
-}
-
+EMIT_REG3(emit_and,  0x8A000000)
 /* ORR Xd, Xn, Xm */
-void emit_orr(int rd, int rn, int rm)
-{
-    emit32(0xAA000000 | (rm << 16) | (rn << 5) | rd);
-}
-
+EMIT_REG3(emit_orr,  0xAA000000)
 /* EOR Xd, Xn, Xm */
-void emit_eor(int rd, int rn, int rm)
-{
-    emit32(0xCA000000 | (rm << 16) | (rn << 5) | rd);
-}
-
+EMIT_REG3(emit_eor,  0xCA000000)
 /* LSL Xd, Xn, Xm */
-void emit_lsl(int rd, int rn, int rm)
-{
-    emit32(0x9AC02000 | (rm << 16) | (rn << 5) | rd);
-}
-
+EMIT_REG3(emit_lsl,  0x9AC02000)
 /* LSR Xd, Xn, Xm */
-void emit_lsr(int rd, int rn, int rm)
-{
-    emit32(0x9AC02400 | (rm << 16) | (rn << 5) | rd);
-}
-
+EMIT_REG3(emit_lsr,  0x9AC02400)
 /* ASR Xd, Xn, Xm */
-void emit_asr(int rd, int rn, int rm)
-{
-    emit32(0x9AC02800 | (rm << 16) | (rn << 5) | rd);
-}
+EMIT_REG3(emit_asr,  0x9AC02800)
 
 /* NEG Xd, Xm (= SUB Xd, XZR, Xm) */
 void emit_neg(int rd, int rm)
@@ -461,137 +427,49 @@ void emit_ldp_post(int rt1, int rt2, int rn, int imm)
     emit32(0xA8C00000 | (imm7 << 15) | (rt2 << 10) | (rn << 5) | rt1);
 }
 
+/*
+ * emit_mem — auxiliāris prō omnibus LDR/STR cum offset immediātō.
+ *
+ * Si offset extrā intervāllum 12-bit scalātum cadit,
+ * ūtitur x17 ut registrō auxiliārī ad adressam computandam.
+ *
+ * scale: 1 (octetus), 2 (semiverbum), 4 (verbum), 8 (duplex)
+ */
+static void emit_mem(uint32_t opcode, int rt, int rn, int imm, int scale)
+{
+    int max_imm = 4095 * scale;
+    int align   = scale - 1;
+    if (imm < 0 || imm > max_imm || (align && (imm & align))) {
+        emit_movi(17, imm);
+        emit_add(17, rn, 17);
+        emit32(opcode | (17 << 5) | rt);
+        return;
+    }
+    emit32(opcode | ((imm / scale) << 10) | (rn << 5) | rt);
+}
+
 /* LDR Xt, [Xn, #imm] (64-bit, unsigned offset) */
-void emit_ldr64(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 32760 || (imm & 7)) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0xF9400000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0xF9400000 | ((imm / 8) << 10) | (rn << 5) | rt);
-}
-
+void emit_ldr64(int rt, int rn, int imm)  { emit_mem(0xF9400000, rt, rn, imm, 8); }
 /* STR Xt, [Xn, #imm] (64-bit, unsigned offset) */
-void emit_str64(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 32760 || (imm & 7)) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0xF9000000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0xF9000000 | ((imm / 8) << 10) | (rn << 5) | rt);
-}
-
+void emit_str64(int rt, int rn, int imm)  { emit_mem(0xF9000000, rt, rn, imm, 8); }
 /* LDR Wt, [Xn, #imm] (32-bit) */
-void emit_ldr32(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 16380 || (imm & 3)) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0xB9400000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0xB9400000 | ((imm / 4) << 10) | (rn << 5) | rt);
-}
-
+void emit_ldr32(int rt, int rn, int imm)  { emit_mem(0xB9400000, rt, rn, imm, 4); }
 /* STR Wt, [Xn, #imm] (32-bit) */
-void emit_str32(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 16380 || (imm & 3)) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0xB9000000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0xB9000000 | ((imm / 4) << 10) | (rn << 5) | rt);
-}
-
+void emit_str32(int rt, int rn, int imm)  { emit_mem(0xB9000000, rt, rn, imm, 4); }
 /* LDRB Wt, [Xn, #imm] */
-void emit_ldrb(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 4095) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0x39400000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0x39400000 | (imm << 10) | (rn << 5) | rt);
-}
-
+void emit_ldrb(int rt, int rn, int imm)   { emit_mem(0x39400000, rt, rn, imm, 1); }
 /* STRB Wt, [Xn, #imm] */
-void emit_strb(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 4095) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0x39000000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0x39000000 | (imm << 10) | (rn << 5) | rt);
-}
-
+void emit_strb(int rt, int rn, int imm)   { emit_mem(0x39000000, rt, rn, imm, 1); }
 /* LDRH Wt, [Xn, #imm] */
-void emit_ldrh(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 8190 || (imm & 1)) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0x79400000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0x79400000 | ((imm / 2) << 10) | (rn << 5) | rt);
-}
-
+void emit_ldrh(int rt, int rn, int imm)   { emit_mem(0x79400000, rt, rn, imm, 2); }
 /* STRH Wt, [Xn, #imm] */
-void emit_strh(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 8190 || (imm & 1)) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0x79000000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0x79000000 | ((imm / 2) << 10) | (rn << 5) | rt);
-}
-
+void emit_strh(int rt, int rn, int imm)   { emit_mem(0x79000000, rt, rn, imm, 2); }
 /* LDRSB Xt, [Xn, #imm] (sign-extend byte to 64-bit) */
-void emit_ldrsb(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 4095) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0x39800000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0x39800000 | (imm << 10) | (rn << 5) | rt);
-}
-
+void emit_ldrsb(int rt, int rn, int imm)  { emit_mem(0x39800000, rt, rn, imm, 1); }
 /* LDRSH Xt, [Xn, #imm] */
-void emit_ldrsh(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 8190 || (imm & 1)) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0x79800000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0x79800000 | ((imm / 2) << 10) | (rn << 5) | rt);
-}
-
+void emit_ldrsh(int rt, int rn, int imm)  { emit_mem(0x79800000, rt, rn, imm, 2); }
 /* LDRSW Xt, [Xn, #imm] */
-void emit_ldrsw(int rt, int rn, int imm)
-{
-    if (imm < 0 || imm > 16380 || (imm & 3)) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(0xB9800000 | (0 << 10) | (17 << 5) | rt);
-        return;
-    }
-    emit32(0xB9800000 | ((imm / 4) << 10) | (rn << 5) | rt);
-}
+void emit_ldrsw(int rt, int rn, int imm)  { emit_mem(0xB9800000, rt, rn, imm, 4); }
 
 /* SXTW Xd, Wn (= SBFM Xd, Xn, #0, #31) */
 void emit_sxtw(int rd, int rn)

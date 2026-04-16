@@ -92,7 +92,6 @@ struct symbolum {
     int est_externus;
     int est_parametrus;
     int valor_enum;         /* pro SYM_ENUM_CONST */
-    int got_index;          /* index in GOT pro functione externa */
     int globalis_index;     /* index in tabula globalium */
     symbolum_t *proximus;   /* catena in ambitu */
 };

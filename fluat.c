@@ -24,6 +24,14 @@
 #include "fluat.h"
 #include "emitte.h"
 
+/* macro prō instructiōnibus FP tribus registrīs: op Fd, Fn, Fm */
+#define EMIT_FP3(nomen, opcode)                                         \
+    void nomen(int fd, int fn, int fm)                                  \
+    {                                                                   \
+        emit32((opcode) | ((fm & 0x1F) << 16) | ((fn & 0x1F) << 5)     \
+               | (fd & 0x1F));                                          \
+    }
+
 /* ================================================================
  * typi praefiniti
  *
@@ -153,29 +161,14 @@ void emit_fmov_ws(int wd, int sn)
  * Annex F §F.3: operationes conformant IEC 60559.
  * ---------------------------------------------------------------- */
 
-/* FADD Dd, Dn, Dm — codificatio: 0x1E602800 | (Dm << 16) | (Dn << 5) | Dd */
-void emit_fadd(int fd, int fn, int fm)
-{
-    emit32(0x1E602800 | ((fm & 0x1F) << 16) | ((fn & 0x1F) << 5) | (fd & 0x1F));
-}
-
-/* FSUB Dd, Dn, Dm — codificatio: 0x1E603800 | (Dm << 16) | (Dn << 5) | Dd */
-void emit_fsub(int fd, int fn, int fm)
-{
-    emit32(0x1E603800 | ((fm & 0x1F) << 16) | ((fn & 0x1F) << 5) | (fd & 0x1F));
-}
-
-/* FMUL Dd, Dn, Dm — codificatio: 0x1E600800 | (Dm << 16) | (Dn << 5) | Dd */
-void emit_fmul(int fd, int fn, int fm)
-{
-    emit32(0x1E600800 | ((fm & 0x1F) << 16) | ((fn & 0x1F) << 5) | (fd & 0x1F));
-}
-
-/* FDIV Dd, Dn, Dm — codificatio: 0x1E601800 | (Dm << 16) | (Dn << 5) | Dd */
-void emit_fdiv(int fd, int fn, int fm)
-{
-    emit32(0x1E601800 | ((fm & 0x1F) << 16) | ((fn & 0x1F) << 5) | (fd & 0x1F));
-}
+/* FADD Dd, Dn, Dm */
+EMIT_FP3(emit_fadd, 0x1E602800)
+/* FSUB Dd, Dn, Dm */
+EMIT_FP3(emit_fsub, 0x1E603800)
+/* FMUL Dd, Dn, Dm */
+EMIT_FP3(emit_fmul, 0x1E600800)
+/* FDIV Dd, Dn, Dm */
+EMIT_FP3(emit_fdiv, 0x1E601800)
 
 /* FNEG Dd, Dn — codificatio: 0x1E614000 | (Dn << 5) | Dd */
 void emit_fneg(int fd, int fn)
@@ -189,29 +182,14 @@ void emit_fneg(int fd, int fn)
  * Eaedem operationes, sed pro typo float (§6.2.5¶10).
  * ---------------------------------------------------------------- */
 
-/* FADD Sd, Sn, Sm — codificatio: 0x1E202800 */
-void emit_fadds(int fd, int fn, int fm)
-{
-    emit32(0x1E202800 | ((fm & 0x1F) << 16) | ((fn & 0x1F) << 5) | (fd & 0x1F));
-}
-
-/* FSUB Sd, Sn, Sm — codificatio: 0x1E203800 */
-void emit_fsubs(int fd, int fn, int fm)
-{
-    emit32(0x1E203800 | ((fm & 0x1F) << 16) | ((fn & 0x1F) << 5) | (fd & 0x1F));
-}
-
-/* FMUL Sd, Sn, Sm — codificatio: 0x1E200800 */
-void emit_fmuls(int fd, int fn, int fm)
-{
-    emit32(0x1E200800 | ((fm & 0x1F) << 16) | ((fn & 0x1F) << 5) | (fd & 0x1F));
-}
-
-/* FDIV Sd, Sn, Sm — codificatio: 0x1E201800 */
-void emit_fdivs(int fd, int fn, int fm)
-{
-    emit32(0x1E201800 | ((fm & 0x1F) << 16) | ((fn & 0x1F) << 5) | (fd & 0x1F));
-}
+/* FADD Sd, Sn, Sm */
+EMIT_FP3(emit_fadds, 0x1E202800)
+/* FSUB Sd, Sn, Sm */
+EMIT_FP3(emit_fsubs, 0x1E203800)
+/* FMUL Sd, Sn, Sm */
+EMIT_FP3(emit_fmuls, 0x1E200800)
+/* FDIV Sd, Sn, Sm */
+EMIT_FP3(emit_fdivs, 0x1E201800)
 
 /* FNEG Sd, Sn — codificatio: 0x1E214000 */
 void emit_fnegs(int fd, int fn)

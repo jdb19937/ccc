@@ -52,6 +52,26 @@ static uint64_t allinea(uint64_t val, uint64_t col)
     return (val + col - 1) & ~(col - 1);
 }
 
+/* auxiliāria prō fixūrīs ADRP et ADD LO12 */
+
+static uint32_t applica_adrp(uint32_t inst, uint64_t target_addr, uint64_t pc)
+{
+    int64_t page_delta = (int64_t)((target_addr & ~0xFFFULL) - (pc & ~0xFFFULL));
+    int64_t imm = page_delta >> 12;
+    int rd = inst & 0x1F;
+    int immlo = (int)(imm & 3);
+    int immhi = (int)((imm >> 2) & 0x7FFFF);
+    return 0x90000000 | (immlo << 29) | (immhi << 5) | rd;
+}
+
+static uint32_t applica_add_lo12(uint32_t inst, uint64_t target_addr)
+{
+    int lo12 = (int)(target_addr & 0xFFF);
+    int rd = inst & 0x1F;
+    int rn = (inst >> 5) & 0x1F;
+    return 0x91000000 | (lo12 << 10) | (rn << 5) | rd;
+}
+
 void scribo_macho(const char *plica_exitus, int main_offset)
 {
     /* computare BSS offsets */
@@ -187,34 +207,18 @@ void scribo_macho(const char *plica_exitus, int main_offset)
                 break;
             }
         case FIX_ADRP: {
-            /* target = chorda id */
-                uint64_t target_addr = cstring_vmaddr + chordae[f->target].offset;
-                uint64_t pc = text_sect_vmaddr + f->offset;
-                int64_t page_delta = (int64_t)((target_addr & ~0xFFFULL) - (pc & ~0xFFFULL));
-                int64_t imm = page_delta >> 12;
-                int rd = inst & 0x1F;
-                int immlo = (int)(imm & 3);
-                int immhi = (int)((imm >> 2) & 0x7FFFF);
-                inst = 0x90000000 | (immlo << 29) | (immhi << 5) | rd;
+                uint64_t ta = cstring_vmaddr + chordae[f->target].offset;
+                inst = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
                 break;
             }
         case FIX_ADD_LO12: {
-                uint64_t target_addr = cstring_vmaddr + chordae[f->target].offset;
-                int lo12 = (int)(target_addr & 0xFFF);
-                int rd = inst & 0x1F;
-                int rn = (inst >> 5) & 0x1F;
-                inst = 0x91000000 | (lo12 << 10) | (rn << 5) | rd;
+                uint64_t ta = cstring_vmaddr + chordae[f->target].offset;
+                inst = applica_add_lo12(inst, ta);
                 break;
             }
         case FIX_ADRP_GOT: {
-                uint64_t target_addr = got_vmaddr + f->target * 8;
-                uint64_t pc = text_sect_vmaddr + f->offset;
-                int64_t page_delta = (int64_t)((target_addr & ~0xFFFULL) - (pc & ~0xFFFULL));
-                int64_t imm = page_delta >> 12;
-                int rd = inst & 0x1F;
-                int immlo = (int)(imm & 3);
-                int immhi = (int)((imm >> 2) & 0x7FFFF);
-                inst = 0x90000000 | (immlo << 29) | (immhi << 5) | rd;
+                uint64_t ta = got_vmaddr + f->target * 8;
+                inst = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
                 break;
             }
         case FIX_LDR_GOT_LO12: {
@@ -227,52 +231,28 @@ void scribo_macho(const char *plica_exitus, int main_offset)
                 break;
             }
         case FIX_ADRP_DATA: {
-                uint64_t target_addr = bss_vmaddr + globales[f->target].bss_offset;
-                uint64_t pc = text_sect_vmaddr + f->offset;
-                int64_t page_delta = (int64_t)((target_addr & ~0xFFFULL) - (pc & ~0xFFFULL));
-                int64_t imm = page_delta >> 12;
-                int rd = inst & 0x1F;
-                int immlo = (int)(imm & 3);
-                int immhi = (int)((imm >> 2) & 0x7FFFF);
-                inst = 0x90000000 | (immlo << 29) | (immhi << 5) | rd;
+                uint64_t ta = bss_vmaddr + globales[f->target].bss_offset;
+                inst = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
                 break;
             }
         case FIX_ADD_LO12_DATA: {
-                uint64_t target_addr = bss_vmaddr + globales[f->target].bss_offset;
-                int lo12 = (int)(target_addr & 0xFFF);
-                int rd = inst & 0x1F;
-                int rn = (inst >> 5) & 0x1F;
-                inst = 0x91000000 | (lo12 << 10) | (rn << 5) | rd;
+                uint64_t ta = bss_vmaddr + globales[f->target].bss_offset;
+                inst = applica_add_lo12(inst, ta);
                 break;
             }
         case FIX_ADRP_TEXT: {
-                uint64_t target_addr = text_sect_vmaddr + f->target;
-                uint64_t pc = text_sect_vmaddr + f->offset;
-                int64_t page_delta = (int64_t)((target_addr & ~0xFFFULL) - (pc & ~0xFFFULL));
-                int64_t imm = page_delta >> 12;
-                int rd = inst & 0x1F;
-                int immlo = (int)(imm & 3);
-                int immhi = (int)((imm >> 2) & 0x7FFFF);
-                inst = 0x90000000 | (immlo << 29) | (immhi << 5) | rd;
+                uint64_t ta = text_sect_vmaddr + f->target;
+                inst = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
                 break;
             }
         case FIX_ADD_LO12_TEXT: {
-                uint64_t target_addr = text_sect_vmaddr + f->target;
-                int lo12 = (int)(target_addr & 0xFFF);
-                int rd = inst & 0x1F;
-                int rn = (inst >> 5) & 0x1F;
-                inst = 0x91000000 | (lo12 << 10) | (rn << 5) | rd;
+                uint64_t ta = text_sect_vmaddr + f->target;
+                inst = applica_add_lo12(inst, ta);
                 break;
             }
         case FIX_ADRP_IDATA: {
-                uint64_t target_addr = idata_vmaddr + f->target;
-                uint64_t pc = text_sect_vmaddr + f->offset;
-                int64_t page_delta = (int64_t)((target_addr & ~0xFFFULL) - (pc & ~0xFFFULL));
-                int64_t imm = page_delta >> 12;
-                int rd = inst & 0x1F;
-                int immlo = (int)(imm & 3);
-                int immhi = (int)((imm >> 2) & 0x7FFFF);
-                inst = 0x90000000 | (immlo << 29) | (immhi << 5) | rd;
+                uint64_t ta = idata_vmaddr + f->target;
+                inst = applica_adrp(inst, ta, text_sect_vmaddr + f->offset);
                 break;
             }
         case FIX_ADD_LO12_IDATA:
@@ -321,6 +301,8 @@ void scribo_macho(const char *plica_exitus, int main_offset)
             /* set symbol */
             bind_info[bind_lon++] = BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM | 0;
             int slen = strlen(got[i].nomen);
+            if (bind_lon + slen + 3 > (int)sizeof(bind_info))
+                erratum("bind info nimis magna (> %d octeti)", (int)sizeof(bind_info));
             memcpy(&bind_info[bind_lon], got[i].nomen, slen + 1);
             bind_lon += slen + 1;
             /* bind */
@@ -407,8 +389,11 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     for (int i = 0; i < num_got; i++) {
         nlist64_t *nl = &symtab_entries[nsyms++];
         nl->n_strx    = strtab_lon;
-        memcpy(&strtab[strtab_lon], got[i].nomen, strlen(got[i].nomen) + 1);
-        strtab_lon += strlen(got[i].nomen) + 1;
+        int glen = strlen(got[i].nomen);
+        if (strtab_lon + glen + 1 > (int)sizeof(strtab))
+            erratum("strtab nimis magna (> %d octeti)", (int)sizeof(strtab));
+        memcpy(&strtab[strtab_lon], got[i].nomen, glen + 1);
+        strtab_lon += glen + 1;
         nl->n_type  = N_EXT; /* external, undefined */
         nl->n_sect  = 0;
         nl->n_desc  = biblio_num_dylib() > 0 ? 0xFE00 : 0x0100;

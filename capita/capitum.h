@@ -246,6 +246,7 @@ struct stat {
 int stat(const char *, struct stat *);
 int fstat(int, struct stat *);
 int lstat(const char *, struct stat *);
+int chmod(const char *, unsigned short);
 #define S_ISDIR(m) (((m) & 0170000) == 0040000)
 #define S_ISREG(m) (((m) & 0170000) == 0100000)
 
