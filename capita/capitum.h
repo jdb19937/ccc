@@ -33,6 +33,31 @@ typedef unsigned int useconds_t;
 #define SEEK_CUR 1
 #define SEEK_END 2
 
+/* stddef — offsetof */
+#define offsetof(type, member) ((size_t)&((type *)0)->member)
+
+/* stdarg — va_copy */
+#define va_copy(dest, src) ((dest) = (src))
+
+/* setjmp/longjmp */
+typedef int jmp_buf[48];
+int setjmp(jmp_buf);
+void longjmp(jmp_buf, int);
+
+/* inttypes — formae impressionis */
+#define PRId64 "ld"
+#define PRIi64 "ld"
+#define PRIu64 "lu"
+#define PRIx64 "lx"
+#define PRIX64 "lX"
+#define PRId32 "d"
+#define PRIu32 "u"
+#define PRIx32 "x"
+#define INT64_C(c) c##L
+#define UINT64_C(c) c##UL
+#define INT32_C(c) c
+#define UINT32_C(c) c##U
+
 /* stdio */
 typedef struct __sFILE FILE;
 FILE *fopen(const char *, const char *);
