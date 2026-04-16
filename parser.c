@@ -1547,10 +1547,16 @@ static nodus_t *parse_declaratio(int est_globalis)
                 }
             } else {
                 if (mag == 0)
-                    mag = 8;
+                    erratum_ad(
+                        sig_linea,
+                        "magnitudo variabilis '%s' est zero", nomen
+                    );
                 int col = typus_colineatio(td);
                 if (col < 1)
-                    col = 1;
+                    erratum_ad(
+                        sig_linea,
+                        "colineatio variabilis '%s' invalida", nomen
+                    );
                 int off = cur_ambitus->proximus_offset - mag;
                 off = off & ~(col - 1);
                 vs->offset = off;
@@ -1628,7 +1634,10 @@ static nodus_t *parse_declaratio(int est_globalis)
                         if (f)
                             folium_mag = typus_magnitudo(f);
                         if (folium_mag < 1)
-                            folium_mag = 4;
+                            erratum_ad(
+                                sig_linea,
+                                "magnitudo folii tabulae invalida"
+                            );
                         int inner_n = basis_mag / folium_mag;
                         if (inner_n < 1)
                             inner_n = 1;
@@ -1642,10 +1651,16 @@ static nodus_t *parse_declaratio(int est_globalis)
                 if (alloca_differtur) {
                     int mag = td->magnitudo;
                     if (mag == 0)
-                        mag = 8;
+                        erratum_ad(
+                            sig_linea,
+                            "magnitudo tabulae differatae est zero"
+                        );
                     int col = typus_colineatio(td);
                     if (col < 1)
-                        col = 1;
+                        erratum_ad(
+                            sig_linea,
+                            "colineatio tabulae differatae invalida"
+                        );
                     int off = cur_ambitus->proximus_offset - mag;
                     off = off & ~(col - 1);
                     vs->offset = off;
@@ -1672,7 +1687,7 @@ static nodus_t *parse_declaratio(int est_globalis)
             int mag = td->magnitudo;
             int col = typus_colineatio(td);
             if (col < 1)
-                col = 1;
+                erratum_ad(sig_linea, "colineatio invalida");
             int off = cur_ambitus->proximus_offset - mag;
             off = off & ~(col - 1);
             vs->offset = off;

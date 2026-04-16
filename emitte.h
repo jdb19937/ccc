@@ -59,10 +59,10 @@ typedef struct {
 } fixup_t;
 
 /* ================================================================
- * relocātiōnēs datōrum (indicēs in init_data quī adressēs continent)
+ * relocationes datorum (indices in init_data qui adresses continent)
  *
- * ARM64_RELOC_UNSIGNED in sectiōnibus __data/__const:
- * octō octeti in init_data quī adressam fīnālem continēre dēbent.
+ * ARM64_RELOC_UNSIGNED in sectionibus __data/__const:
+ * octo octeti in init_data qui adressam finalem continere debent.
  * ================================================================ */
 
 enum {
@@ -72,9 +72,9 @@ enum {
 };
 
 typedef struct {
-    int idata_offset;   /* offset in init_data ubi 8 octeti scrībendī sunt */
+    int idata_offset;   /* offset in init_data ubi 8 octeti scribendi sunt */
     int genus;          /* DR_CSTRING, DR_TEXT, DR_IDATA */
-    int target;         /* offset in sectiōne scopī */
+    int target;         /* offset in sectione scopi */
 } data_reloc_t;
 
 #define MAX_DATA_RELOCS 4096

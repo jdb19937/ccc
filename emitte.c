@@ -141,7 +141,7 @@ void fixup_adde(int genus, int offset, int target, int mag)
 void data_reloc_adde(int idata_offset, int genus, int target)
 {
     if (num_data_relocs >= MAX_DATA_RELOCS)
-        erratum("nimis multae relocātiōnēs datōrum");
+        erratum("nimis multae relocationes datorum");
     data_relocs[num_data_relocs].idata_offset = idata_offset;
     data_relocs[num_data_relocs].genus        = genus;
     data_relocs[num_data_relocs].target       = target;
@@ -223,7 +223,7 @@ void emit32(uint32_t inst)
  * instructiones ARM64 — helpers
  * ================================================================ */
 
-/* macro prō instructiōnibus tribus registrīs: op Xd, Xn, Xm */
+/* macro pro instructionibus tribus registris: op Xd, Xn, Xm */
 #define EMIT_REG3(nomen, opcode)                            \
     void nomen(int rd, int rn, int rm)                      \
     {                                                       \
@@ -447,10 +447,10 @@ void emit_ldp_post(int rt1, int rt2, int rn, int imm)
 }
 
 /*
- * emit_mem — auxiliāris prō omnibus LDR/STR cum offset immediātō.
+ * emit_mem — auxiliaris pro omnibus LDR/STR cum offset immediato.
  *
- * Si offset extrā intervāllum 12-bit scalātum cadit,
- * ūtitur x17 ut registrō auxiliārī ad adressam computandam.
+ * Si offset extra intervallum 12-bit scalatum cadit,
+ * utitur x17 ut registro auxiliari ad adressam computandam.
  *
  * scale: 1 (octetus), 2 (semiverbum), 4 (verbum), 8 (duplex)
  */
