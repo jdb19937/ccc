@@ -1,0 +1,21 @@
+# Faceplica — cruciatus compilatoris
+#
+# Compilat omnes cruciatus ad executabilia.
+
+CC     ?= cc
+CFLAGS ?= -Wall -Wextra -pedantic -std=c99 -O2
+
+NOMINA = \
+	coniectura connexio continuae divisores euleri goldbachiana matrices mersenniani \
+	moebiana perfecti polyhedra primi residua simplicium superficies totiens
+
+omnia: $(NOMINA)
+
+%: %.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+purga:
+	rm -f $(NOMINA)
+
+.PHONY: omnia purga
+

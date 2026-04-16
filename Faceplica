@@ -47,6 +47,7 @@ purga:
 proba:
 	./proba_corpus.py casus
 	./proba_corpus.py silva
+	./proba_corpus.py cruces
 	$(FACE) initia
 	# $(FACE) reinitia
 

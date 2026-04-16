@@ -57,6 +57,9 @@ void *calloc(unsigned long, unsigned long);
 void free(void *);
 void exit(int);
 long strtol(const char *, char **, int);
+char *strtok(char *str, const char *sep);
+char *strtok_r(char *str, const char *sep, char **lasts);
+
 char *strdup(const char *);
 int atoi(const char *);
 void abort(void);
@@ -66,6 +69,7 @@ int atexit(void (*)(void));
 void *memcpy(void *, const void *, unsigned long);
 void *memmove(void *, const void *, unsigned long);
 void *memset(void *, int, unsigned long);
+void *memchr(const void *s, int c, size_t n);
 int memcmp(const void *, const void *, unsigned long);
 int strcmp(const char *, const char *);
 int strncmp(const char *, const char *, unsigned long);
@@ -85,6 +89,8 @@ int isalpha(int);
 int isalnum(int);
 int toupper(int);
 int tolower(int);
+int isxdigit(int c);
+int ishexnumber(int c);
 
 /* unistd */
 #define STDIN_FILENO 0
@@ -162,7 +168,9 @@ struct sigaction {
 #define SIG_IGN ((__sighandler_t)1)
 #define SIGINT 2
 #define SIGALRM 14
+#define SIGTERM 15
 #define SIGCHLD 20
+#define SIGWINCH 28
 #define SIGUSR1 30
 #define SIGUSR2 31
 #define SA_RESTART 0x0002
@@ -284,6 +292,7 @@ int isatty(int);
 int putchar(int);
 int fputc(int c, FILE *stream);
 int fputs(const char *, void *);
+int puts(const char *s);
 int fflush(void *);
 int fileno(void *);
 extern void *__stdinp;
@@ -377,5 +386,16 @@ int unlockpt(int fildes);
 char *ptsname(int fildes);
 
 int execlp(const char *file, const char *arg0, ...);
+
+struct pollfd {                                                                                         
+    int   fd;       /* descriptio plicae */
+    short events;   /* eventus quaesiti */                                                              
+    short revents;  /* eventus qui acciderunt */                                                        
+};                  
+typedef unsigned int nfds_t;
+#define POLLIN  0x0001                                                                                  
+#define POLLOUT 0x0004                                                                                  
+#define POLLERR 0x0008   
+int poll(struct pollfd fds[], nfds_t nfds, int timeout);
 
 #endif
