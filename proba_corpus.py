@@ -31,7 +31,7 @@ def curre(argv, stdout_path=None):
     """curre mandatum cum limite temporis. reddit (exitus, True) vel (None, False) si tempus excessit."""
     try:
         f = open(stdout_path, "w") if stdout_path else subprocess.DEVNULL
-        r = subprocess.run(argv, stdout=f, stderr=subprocess.STDOUT, timeout=TIMEOUT)
+        r = subprocess.run(argv, stdout=f, stderr=subprocess.DEVNULL, timeout=TIMEOUT)
         if stdout_path:
             f.close()
         return r.returncode, True
@@ -122,7 +122,7 @@ def main():
                 if run_res[i] == "-":
                     continue
                 if ref_run == "0" and run_res[i] == "0":
-                    if open(outs[0]).read() == open(outs[i]).read():
+                    if open(outs[0], "rb").read() == open(outs[i], "rb").read():
                         run_res[i] = "par"
                         par_cnt[i] += 1
                     else:

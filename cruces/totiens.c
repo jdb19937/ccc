@@ -66,7 +66,8 @@ static const char *const descriptiones[] = {
 static int
 totiens_directa(int n)
 {
-    if (n <= 0) return 0;
+    if (n <= 0)
+        return 0;
     int eventus = 0;
     for (int i = 1; i <= n; i++) {
         /* Algorithmus Euclideus pro MCD */
@@ -74,8 +75,8 @@ totiens_directa(int n)
         int b = n;
         while (b != 0) {
             int t = b;
-            b = a % b;
-            a = t;
+            b     = a % b;
+            a     = t;
         }
         if (a == 1)
             eventus++;
@@ -86,9 +87,10 @@ totiens_directa(int n)
 static int
 totiens_formulae(int n)
 {
-    if (n <= 0) return 0;
+    if (n <= 0)
+        return 0;
     int eventus = n;
-    int m = n;
+    int m       = n;
     for (int p = 2; p * p <= m; p++) {
         if (m % p == 0) {
             while (m % p == 0)
@@ -142,8 +144,10 @@ main(int argc, char *argv[])
     /* Demonstratio X-macro: scribe methodos ex tabula generata */
     printf("Methodi computandi functionem totientem:\n");
     for (int i = 0; i < (int)METHODORUM_NUMEROSITAS; i++)
-        printf("  %d. %s: %s\n", i + 1,
-               tabula_methodorum[i].nomen, descriptiones[i]);
+        printf(
+            "  %d. %s: %s\n", i + 1,
+            tabula_methodorum[i].nomen, descriptiones[i]
+        );
 
     /* Computa phi(n) utraque methodo */
     int errores = 0;
@@ -172,9 +176,11 @@ main(int argc, char *argv[])
             if (n % d == 0)
                 summa += tabula_methodorum[0].functio(d);
         }
-        SCRIBE_SI(summa != n,
-                  "  FALLACIA: summa phi(d|%d) = %d, non %d",
-                  n, summa, n);
+        SCRIBE_SI(
+            summa != n,
+            "  FALLACIA: summa phi(d|%d) = %d, non %d",
+            n, summa, n
+        );
         if (summa != n)
             errores++;
     }

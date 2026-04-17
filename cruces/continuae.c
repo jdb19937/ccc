@@ -76,19 +76,22 @@ expande_radicem(long n)
     /* Si n est quadratum perfectum, fractio terminat */
     if (a0 * a0 == n) {
         fc.coefficientes[0] = a0;
-        fc.longitudo = 1;
+        fc.longitudo        = 1;
         return fc;
     }
 
     fc.coefficientes[0] = a0;
-    fc.longitudo = 1;
+    fc.longitudo        = 1;
 
     /*
      * Algorithmus per uniones: servamus status (m, d) in unione
      * pro demonstratione typi punning.
      */
     typedef union {
-        struct { long m; long d; } componentes;
+        struct {
+            long m;
+            long d;
+        }componentes;
         long paria[2];
     } StatusAlgorithmi;
 
@@ -109,8 +112,10 @@ expande_radicem(long n)
             /* Serva primum statum post a0 */
             primus_status.componentes.m = m;
             primus_status.componentes.d = d;
-        } else if (primus_status.paria[0] == m &&
-                   primus_status.paria[1] == d) {
+        } else if (
+            primus_status.paria[0] == m &&
+            primus_status.paria[1] == d
+        ) {
             /* Periodus detecta per accessum arietis unionis */
             fc.periodus_initium = 1;
             break;
@@ -134,28 +139,28 @@ computa_convergentem(const FractioContinua *fc, int ordo)
     NumerusDiscriminatus eventus;
 
     if (ordo < 0 || ordo >= fc->longitudo) {
-        eventus.typus = TYPUS_INTEGER;
+        eventus.typus         = TYPUS_INTEGER;
         eventus.valor.integer = 0;
         return eventus;
     }
 
-    long h_prior = 1;
+    long h_prior    = 1;
     long h_praesens = fc->coefficientes[0];
-    long k_prior = 0;
+    long k_prior    = 0;
     long k_praesens = 1;
 
     for (int i = 1; i <= ordo; i++) {
-        long a = fc->coefficientes[i];
+        long a       = fc->coefficientes[i];
         long h_novum = a * h_praesens + h_prior;
         long k_novum = a * k_praesens + k_prior;
-        h_prior = h_praesens;
-        h_praesens = h_novum;
-        k_prior = k_praesens;
-        k_praesens = k_novum;
+        h_prior      = h_praesens;
+        h_praesens   = h_novum;
+        k_prior      = k_praesens;
+        k_praesens   = k_novum;
     }
 
     if (k_praesens == 1) {
-        eventus.typus = TYPUS_INTEGER;
+        eventus.typus         = TYPUS_INTEGER;
         eventus.valor.integer = h_praesens;
     } else {
         eventus.typus = TYPUS_FRACTIONIS;
@@ -176,8 +181,10 @@ scribe_numerum(NumerusDiscriminatus num)
         printf("%ld", num.valor.integer);
         break;
     case TYPUS_FRACTIONIS:
-        printf("%ld/%ld", num.valor.fractio.numerator,
-               num.valor.fractio.denominator);
+        printf(
+            "%ld/%ld", num.valor.fractio.numerator,
+            num.valor.fractio.denominator
+        );
         break;
     case TYPUS_APPROXIMATIONIS:
         printf("%.10f", num.valor.approximatio);
@@ -210,8 +217,8 @@ mcd(long a, long b)
 {
     while (b != 0) {
         long t = b;
-        b = a % b;
-        a = t;
+        b      = a % b;
+        a      = t;
     }
     return a;
 }
@@ -222,16 +229,26 @@ main(void)
     /* Informatio de unionibus */
     printf("Informationes de unionibus:\n");
     printf("  sizeof(Fractio) = %zu\n", sizeof(Fractio));
-    printf("  sizeof(ValorNumericus) = %zu (= max membrorum)\n",
-           sizeof(ValorNumericus));
-    printf("  sizeof(NumerusDiscriminatus) = %zu\n",
-           sizeof(NumerusDiscriminatus));
-    printf("  offsetof(ValorNumericus in NumerusDiscriminatus) = %zu\n",
-           offsetof(NumerusDiscriminatus, valor));
-    printf("  offsetof(fractio.numerator) = %zu\n",
-           offsetof(Fractio, numerator));
-    printf("  offsetof(fractio.denominator) = %zu\n\n",
-           offsetof(Fractio, denominator));
+    printf(
+        "  sizeof(ValorNumericus) = %zu (= max membrorum)\n",
+        sizeof(ValorNumericus)
+    );
+    printf(
+        "  sizeof(NumerusDiscriminatus) = %zu\n",
+        sizeof(NumerusDiscriminatus)
+    );
+    printf(
+        "  offsetof(ValorNumericus in NumerusDiscriminatus) = %zu\n",
+        offsetof(NumerusDiscriminatus, valor)
+    );
+    printf(
+        "  offsetof(fractio.numerator) = %zu\n",
+        offsetof(Fractio, numerator)
+    );
+    printf(
+        "  offsetof(fractio.denominator) = %zu\n\n",
+        offsetof(Fractio, denominator)
+    );
 
     int errores = 0;
 
@@ -244,15 +261,18 @@ main(void)
 
         printf("sqrt(%d) = ", n);
         scribe_fractionem_continuam(&fc);
-        printf("  (longitudo periodi: %d)\n",
-               (fc.periodus_initium >= 0) ? fc.longitudo - 1 : 0);
+        printf(
+            "  (longitudo periodi: %d)\n",
+            (fc.periodus_initium >= 0) ? fc.longitudo - 1 : 0
+        );
 
         /* Convergentes */
         printf("  Convergentes: ");
         int max_ordo = (fc.longitudo < 8) ? fc.longitudo : 8;
         for (int ord = 0; ord < max_ordo; ord++) {
             NumerusDiscriminatus conv = computa_convergentem(&fc, ord);
-            if (ord > 0) printf(", ");
+            if (ord > 0)
+                printf(", ");
             scribe_numerum(conv);
         }
         putchar('\n');
@@ -302,7 +322,8 @@ main(void)
         long b = den;
         int primus_coeff = 1;
         while (b != 0) {
-            if (!primus_coeff) printf(", ");
+            if (!primus_coeff)
+                printf(", ");
             printf("%ld", a / b);
             primus_coeff = 0;
             long temp = b;

@@ -67,6 +67,10 @@ struct nodus {
     typus_t *typus_decl;    /* typus declaratus (cast, sizeof, var_decl) */
     int est_staticus;
     int est_externus;
+    int init_offset;        /* §6.7.8: offset in bytes pro designatorem; -1 si non */
+    int init_size;          /* §6.7.8: magnitudo scripturae in bytes; 0 si indefinita */
+    int init_bitpos;        /* §6.7.2.1: positus campī bitōrum (0 sī nōn campus) */
+    int init_bitwidth;      /* §6.7.2.1: latitūdō campī bitōrum (0 sī nōn campus) */
 
     /* indicem ad symbolum (salvatum a parsore dum ambitus vivit) */
     struct symbolum *sym;
@@ -93,6 +97,7 @@ struct symbolum {
     int est_parametrus;
     int valor_enum;         /* pro SYM_ENUM_CONST */
     int globalis_index;     /* index in tabula globalium */
+    struct nodus *vla_expr; /* §6.5.3.4p2: expressio dimensionis VLA pro sizeof */
     symbolum_t *proximus;   /* catena in ambitu */
 };
 

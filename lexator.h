@@ -42,6 +42,8 @@ enum {
     T_ARROW, T_DOT, T_QUESTION, T_COLON, T_SEMICOLON, T_COMMA,
     T_LPAREN, T_RPAREN, T_LBRACKET, T_RBRACKET, T_LBRACE, T_RBRACE,
     T_ELLIPSIS, T_HASH,
+    /* vocabula clavis C99 addita — §6.7.4, §6.2.5, §6.7.3.1 */
+    T_INLINE, T_BOOL, T_RESTRICT,
     /* litterae et nomina */
     T_NUM, T_NUM_FLUAT, T_STR, T_CHARLIT, T_IDENT,
     T_NUM_SIGNORUM

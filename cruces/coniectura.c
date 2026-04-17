@@ -47,7 +47,7 @@ longitudo_sequentiae(Naturalis initium)
      * — uterque effectus lateralis in una expressione.
      */
     for (passus = 0; valor != 1; valor = passus_collatzii(valor), passus++)
-        ;  /* corpus vacuum — omne opus fit in capite plicae */
+        (void)0;  /* corpus vacuum — omne opus fit in capite plicae */
 
     return passus;
 }
@@ -59,11 +59,11 @@ longitudo_sequentiae(Naturalis initium)
 static Naturalis
 altitudo_maxima(Naturalis initium)
 {
-    Naturalis valor = initium;
+    Naturalis valor   = initium;
     Naturalis maximum = initium;
 
     while (valor != 1) {
-        valor = passus_collatzii(valor);
+        valor   = passus_collatzii(valor);
         maximum = (valor > maximum) ? valor : maximum;
     }
 
@@ -74,14 +74,16 @@ altitudo_maxima(Naturalis initium)
  * Classificatio numeri per catenam ternarii.
  */
 static const char *
-classifica_numerum(Naturalis n)
+    classifica_numerum(Naturalis n)
 {
-    return (n == 0)       ? "nullus" :
-           (n == 1)       ? "unitas" :
-           (n % 2 == 0)   ? "par" :
-           (n % 3 == 0)   ? "impar triplicis" :
-           (n % 5 == 0)   ? "impar quintuplicis" :
-                            "impar alius";
+    return (
+        (n == 0)     ? "nullus" :
+        (n == 1)     ? "unitas" :
+        (n % 2 == 0) ? "par" :
+        (n % 3 == 0) ? "impar triplicis" :
+        (n % 5 == 0) ? "impar quintuplicis" :
+        "impar alius"
+    );
 }
 
 /*
@@ -92,7 +94,7 @@ scribe_sequentiam(Naturalis initium)
 {
     printf("  Sequentia(%llu):", initium);
     Naturalis valor = initium;
-    int scriptum = 0;
+    int scriptum    = 0;
 
     while (valor != 1) {
         printf(" %llu", valor);
@@ -122,41 +124,47 @@ main(int argc, char *argv[])
     printf("Coniectura Collatzii usque ad %llu:\n\n", limes);
 
     /* Inveni recordos longitudinis */
-    Integer longitudo_maxima = 0;
-    Naturalis numerus_recordi = 1;
-    Naturalis altitudo_recordi = 1;
+    Integer longitudo_maxima      = 0;
+    Naturalis numerus_recordi     = 1;
+    Naturalis altitudo_recordi    = 1;
     Naturalis numerus_altitudinis = 1;
 
     printf("Recordi longitudinum:\n");
     for (Naturalis n = 2; n <= limes; n++) {
-        Integer longitudo = longitudo_sequentiae(n);
+        Integer longitudo  = longitudo_sequentiae(n);
         Naturalis altitudo = altitudo_maxima(n);
 
         /* Novus recordus longitudinis */
         if (longitudo > longitudo_maxima) {
             longitudo_maxima = longitudo;
-            numerus_recordi = n;
+            numerus_recordi  = n;
 
             /*
              * Promotio typorum: %llu pro Naturalis (unsigned long long),
              * %lld pro Integer (long long) — compilator debet
              * concordantiam format specifiers verificare.
              */
-            printf("  n = %6llu: %3lld passus [%s]\n",
-                   n, longitudo, classifica_numerum(n));
+            printf(
+                "  n = %6llu: %3lld passus [%s]\n",
+                n, longitudo, classifica_numerum(n)
+            );
         }
 
         /* Novus recordus altitudinis */
         if (altitudo > altitudo_recordi) {
-            altitudo_recordi = altitudo;
+            altitudo_recordi    = altitudo;
             numerus_altitudinis = n;
         }
     }
 
-    printf("\nRecordus absolutus longitudinis: n=%llu, %lld passus\n",
-           numerus_recordi, longitudo_maxima);
-    printf("Recordus absolutus altitudinis: n=%llu, altitudo=%llu\n",
-           numerus_altitudinis, altitudo_recordi);
+    printf(
+        "\nRecordus absolutus longitudinis: n=%llu, %lld passus\n",
+        numerus_recordi, longitudo_maxima
+    );
+    printf(
+        "Recordus absolutus altitudinis: n=%llu, altitudo=%llu\n",
+        numerus_altitudinis, altitudo_recordi
+    );
 
     /* Scribe aliquot sequentias integras */
     printf("\nSequentiae selectae:\n");
@@ -177,7 +185,7 @@ main(int argc, char *argv[])
             maxima_classis = 50;
 
         int numerositas_brevis = 0;
-        int numerositas_longa = 0;
+        int numerositas_longa  = 0;
 
         for (Naturalis n = 2; n <= limes; n++) {
             Integer lon = longitudo_sequentiae(n);
@@ -187,10 +195,14 @@ main(int argc, char *argv[])
                 numerositas_longa++;
         }
 
-        printf("  Sequentiae breves (< 10 passus): %d\n",
-               numerositas_brevis);
-        printf("  Sequentiae longae (> 100 passus): %d\n",
-               numerositas_longa);
+        printf(
+            "  Sequentiae breves (< 10 passus): %d\n",
+            numerositas_brevis
+        );
+        printf(
+            "  Sequentiae longae (> 100 passus): %d\n",
+            numerositas_longa
+        );
     }
 
     printf("\nConiectura Collatzii verificata usque ad %llu.\n", limes);

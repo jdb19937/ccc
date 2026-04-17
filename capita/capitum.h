@@ -14,7 +14,7 @@ typedef long __ccc_ssize_t;
 typedef unsigned long size_t;
 typedef long ssize_t;
 #define NULL ((void *)0)
-typedef int _Bool;
+/* _Bool nunc verbum clavis est — §6.2.5 */
 typedef int pid_t;
 typedef int mode_t;
 typedef int off_t;
@@ -82,6 +82,8 @@ void *calloc(unsigned long, unsigned long);
 void free(void *);
 void exit(int);
 long strtol(const char *, char **, int);
+unsigned long long strtoull(const char *, char **, int);  /* §7.20.1.4 */
+long long strtoll(const char *, char **, int);            /* §7.20.1.3 */
 char *strtok(char *str, const char *sep);
 char *strtok_r(char *str, const char *sep, char **lasts);
 
@@ -89,6 +91,13 @@ char *strdup(const char *);
 int atoi(const char *);
 void abort(void);
 int atexit(void (*)(void));
+void qsort(void *, size_t, size_t, int (*)(const void *, const void *));    /* §7.20.5.2 */
+void *bsearch(const void *, const void *, size_t, size_t, int (*)(const void *, const void *));  /* §7.20.5.1 */
+int abs(int);
+long labs(long);
+int rand(void);
+void srand(unsigned);
+#define RAND_MAX 0x7fffffff
 
 /* string */
 void *memcpy(void *, const void *, unsigned long);
@@ -105,6 +114,7 @@ char *strstr(const char *, const char *);
 char *strncpy(char *, const char *, unsigned long);
 char *strcpy(char *, const char *);
 char *strcat(char *, const char *);
+char *strncat(char *, const char *, unsigned long);
 double strtod(const char *nptr, char **endptr);
 
 /* ctype */
@@ -112,6 +122,12 @@ int isspace(int);
 int isdigit(int);
 int isalpha(int);
 int isalnum(int);
+int isupper(int);
+int islower(int);
+int ispunct(int);
+int iscntrl(int);
+int isprint(int);
+int isgraph(int);
 int toupper(int);
 int tolower(int);
 int isxdigit(int c);
@@ -178,6 +194,7 @@ int ioctl(int, unsigned long, ...);
 /* stdarg */
 typedef char *va_list;
 int vfprintf(void *, const char *, va_list);
+int vprintf(const char *, va_list);
 int vsnprintf(char *, unsigned long, const char *, va_list);
 int vsprintf(char *, const char *, va_list);
 
@@ -412,11 +429,11 @@ char *ptsname(int fildes);
 
 int execlp(const char *file, const char *arg0, ...);
 
-struct pollfd {                                                                                         
+struct pollfd {
     int   fd;       /* descriptio plicae */
-    short events;   /* eventus quaesiti */                                                              
-    short revents;  /* eventus qui acciderunt */                                                        
-};                  
+    short events;   /* eventus quaesiti */
+    short revents;  /* eventus qui acciderunt */
+};
 typedef unsigned int nfds_t;
 #define POLLIN  0x0001                                                                                  
 #define POLLOUT 0x0004                                                                                  

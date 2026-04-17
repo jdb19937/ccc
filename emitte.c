@@ -305,8 +305,12 @@ void emit_addi(int rd, int rn, int imm)
         return;
     }
     if (imm > 4095) {
+        /* ADD Xd, Xn, Xm — reg 31 = XZR non SP.
+         * Ergo per registrum intermedium et ADD imm. */
         emit_movi(17, imm);
-        emit_add(rd, rn, 17);
+        emit_addi(16, rn, 0);   /* x16 = rn (vel sp) */
+        emit_add(16, 16, 17);   /* x16 = x16 + x17 */
+        emit_addi(rd, 16, 0);   /* rd (vel sp) = x16 */
         return;
     }
     emit32(0x91000000 | (imm << 10) | (rn << 5) | rd);
@@ -323,8 +327,12 @@ void emit_subi(int rd, int rn, int imm)
         return;
     }
     if (imm > 4095) {
+        /* SUB Xd, Xn, Xm — reg 31 = XZR non SP.
+         * Ergo per registrum intermedium et SUB imm adhibeamus. */
         emit_movi(17, imm);
-        emit_sub(rd, rn, 17);
+        emit_addi(16, rn, 0);   /* x16 = rn (vel sp si rn==31) */
+        emit_sub(16, 16, 17);   /* x16 = x16 - x17 */
+        emit_addi(rd, 16, 0);   /* rd (vel sp) = x16 */
         return;
     }
     emit32(0xD1000000 | (imm << 10) | (rn << 5) | rd);
@@ -459,9 +467,11 @@ static void emit_mem(uint32_t opcode, int rt, int rn, int imm, int scale)
     int max_imm = 4095 * scale;
     int align   = scale - 1;
     if (imm < 0 || imm > max_imm || (align && (imm & align))) {
-        emit_movi(17, imm);
-        emit_add(17, rn, 17);
-        emit32(opcode | (17 << 5) | rt);
+        /* si rt == 17, utere x16 pro addresse calculatione ne cloberetur */
+        int ra = (rt == 17) ? 16 : 17;
+        emit_movi(ra, imm);
+        emit_add(ra, rn, ra);
+        emit32(opcode | (ra << 5) | rt);
         return;
     }
     emit32(opcode | ((imm / scale) << 10) | (rn << 5) | rt);

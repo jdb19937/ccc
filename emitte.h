@@ -17,7 +17,7 @@
  * ================================================================ */
 
 #define MAX_CODEX       (4*1048576)
-#define MAX_DATA        (2*1048576)
+#define MAX_DATA        (16*1048576)
 #define MAX_CHORDAE_LIT 16384
 #define MAX_GOT         512
 #define MAX_FIXUPS      262144
@@ -69,12 +69,13 @@ enum {
     DR_CSTRING,     /* scopus in __cstring */
     DR_TEXT,        /* scopus in __text */
     DR_IDATA,       /* scopus in init_data */
+    DR_EXT_FUNC,    /* scopus: functiō externa (target = GOT index) */
 };
 
 typedef struct {
     int idata_offset;   /* offset in init_data ubi 8 octeti scribendi sunt */
-    int genus;          /* DR_CSTRING, DR_TEXT, DR_IDATA */
-    int target;         /* offset in sectione scopi */
+    int genus;          /* DR_CSTRING, DR_TEXT, DR_IDATA, DR_EXT_FUNC */
+    int target;         /* offset in sectione scopi vel index GOT */
 } data_reloc_t;
 
 #define MAX_DATA_RELOCS 4096

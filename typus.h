@@ -26,6 +26,9 @@ typedef struct {
     char nomen[128];
     typus_t *typus;
     int offset;
+    int campus_bitorum;   /* §6.7.2.1: 0 = nōn est campus; >0 = latitūdō in bitīs */
+    int campus_positus;   /* positus in ūnitāte repositōriā (in bitīs) */
+    int campus_signatus;  /* 1 sī signed — prō extensiōne signī */
 } membrum_t;
 
 struct typus {
@@ -38,6 +41,7 @@ struct typus {
     /* pro indicibus (ptr) et tabulis (array) */
     typus_t *basis;
     int num_elementorum;    /* pro tabulis; -1 si indefinitum */
+    struct nodus *vla_dim;  /* §6.7.5.2: expressio dimensiōnis VLA (0 sī nōn) */
 
     /* pro structuris */
     membrum_t *membra;

@@ -901,6 +901,24 @@ void scribo_obiectum(const char *plica_exitus)
         }
     }
 
+    /* symbola localia pro variabilibus globalibus staticis definitis
+     * in __data (non BSS) — ordinatio DYSYMTAB requirit locales ante extdef */
+    {
+        int data_sectnum_loc = (chordae_lon > 0) ? 3 : 2;
+        int idata_vmaddr_loc = (int)allinea(codex_lon + chordae_lon, 8);
+        for (int i = 0; i < num_globalium; i++) {
+            if (!globales[i].est_staticus || globales[i].est_bss)
+                continue;
+            char nn[260];
+            snprintf(nn, 260, "_L_%s.%d", globales[i].nomen, i);
+            strncpy(syms[nsyms].nomen, nn, 259);
+            syms[nsyms].sectio = data_sectnum_loc;
+            syms[nsyms].valor  = idata_vmaddr_loc + globales[i].data_offset;
+            nsyms++;
+            n_loc++;
+        }
+    }
+
     /* functiones non-staticae definitae → extdef symbola */
     for (int i = 0; i < num_got; i++) {
         const char *gn = got[i].nomen;
@@ -1164,6 +1182,29 @@ void scribo_obiectum(const char *plica_exitus)
                 erratum("data_reloc: chorda ad offset %d nōn inventa", coff);
             data_reloc_sym[i] = chorda_ad_sym[cid];
             n_data_relocs_obj++;
+        } else if (data_relocs[i].genus == DR_TEXT) {
+            /* §6.7.8¶4: indicātor functiōnis in dātīs —
+             * scrībe offset textūs in init_data ut addendum,
+             * relocātiō nōn-externa ad sectiōnem 1 (__text) */
+            uint64_t text_off = (uint64_t)data_relocs[i].target;
+            memcpy(init_data + data_relocs[i].idata_offset, &text_off, 8);
+            data_reloc_sym[i] = -2; /* sentīnella: nōn-externa textūs */
+            n_data_relocs_obj++;
+        } else if (data_relocs[i].genus == DR_IDATA) {
+            /* indicātor ad variābilem in init_data —
+             * addendum = vmaddr sectiōnis + offset in init_data */
+            uint64_t idata_off =
+                (uint64_t)idata_vmaddr_obj + (uint64_t)data_relocs[i].target;
+            memcpy(init_data + data_relocs[i].idata_offset, &idata_off, 8);
+            data_reloc_sym[i] = -3; /* sentīnella: nōn-externa dāta */
+            n_data_relocs_obj++;
+        } else if (data_relocs[i].genus == DR_EXT_FUNC) {
+            /* §6.7.8¶4: indicātor functiōnis externae in dātīs —
+             * addendum = 0, symbolum resolvitur ad GOT (postea) */
+            uint64_t zero = 0;
+            memcpy(init_data + data_relocs[i].idata_offset, &zero, 8);
+            data_reloc_sym[i] = -4; /* sentīnella: externa functiō per GOT */
+            n_data_relocs_obj++;
         } else {
             data_reloc_sym[i] = -1;
         }
@@ -1189,7 +1230,8 @@ void scribo_obiectum(const char *plica_exitus)
     int seg_cmd_size = 72 + nsects * 80;
     int symtab_size  = 24;  /* LC_SYMTAB */
     int dysym_size   = 80;  /* LC_DYSYMTAB */
-    int sizeofcmds   = seg_cmd_size + symtab_size + dysym_size;
+    int build_size   = 24;  /* LC_BUILD_VERSION — macOS platform (sine tools) */
+    int sizeofcmds   = seg_cmd_size + symtab_size + dysym_size + build_size;
 
     int text_offset    = header_size + sizeofcmds;
     int cstring_offset = text_offset + text_size;
@@ -1234,7 +1276,7 @@ void scribo_obiectum(const char *plica_exitus)
     scribe32(fp, CPU_TYPE_ARM64);
     scribe32(fp, CPU_SUBTYPE_ALL);
     scribe32(fp, 1); /* MH_OBJECT */
-    scribe32(fp, 3); /* ncmds: segment + symtab + dysymtab */
+    scribe32(fp, 4); /* ncmds: segment + symtab + dysymtab + build_version */
     scribe32(fp, sizeofcmds);
     scribe32(fp, MH_NOUNDEFS);
     scribe32(fp, 0); /* reservatum */
@@ -1349,6 +1391,15 @@ void scribo_obiectum(const char *plica_exitus)
     scribe32(fp, 0);
     /* locreloff, nlocrel */
 
+    /* LC_BUILD_VERSION — pro ligātōre dīcāmus platformam macOS.
+     * Format: cmd, cmdsize=24, platform, minos, sdk, ntools=0 */
+    scribe32(fp, LC_BUILD_VERSION);
+    scribe32(fp, 24);             /* cmdsize (sine tools) */
+    scribe32(fp, 1);              /* PLATFORM_MACOS */
+    scribe32(fp, 15 << 16);       /* minos = 15.0.0 */
+    scribe32(fp, 15 << 16);       /* sdk = 15.0.0 */
+    scribe32(fp, 0);              /* ntools */
+
     /* __text data */
     fwrite(codex, 1, text_size, fp);
 
@@ -1382,15 +1433,38 @@ void scribo_obiectum(const char *plica_exitus)
 
     /* relocationes __data (ARM64_RELOC_UNSIGNED) */
     for (int i = 0; i < num_data_relocs; i++) {
-        if (data_reloc_sym[i] < 0)
+        if (data_reloc_sym[i] == -1)
             continue;
-        /* r_address = offset in __data */
         scribe32(fp, (uint32_t)data_relocs[i].idata_offset);
-        /* r_info: sym(24) | pcrel=0(1) | len=3(2) | ext=1(1) | type=0(4) */
-        uint32_t info = (data_reloc_sym[i] & 0xFFFFFF)
-            | (0 << 24) | (3 << 25) | (1 << 27)
-            | ((uint32_t)ARM64_RELOC_UNSIGNED << 28);
-        scribe32(fp, info);
+        if (data_reloc_sym[i] == -2) {
+            /* nōn-externa relocātiō ad sectiōnem __text (1) */
+            uint32_t info = (1 & 0xFFFFFF)
+                | (0 << 24) | (3 << 25) | (0 << 27)
+                | ((uint32_t)ARM64_RELOC_UNSIGNED << 28);
+            scribe32(fp, info);
+        } else if (data_reloc_sym[i] == -3) {
+            /* nōn-externa relocātiō ad sectiōnem __const (init_data)
+             * sect = 2 sī nūlla __cstring, 3 sī __cstring adest */
+            int idata_sectnum = 1 + (cstring_size > 0 ? 1 : 0) + 1;
+            uint32_t info = (idata_sectnum & 0xFFFFFF)
+                | (0 << 24) | (3 << 25) | (0 << 27)
+                | ((uint32_t)ARM64_RELOC_UNSIGNED << 28);
+            scribe32(fp, info);
+        } else if (data_reloc_sym[i] == -4) {
+            /* externa relocātiō ad functiōnem per GOT:
+             * target est index GOT, resolve ad symbolum */
+            int sym_idx = got_ad_sym[data_relocs[i].target];
+            uint32_t info = (sym_idx & 0xFFFFFF)
+                | (0 << 24) | (3 << 25) | (1 << 27)
+                | ((uint32_t)ARM64_RELOC_UNSIGNED << 28);
+            scribe32(fp, info);
+        } else {
+            /* externa relocātiō ad symbolum */
+            uint32_t info = (data_reloc_sym[i] & 0xFFFFFF)
+                | (0 << 24) | (3 << 25) | (1 << 27)
+                | ((uint32_t)ARM64_RELOC_UNSIGNED << 28);
+            scribe32(fp, info);
+        }
     }
 
     /* tabula symbolorum (nlist_64) */

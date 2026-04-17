@@ -126,7 +126,8 @@ int typus_est_integer(typus_t *t)
 {
     if (!t)
         return 0;
-    return t->genus >= TY_CHAR && t->genus <= TY_ULLONG;
+    /* §6.2.5¶17: char, short, int, long, long long et sine-signō */
+    return (t->genus >= TY_CHAR && t->genus <= TY_ULLONG);
 }
 
 int typus_est_index(typus_t *t)

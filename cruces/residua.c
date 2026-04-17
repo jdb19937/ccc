@@ -46,7 +46,7 @@ mcd_extensus(long a, long b, long *coefficiens_x, long *coefficiens_y)
     }
     long x1;
     long y1;
-    long d = mcd_extensus(b % a, a, &x1, &y1);
+    long d         = mcd_extensus(b % a, a, &x1, &y1);
     *coefficiens_x = y1 - (b / a) * x1;
     *coefficiens_y = x1;
     return d;
@@ -72,27 +72,32 @@ inversum_modulare(long a, long m)
  * sizeof(structura) + n * sizeof(elementum_flexibile)
  */
 static SystemaCongruentiarum *
-crea_systema(const char *descriptio, int numerositas,
-             const Congruentia *congruentiae)
-{
+    crea_systema(
+        const char *descriptio, int numerositas,
+        const Congruentia *congruentiae
+    ) {
     /*
      * offsetof cum FAM: distantia a principio structurae
      * ad initium arietis flexibilis.
      */
     size_t magnitudo = offsetof(SystemaCongruentiarum, congruentiae)
-                       + (size_t)numerositas * sizeof(Congruentia);
+        + (size_t)numerositas * sizeof(Congruentia);
 
     SystemaCongruentiarum *systema = malloc(magnitudo);
     if (systema == NULL)
         return NULL;
 
     systema->numerositas = numerositas;
-    strncpy(systema->descriptio, descriptio,
-            sizeof(systema->descriptio) - 1);
+    strncpy(
+        systema->descriptio, descriptio,
+        sizeof(systema->descriptio) - 1
+    );
     systema->descriptio[sizeof(systema->descriptio) - 1] = '\0';
 
-    memcpy(systema->congruentiae, congruentiae,
-           (size_t)numerositas * sizeof(Congruentia));
+    memcpy(
+        systema->congruentiae, congruentiae,
+        (size_t)numerositas * sizeof(Congruentia)
+    );
 
     return systema;
 }
@@ -124,7 +129,7 @@ solve_crt(const SystemaCongruentiarum *systema)
         solutio = solutio + modulus_accumulatus * ((differentia * inv) % m);
         modulus_accumulatus *= m;
         solutio = ((solutio % modulus_accumulatus) + modulus_accumulatus)
-                  % modulus_accumulatus;
+            % modulus_accumulatus;
     }
 
     return solutio;
@@ -138,11 +143,13 @@ verifica_solutionem(const SystemaCongruentiarum *systema, long solutio)
     for (int i = 0; i < systema->numerositas; i++) {
         long residuum = solutio % systema->congruentiae[i].modulus;
         long expectatum = systema->congruentiae[i].residuum
-                          % systema->congruentiae[i].modulus;
+            % systema->congruentiae[i].modulus;
         if (residuum != expectatum) {
-            printf("    FALLACIA: %ld mod %ld = %ld, expectatum %ld\n",
-                   solutio, systema->congruentiae[i].modulus,
-                   residuum, expectatum);
+            printf(
+                "    FALLACIA: %ld mod %ld = %ld, expectatum %ld\n",
+                solutio, systema->congruentiae[i].modulus,
+                residuum, expectatum
+            );
             errores++;
         }
     }
@@ -155,11 +162,15 @@ main(void)
     int errores = 0;
 
     /* sizeof structurae cum FAM — non includit elementa flexibilia */
-    printf("sizeof(SystemaCongruentiarum) = %zu (sine FAM)\n",
-           sizeof(SystemaCongruentiarum));
+    printf(
+        "sizeof(SystemaCongruentiarum) = %zu (sine FAM)\n",
+        sizeof(SystemaCongruentiarum)
+    );
     printf("sizeof(Congruentia) = %zu\n", sizeof(Congruentia));
-    printf("offsetof(congruentiae) = %zu\n\n",
-           offsetof(SystemaCongruentiarum, congruentiae));
+    printf(
+        "offsetof(congruentiae) = %zu\n\n",
+        offsetof(SystemaCongruentiarum, congruentiae)
+    );
 
     /*
      * Exemplum classicum: problema Sunzi (III saeculum)
@@ -169,7 +180,8 @@ main(void)
     {
         Congruentia cong[] = { {2, 3}, {3, 5}, {2, 7} };
         SystemaCongruentiarum *sys = crea_systema(
-            "Problema Sunzi", 3, cong);
+            "Problema Sunzi", 3, cong
+        );
         if (sys == NULL) {
             fprintf(stderr, "Error: allocatio memoriae fallit\n");
             return 1;
@@ -177,9 +189,11 @@ main(void)
 
         printf("=== %s ===\n", sys->descriptio);
         for (int i = 0; i < sys->numerositas; i++) {
-            printf("  x = %ld (mod %ld)\n",
-                   sys->congruentiae[i].residuum,
-                   sys->congruentiae[i].modulus);
+            printf(
+                "  x = %ld (mod %ld)\n",
+                sys->congruentiae[i].residuum,
+                sys->congruentiae[i].modulus
+            );
         }
 
         long solutio = solve_crt(sys);
@@ -195,7 +209,8 @@ main(void)
     {
         Congruentia cong[] = { {1, 2}, {2, 3}, {3, 5}, {4, 7}, {5, 11} };
         SystemaCongruentiarum *sys = crea_systema(
-            "Systema quinque congruentiarum", 5, cong);
+            "Systema quinque congruentiarum", 5, cong
+        );
         if (sys == NULL) {
             fprintf(stderr, "Error: allocatio memoriae fallit\n");
             return 1;
@@ -203,12 +218,14 @@ main(void)
 
         printf("\n=== %s ===\n", sys->descriptio);
         for (int i = 0; i < sys->numerositas; i++) {
-            printf("  x = %ld (mod %ld)\n",
-                   sys->congruentiae[i].residuum,
-                   sys->congruentiae[i].modulus);
+            printf(
+                "  x = %ld (mod %ld)\n",
+                sys->congruentiae[i].residuum,
+                sys->congruentiae[i].modulus
+            );
         }
 
-        long solutio = solve_crt(sys);
+        long solutio         = solve_crt(sys);
         long modulus_totalis = 2L * 3 * 5 * 7 * 11;
         printf("  Solutio: x = %ld (mod %ld)\n", solutio, modulus_totalis);
         errores += verifica_solutionem(sys, solutio);
@@ -230,11 +247,12 @@ main(void)
         long secretum = 12345;
         for (int i = 0; i < n; i++) {
             cong[i].residuum = secretum % primi[i];
-            cong[i].modulus = primi[i];
+            cong[i].modulus  = primi[i];
         }
 
         SystemaCongruentiarum *sys = crea_systema(
-            "Reconstructio numeri secreti", n, cong);
+            "Reconstructio numeri secreti", n, cong
+        );
         free(cong);
         if (sys == NULL) {
             fprintf(stderr, "Error: allocatio memoriae fallit\n");
@@ -243,9 +261,11 @@ main(void)
 
         printf("\n=== %s ===\n", sys->descriptio);
         for (int i = 0; i < sys->numerositas; i++) {
-            printf("  x = %ld (mod %ld)\n",
-                   sys->congruentiae[i].residuum,
-                   sys->congruentiae[i].modulus);
+            printf(
+                "  x = %ld (mod %ld)\n",
+                sys->congruentiae[i].residuum,
+                sys->congruentiae[i].modulus
+            );
         }
 
         long solutio = solve_crt(sys);

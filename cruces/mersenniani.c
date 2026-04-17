@@ -17,9 +17,12 @@
 static int
 est_primus(int n)
 {
-    if (n < 2) return 0;
-    if (n < 4) return 1;
-    if (n % 2 == 0 || n % 3 == 0) return 0;
+    if (n < 2)
+        return 0;
+    if (n < 4)
+        return 1;
+    if (n % 2 == 0 || n % 3 == 0)
+        return 0;
     for (int i = 5; i * i <= n; i += 6) {
         if (n % i == 0 || n % (i + 2) == 0)
             return 0;
@@ -137,7 +140,7 @@ investiga_repunitos(int basis, int limes_exponens)
         /* Ambitus: 'valor' est repunitus */
         {
             long long valor = 0;
-            long long pot = 1;
+            long long pot   = 1;
 
             /* Ambitus interior: 'i' ad computandum repunitum */
             {
@@ -159,9 +162,11 @@ investiga_repunitos(int basis, int limes_exponens)
                     }
                 }
 
-                printf("  R(%d,%d) = %lld %s\n",
-                       basis, n, valor,
-                       est_primus_repunitus ? "(primus!)" : "");
+                printf(
+                    "  R(%d,%d) = %lld %s\n",
+                    basis, n, valor,
+                    est_primus_repunitus ? "(primus!)" : ""
+                );
             }
         }
     }
@@ -203,9 +208,11 @@ main(int argc, char *argv[])
          * variabilem localem in ambitu for */
         {
             int est_mersennianus_primus = proba_lucas_lehmer(p);
-            printf("%-6d  %-20lld  %s\n",
-                   p, mersennianus,
-                   est_mersennianus_primus ? "PRIMUS" : "compositus");
+            printf(
+                "%-6d  %-20lld  %s\n",
+                p, mersennianus,
+                est_mersennianus_primus ? "PRIMUS" : "compositus"
+            );
 
             if (est_mersennianus_primus) {
                 mersenniani_inventi++;
@@ -219,8 +226,10 @@ main(int argc, char *argv[])
         }
     }
 
-    printf("\nNumerositas primorum Mersennianorum inventorum: %d\n",
-           mersenniani_inventi);
+    printf(
+        "\nNumerositas primorum Mersennianorum inventorum: %d\n",
+        mersenniani_inventi
+    );
 
     /* Repuniti sunt generalizatio numerorum Mersennianorum */
     investiga_repunitos(2, 19);  /* = numeri Mersenniani */
@@ -232,11 +241,13 @@ main(int argc, char *argv[])
     for (int p = 2; p <= limes && p <= 19; p++) {
         if (!est_primus(p))
             continue;
-        long long m = (1LL << p) - 1;
+        long long m      = (1LL << p) - 1;
         long long fermat = potentia_mod(2, m - 1, m);
-        printf("  2^(M_%d - 1) mod M_%d = %lld %s\n",
-               p, p, fermat,
-               (fermat == 1) ? "(Fermat satisfactum)" : "(compositus)");
+        printf(
+            "  2^(M_%d - 1) mod M_%d = %lld %s\n",
+            p, p, fermat,
+            (fermat == 1) ? "(Fermat satisfactum)" : "(compositus)"
+        );
     }
 
     /* Coniectatio Lenstra-Pomerance-Wagstaff */

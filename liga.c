@@ -37,6 +37,13 @@ typedef struct {
     int  sym_valor;     /* n_value symboli (pro externis chordis) */
 } liga_reloc_t;
 
+/* relocātiō dātōrum dīlāta — externum indefīnītum in hōc .o,
+ * resolvendum per nōmen post prīmum passum */
+typedef struct {
+    int  patch_off;
+    char sym_nomen[260];
+} liga_data_reloc_t;
+
 #define MAX_LIGA_SYM 4096
 
 static liga_sym_t liga_syms[MAX_LIGA_SYM];
@@ -94,6 +101,11 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
     liga_reloc_t *relocs = NULL;
     int num_relocs       = 0;
     int cap_relocs       = 0;
+
+    /* relocātiōnēs dātōrum dīlātae (ad symbola externa indefīnīta) */
+    liga_data_reloc_t *data_relocs_dilatae = NULL;
+    int num_data_relocs_dilatae            = 0;
+    int cap_data_relocs_dilatae            = 0;
 
     int *codex_bases   = malloc(num_obj * sizeof(int));
     int *cstr_bases    = malloc(num_obj * sizeof(int));
@@ -201,7 +213,14 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                         data_vma     = (int)s_addr;
                         if (sect_counter < MAX_SECT)
                             sect_genera[oi * MAX_SECT + sect_counter] = 3;
-                    } else if (strcmp(sectname, "__const") == 0) {
+                    } else if (
+                        strcmp(sectname, "__const") == 0
+                        || strcmp(sectname, "__literal4") == 0
+                        || strcmp(sectname, "__literal8") == 0
+                        || strcmp(sectname, "__literal16") == 0
+                    ) {
+                        /* §6.4.4: sectiones pro literalibus constantibus
+                         * — __literal4/8/16 similes __const tractantur */
                         if (sect_counter < MAX_SECT)
                             sect_genera[oi * MAX_SECT + sect_counter] = 3;
                     } else if (
@@ -411,6 +430,33 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                                 sym_nsect, sg
                             );
                         }
+                    } else if (sym_nsect == 0) {
+                        /* externum indefīnītum in hōc .o —
+                         * dīlāta resolūtiō per nōmen post prīmum passum */
+                        uint32_t sym_strx = lege32(data + sym_noff);
+                        const char *sym_nomen =
+                            (const char *)(data + strtab_off + sym_strx);
+                        if (num_data_relocs_dilatae >= cap_data_relocs_dilatae) {
+                            cap_data_relocs_dilatae = cap_data_relocs_dilatae
+                                ? cap_data_relocs_dilatae * 2 : 64;
+                            data_relocs_dilatae = realloc(
+                                data_relocs_dilatae,
+                                cap_data_relocs_dilatae
+                                    * sizeof(liga_data_reloc_t)
+                            );
+                            if (!data_relocs_dilatae)
+                                erratum("memoria exhausta");
+                        }
+                        data_relocs_dilatae[num_data_relocs_dilatae].patch_off
+                            = patch_off;
+                        strncpy(
+                            data_relocs_dilatae[num_data_relocs_dilatae]
+                                .sym_nomen,
+                            sym_nomen, 259
+                        );
+                        data_relocs_dilatae[num_data_relocs_dilatae]
+                            .sym_nomen[259] = '\0';
+                        num_data_relocs_dilatae++;
                     } else {
                         erratum(
                             "ARM64_RELOC_UNSIGNED: sectiō %d invalida",
@@ -430,10 +476,30 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     } else if (sect_num == 1) {
                         int text_target = codex_bases[oi] + (int)addendum;
                         data_reloc_adde(patch_off, DR_TEXT, text_target);
+                    } else if (sect_num > 0 && sect_num < MAX_SECT) {
+                        /* §6.7.8¶4: relocātiō ad sectiōnem dātōrum
+                         * (init_data/const) — resolvī per idata offset */
+                        int tsi = oi * MAX_SECT + sect_num;
+                        int sg  = sect_genera[tsi];
+                        if (sg == 3) {
+                            int idata_target = sect_idata_bases[tsi]
+                                + (int)addendum
+                                - sect_idata_vmas[tsi];
+                            data_reloc_adde(
+                                patch_off, DR_IDATA,
+                                idata_target
+                            );
+                        } else {
+                            erratum(
+                                "ARM64_RELOC_UNSIGNED nōn-externa: "
+                                "sectiō %d genus %d nōn sustenta",
+                                sect_num, sg
+                            );
+                        }
                     } else {
                         erratum(
                             "ARM64_RELOC_UNSIGNED nōn-externa: "
-                            "sectiō %d nōn sustenta", sect_num
+                            "sectiō %d invalida", sect_num
                         );
                     }
                 }
@@ -479,6 +545,65 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
         globales[gid].valor_initialis  = 0;
         globales[gid].habet_valorem    = 0;
         liga_syms[i].globalis_index = gid;
+    }
+
+    /* resolvere relocātiōnēs dātōrum dīlātās ad externa indefīnīta */
+    for (int i = 0; i < num_data_relocs_dilatae; i++) {
+        liga_data_reloc_t *d = &data_relocs_dilatae[i];
+        int sid = liga_sym_quaere(d->sym_nomen);
+        if (sid < 0 || !liga_syms[sid].definita) {
+            if (sid >= 0 && liga_syms[sid].est_communis
+                && liga_syms[sid].globalis_index >= 0) {
+                /* symbolum commune — in __bss/globales */
+                int gid = liga_syms[sid].globalis_index;
+                /* BSS offset scītur tantum in scribo_macho; ūtere
+                 * DR_IDATA sī data_offset est assignātum, aliter erratum */
+                if (!globales[gid].est_bss) {
+                    data_reloc_adde(
+                        d->patch_off, DR_IDATA, globales[gid].data_offset
+                    );
+                    continue;
+                }
+            }
+            erratum(
+                "symbolum '%s' in relocātiōne dātōrum nōn resolūtum",
+                d->sym_nomen
+            );
+        }
+        int sym_oi   = liga_syms[sid].obiectum;
+        int sym_sect = liga_syms[sid].sectio;
+        if (sym_sect == 1) {
+            data_reloc_adde(
+                d->patch_off, DR_TEXT, liga_syms[sid].valor_globalis
+            );
+        } else if (sym_sect > 0 && sym_sect < MAX_SECT) {
+            int tsi = sym_oi * MAX_SECT + sym_sect;
+            int sg  = sect_genera[tsi];
+            if (sg == 1) {
+                data_reloc_adde(
+                    d->patch_off, DR_TEXT, liga_syms[sid].valor_globalis
+                );
+            } else if (sg == 2) {
+                int cstr_target = cstr_bases[sym_oi]
+                    + liga_syms[sid].valor - cstr_vmaddrs[sym_oi];
+                data_reloc_adde(d->patch_off, DR_CSTRING, cstr_target);
+            } else if (sg == 3) {
+                int idata_target = sect_idata_bases[tsi]
+                    + liga_syms[sid].valor - sect_idata_vmas[tsi];
+                data_reloc_adde(d->patch_off, DR_IDATA, idata_target);
+            } else {
+                erratum(
+                    "symbolum '%s' in sectione ignota (genus %d)"
+                    " prō relocātiōne dātōrum",
+                    d->sym_nomen, sg
+                );
+            }
+        } else {
+            erratum(
+                "symbolum '%s' sine sectione prō relocātiōne dātōrum",
+                d->sym_nomen
+            );
+        }
     }
 
     /* === passus secundus: processa relocationes === */

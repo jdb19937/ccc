@@ -97,7 +97,8 @@ static const struct {
 static long
 tau(long n)
 {
-    if (n <= 0) return 0;
+    if (n <= 0)
+        return 0;
     long summa = 0;
     for (long d = 1; d * d <= n; d++) {
         if (n % d == 0) {
@@ -113,7 +114,8 @@ tau(long n)
 static long
 sigma_k(long n, int k)
 {
-    if (n <= 0) return 0;
+    if (n <= 0)
+        return 0;
     long summa = 0;
     for (long d = 1; d * d <= n; d++) {
         if (n % d == 0) {
@@ -123,7 +125,7 @@ sigma_k(long n, int k)
             summa += pot;
             if (d != n / d) {
                 long pot2 = 1;
-                long d2 = n / d;
+                long d2   = n / d;
                 for (int i = 0; i < k; i++)
                     pot2 *= d2;
                 summa += pot2;
@@ -197,11 +199,13 @@ main(int argc, char *argv[])
     printf("  sizeof(void*) = %d octeti\n", (int)OCTETI_PER_INDICATOREM);
     int errores = 0;
     for (int i = 0; i < (int)(sizeof(constantia) / sizeof(constantia[0])); i++) {
-        printf("  %s: %d %s %d\n",
-               constantia[i].nomen,
-               constantia[i].valor,
-               (constantia[i].valor == constantia[i].computatum) ? "==" : "!=",
-               constantia[i].computatum);
+        printf(
+            "  %s: %d %s %d\n",
+            constantia[i].nomen,
+            constantia[i].valor,
+            (constantia[i].valor == constantia[i].computatum) ? "==" : "!=",
+            constantia[i].computatum
+        );
         if (constantia[i].valor != constantia[i].computatum)
             errores++;
     }
@@ -209,14 +213,16 @@ main(int argc, char *argv[])
     /* Computa tabulas */
     for (int n = 1; n <= limes; n++) {
         tabula_sigma[n] = sigma(n);
-        tabula_tau[n] = tau(n);
+        tabula_tau[n]   = tau(n);
     }
 
     /* Scribe valorem sigma et tau */
     printf("\nFunctiones divisorum pro n = 1..%d:\n", (limes < 30) ? limes : 30);
     for (int n = 1; n <= limes && n <= 30; n++) {
-        printf("  sigma(%2d) = %4ld, tau(%2d) = %2ld\n",
-               n, tabula_sigma[n], n, tabula_tau[n]);
+        printf(
+            "  sigma(%2d) = %4ld, tau(%2d) = %2ld\n",
+            n, tabula_sigma[n], n, tabula_tau[n]
+        );
     }
 
     /* Verificatio: sigma = id * u (convolutio Dirichletiana) */
@@ -224,8 +230,10 @@ main(int argc, char *argv[])
     for (int n = 1; n <= limes; n++) {
         long conv = convolutio(n, identitas, unitas);
         if (conv != tabula_sigma[n]) {
-            printf("  FALLACIA: sigma(%d) = %ld, (id*u)(%d) = %ld\n",
-                   n, tabula_sigma[n], n, conv);
+            printf(
+                "  FALLACIA: sigma(%d) = %ld, (id*u)(%d) = %ld\n",
+                n, tabula_sigma[n], n, conv
+            );
             errores++;
         }
     }
@@ -235,8 +243,10 @@ main(int argc, char *argv[])
     for (int n = 1; n <= limes; n++) {
         long conv = convolutio(n, unitas, unitas);
         if (conv != tabula_tau[n]) {
-            printf("  FALLACIA: tau(%d) = %ld, (u*u)(%d) = %ld\n",
-                   n, tabula_tau[n], n, conv);
+            printf(
+                "  FALLACIA: tau(%d) = %ld, (u*u)(%d) = %ld\n",
+                n, tabula_tau[n], n, conv
+            );
             errores++;
         }
     }
@@ -250,8 +260,10 @@ main(int argc, char *argv[])
             continue;
         }
         long s = sigma(n);
-        printf("  sigma(%ld) = %ld %s 2*%ld = %ld\n",
-               n, s, (s == 2 * n) ? "==" : "!=", n, 2 * n);
+        printf(
+            "  sigma(%ld) = %ld %s 2*%ld = %ld\n",
+            n, s, (s == 2 * n) ? "==" : "!=", n, 2 * n
+        );
         if (s != 2 * n)
             errores++;
     }

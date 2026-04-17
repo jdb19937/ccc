@@ -41,9 +41,12 @@ typedef struct {
 static _Bool
 est_primus(int n)
 {
-    if (n < 2) return false;
-    if (n < 4) return true;
-    if (n % 2 == 0 || n % 3 == 0) return false;
+    if (n < 2)
+        return false;
+    if (n < 4)
+        return true;
+    if (n % 2 == 0 || n % 3 == 0)
+        return false;
     for (int i = 5; i * i <= n; i += 6) {
         if (n % i == 0 || n % (i + 2) == 0)
             return false;
@@ -98,9 +101,9 @@ computa_proprietates(int n)
         factores++;
     }
 
-    prop.est_liber_quadratis = liber ? 1 : 0;
+    prop.est_liber_quadratis  = liber ? 1 : 0;
     prop.numerositas_factorum = (unsigned)factores;
-    prop.minimus_factor = (primus_minimus <= 31) ? (unsigned)primus_minimus : 0;
+    prop.minimus_factor       = (primus_minimus <= 31) ? (unsigned)primus_minimus : 0;
 
     if (!liber) {
         prop.valor_mu = VALOR_MU_NULLUS;
@@ -128,8 +131,10 @@ verifica_summa_moebii(int limes)
         }
         int expectatum = (n == 1) ? 1 : 0;
         if (summa != expectatum) {
-            printf("  FALLACIA: summa mu(d|%d) = %d, expectatum %d\n",
-                   n, summa, expectatum);
+            printf(
+                "  FALLACIA: summa mu(d|%d) = %d, expectatum %d\n",
+                n, summa, expectatum
+            );
             errores++;
         }
     }
@@ -153,12 +158,14 @@ main(int argc, char *argv[])
     }
 
     /* sizeof structurae cum campis bitorum — dependet ab impletione */
-    printf("Magnitudo ProprietatesNumerales: %zu octeti\n",
-           sizeof(ProprietatesNumerales));
+    printf(
+        "Magnitudo ProprietatesNumerales: %zu octeti\n",
+        sizeof(ProprietatesNumerales)
+    );
     printf("Magnitudo _Bool: %zu octeti\n\n", sizeof(_Bool));
 
     printf("Functio Moebii mu(n) pro n = 1..%d:\n", limes);
-    int primos = 0;
+    int primos  = 0;
     int liberos = 0;
     for (int n = 1; n <= limes; n++) {
         ProprietatesNumerales prop = computa_proprietates(n);
@@ -182,13 +189,17 @@ main(int argc, char *argv[])
     printf("  Numeri liberi quadratis: %d\n", liberos);
 
     /* Densitas numerorum liberorum quadratis -> 6/pi^2 ~ 0.6079 */
-    printf("  Densitas liberorum: %.4f (expectata ~0.6079)\n",
-           (double)liberos / (double)limes);
+    printf(
+        "  Densitas liberorum: %.4f (expectata ~0.6079)\n",
+        (double)liberos / (double)limes
+    );
 
     /* Verificatio identitatis summae Moebii */
     int limes_verificationis = (limes < 200) ? limes : 200;
-    printf("\nVerificatio: summa mu(d) pro d|n (n=1..%d):\n",
-           limes_verificationis);
+    printf(
+        "\nVerificatio: summa mu(d) pro d|n (n=1..%d):\n",
+        limes_verificationis
+    );
     int errores = verifica_summa_moebii(limes_verificationis);
 
     /* Functio Mertens: M(n) = summa mu(k) pro k=1..n */

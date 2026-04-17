@@ -48,6 +48,7 @@ proba:
 	./proba_corpus.py casus
 	./proba_corpus.py silva
 	./proba_corpus.py cruces
+	./proba_corpus.py linguae
 	$(FACE) initia
 	# $(FACE) reinitia
 

@@ -36,11 +36,12 @@ typedef struct {
  * Si allocatio fallit, saltat ad 'liberatio' label.
  */
 static int
-explora_componentem(const Graphus *graphus, int initium,
-                    int *visitata, int indicis_componentis)
-{
-    int magnitudo = 0;
-    int *acervus = NULL;
+explora_componentem(
+    const Graphus *graphus, int initium,
+    int *visitata, int indicis_componentis
+) {
+    int magnitudo   = 0;
+    int *acervus    = NULL;
     int apex_acervi = 0;
 
     /* Allocatio */
@@ -58,7 +59,7 @@ explora_componentem(const Graphus *graphus, int initium,
 
         for (int vicinus = 0; vicinus < graphus->numerositas_verticium; vicinus++) {
             if (graphus->matrice[vertex][vicinus] && visitata[vicinus] < 0) {
-                visitata[vicinus] = indicis_componentis;
+                visitata[vicinus]      = indicis_componentis;
                 acervus[apex_acervi++] = vicinus;
                 magnitudo++;
             }
@@ -90,7 +91,8 @@ inveni_componentes(const Graphus *graphus)
         if (resultatum.componentis[v] < 0) {
             int magnitudo = explora_componentem(
                 graphus, v, resultatum.componentis,
-                resultatum.numerositas_componentium);
+                resultatum.numerositas_componentium
+            );
             if (magnitudo < 0)
                 break;  /* error allocandi */
             resultatum.numerositas_componentium++;
@@ -131,10 +133,10 @@ inveni_pontes(const Graphus *graphus)
             if (acervus == NULL)
                 goto finis_pontium;
 
-            int apex = 0;
+            int apex        = 0;
             acervus[apex++] = u;
-            visitata[u] = 1;
-            int invenit_v = 0;
+            visitata[u]     = 1;
+            int invenit_v   = 0;
 
             while (apex > 0 && !invenit_v) {
                 int vertex = acervus[--apex];
@@ -148,7 +150,7 @@ inveni_pontes(const Graphus *graphus)
                              */
                             goto latus_non_pons;
                         }
-                        visitata[w] = 1;
+                        visitata[w]     = 1;
                         acervus[apex++] = w;
                     }
                 }
@@ -178,8 +180,10 @@ finis_pontium:
 static void
 adde_latus(Graphus *graphus, int u, int v)
 {
-    if (u < 0 || u >= graphus->numerositas_verticium ||
-        v < 0 || v >= graphus->numerositas_verticium)
+    if (
+        u < 0 || u >= graphus->numerositas_verticium ||
+        v < 0 || v >= graphus->numerositas_verticium
+    )
         goto finis_addendi;
 
     /* Declaratio post label — C99 non permittit label ante declarationem directe */
@@ -267,9 +271,11 @@ static void
 analysa_graphum(Graphus *graphus)
 {
     printf("\n=== %s ===\n", graphus->nomen);
-    printf("V = %d, E = %d\n",
-           graphus->numerositas_verticium,
-           graphus->numerositas_laterum);
+    printf(
+        "V = %d, E = %d\n",
+        graphus->numerositas_verticium,
+        graphus->numerositas_laterum
+    );
 
     ResultatumConnexitatis res = inveni_componentes(graphus);
     printf("Componentes connexae: %d\n", res.numerositas_componentium);
@@ -285,13 +291,15 @@ analysa_graphum(Graphus *graphus)
 
     /* Characteristica Euleri graphi: V - E + C (C = componentium) */
     int chi = graphus->numerositas_verticium
-              - graphus->numerositas_laterum
-              + res.numerositas_componentium;
-    printf("V - E + C = %d - %d + %d = %d\n",
-           graphus->numerositas_verticium,
-           graphus->numerositas_laterum,
-           res.numerositas_componentium,
-           chi);
+        - graphus->numerositas_laterum
+        + res.numerositas_componentium;
+    printf(
+        "V - E + C = %d - %d + %d = %d\n",
+        graphus->numerositas_verticium,
+        graphus->numerositas_laterum,
+        res.numerositas_componentium,
+        chi
+    );
 
     printf("Pontes (latera critici):\n");
     int numerositas_pontium = inveni_pontes(graphus);

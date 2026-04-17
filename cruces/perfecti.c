@@ -32,7 +32,8 @@ typedef struct {
 static long
 summa_divisorum(long n)
 {
-    if (n <= 0) return 0;
+    if (n <= 0)
+        return 0;
     long summa = 0;
     for (long d = 1; d * d <= n; d++) {
         if (n % d == 0) {
@@ -55,7 +56,8 @@ summa_propriorum(long n)
 static long
 numerositas_divisorum(long n)
 {
-    if (n <= 0) return 0;
+    if (n <= 0)
+        return 0;
     long numerositas = 0;
     for (long d = 1; d * d <= n; d++) {
         if (n % d == 0) {
@@ -71,7 +73,8 @@ numerositas_divisorum(long n)
 static long
 maximus_divisor(long n)
 {
-    if (n <= 1) return 0;
+    if (n <= 1)
+        return 0;
     for (long d = 2; d * d <= n; d++) {
         if (n % d == 0)
             return n / d;
@@ -136,18 +139,22 @@ static ClassisNumeri
 classifica_per_callback(long n, FunctioDivisorum computator)
 {
     long s = computator(n) - n;  /* summa propriorum ex sigma */
-    if (s < n) return CLASSIS_DEFICIENS;
-    if (s > n) return CLASSIS_ABUNDANS;
+    if (s < n)
+        return CLASSIS_DEFICIENS;
+    if (s > n)
+        return CLASSIS_ABUNDANS;
     return CLASSIS_PERFECTUS;
 }
 
 /* Nomen classis per indicem */
 static const char *
-nomen_classis(ClassisNumeri classis)
+    nomen_classis(ClassisNumeri classis)
 {
-    for (int i = 0;
-         i < (int)(sizeof(descriptiones_classium) / sizeof(descriptiones_classium[0]));
-         i++) {
+    for (
+        int i = 0;
+        i < (int)(sizeof(descriptiones_classium) / sizeof(descriptiones_classium[0]));
+        i++
+    ) {
         if (descriptiones_classium[i].classis == classis)
             return descriptiones_classium[i].nomen;
     }
@@ -173,16 +180,20 @@ main(int argc, char *argv[])
     /* Demonstratio tabulae methodorum */
     printf("Methodi divisorum (per arietes functionum indicatarum):\n");
     for (int i = 0; i < NUMEROSITAS_METHODORUM; i++) {
-        printf("  %s(12) = %ld — %s\n",
-               methodi[i].nomen,
-               methodi[i].functio(12),
-               methodi[i].descriptio);
+        printf(
+            "  %s(12) = %ld — %s\n",
+            methodi[i].nomen,
+            methodi[i].functio(12),
+            methodi[i].descriptio
+        );
     }
 
     /* Demonstratio selectoris */
     SelectorFunctionis selector = selige_methodum;
-    printf("\nPer selectorem: sigma(28) = %ld\n",
-           selector(0)(28));
+    printf(
+        "\nPer selectorem: sigma(28) = %ld\n",
+        selector(0)(28)
+    );
 
     /* Inveni numeros perfectos */
     printf("\nNumeri perfecti usque ad %ld:\n", limes);
@@ -208,7 +219,7 @@ main(int argc, char *argv[])
 
     /* Inveni numeros amicabiles */
     printf("\nNumeri amicabiles usque ad %ld:\n", limes);
-    FunctioDivisorum s = selige_methodum(1);
+    FunctioDivisorum s     = selige_methodum(1);
     int amicabiles_inventi = 0;
     for (long a = 2; a <= limes; a++) {
         long b = s(a);
@@ -220,8 +231,10 @@ main(int argc, char *argv[])
     printf("Paria amicabilium: %d\n", amicabiles_inventi);
 
     /* Statisticae classium — nomen_classis per callback invocatur */
-    printf("\nDistributio classium (n = 2..%ld):\n",
-           (limes < 1000) ? limes : 1000L);
+    printf(
+        "\nDistributio classium (n = 2..%ld):\n",
+        (limes < 1000) ? limes : 1000L
+    );
     int census[3] = {0, 0, 0};
     long limes_census = (limes < 1000) ? limes : 1000;
     for (long n = 2; n <= limes_census; n++) {

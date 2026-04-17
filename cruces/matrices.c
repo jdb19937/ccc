@@ -31,18 +31,21 @@ static const Matricula MATRICULA_FIBONACCI   = { { {1, 1}, {1, 0} } };
  * 'const' in 'sinistra' et 'dextra': non mutantur.
  */
 static inline void
-multiplica(Matricula * restrict productum,
-           const Matricula *sinistra,
-           const Matricula *dextra,
-           Numerus modulus)
-{
+multiplica(
+    Matricula * restrict productum,
+    const Matricula *sinistra,
+    const Matricula *dextra,
+    Numerus modulus
+) {
     Matricula temporale = { { {0, 0}, {0, 0} } };
     for (int i = 0; i < 2; i++) {
         for (int k = 0; k < 2; k++) {
             for (int j = 0; j < 2; j++) {
                 temporale.elementa[i][k] +=
-                    (sinistra->elementa[i][j] *
-                     dextra->elementa[j][k]) % modulus;
+                    (
+                        sinistra->elementa[i][j] *
+                        dextra->elementa[j][k]
+                    ) % modulus;
             }
             temporale.elementa[i][k] %= modulus;
         }
@@ -56,13 +59,14 @@ multiplica(Matricula * restrict productum,
  * scriptiones ad eventus optimizare.
  */
 static void
-potentia(Matricula * restrict eventus,
-         const Matricula *basis,
-         Numerus exponens,
-         Numerus modulus)
-{
+potentia(
+    Matricula * restrict eventus,
+    const Matricula *basis,
+    Numerus exponens,
+    Numerus modulus
+) {
     Matricula accumulatum = MATRICULA_IDENTITATIS;
-    Matricula base_copia = *basis;
+    Matricula base_copia  = *basis;
     Matricula temporale;
 
     while (exponens > 0) {
@@ -82,8 +86,10 @@ potentia(Matricula * restrict eventus,
 static inline Numerus
 fibonacci_matricialis(Numerus n, Numerus modulus)
 {
-    if (n <= 0) return 0;
-    if (n <= 2) return 1;
+    if (n <= 0)
+        return 0;
+    if (n <= 2)
+        return 1;
 
     Matricula eventus;
     potentia(&eventus, &MATRICULA_FIBONACCI, n - 1, modulus);
@@ -94,10 +100,12 @@ fibonacci_matricialis(Numerus n, Numerus modulus)
 static Numerus
 fibonacci_iterativa(Numerus n, Numerus modulus)
 {
-    if (n <= 0) return 0;
-    if (n <= 2) return 1;
+    if (n <= 0)
+        return 0;
+    if (n <= 2)
+        return 1;
 
-    Numerus prior = 1;
+    Numerus prior    = 1;
     Numerus praesens = 1;
     for (Numerus i = 3; i <= n; i++) {
         Numerus proximus = (prior + praesens) % modulus;
@@ -133,15 +141,17 @@ main(int argc, char *argv[])
     int errores = 0;
     for (Numerus n = 0; n <= limes; n++) {
         Numerus rapida = fibonacci_matricialis(n, MODULUS);
-        Numerus lenta = fibonacci_iterativa(n, MODULUS);
+        Numerus lenta  = fibonacci_iterativa(n, MODULUS);
 
         printf("  F(%2" PRId64 ") = %" PRId64, n, rapida);
         if (n % 5 == 4 || n == limes)
             putchar('\n');
 
         if (rapida != lenta) {
-            printf("    DISCREPANTIA: %" PRId64 " != %" PRId64 "\n",
-                   rapida, lenta);
+            printf(
+                "    DISCREPANTIA: %" PRId64 " != %" PRId64 "\n",
+                rapida, lenta
+            );
             errores++;
         }
     }
@@ -155,10 +165,12 @@ main(int argc, char *argv[])
         for (Numerus n = 5; n <= 20; n++) {
             Numerus sinistrum = fibonacci_matricialis(m + n, MODULUS);
             Numerus dextrum =
-                (fibonacci_matricialis(m, MODULUS) *
-                 fibonacci_matricialis(n + 1, MODULUS) +
-                 fibonacci_matricialis(m - 1, MODULUS) *
-                 fibonacci_matricialis(n, MODULUS)) % MODULUS;
+                (
+                    fibonacci_matricialis(m, MODULUS) *
+                    fibonacci_matricialis(n + 1, MODULUS) +
+                    fibonacci_matricialis(m - 1, MODULUS) *
+                    fibonacci_matricialis(n, MODULUS)
+                ) % MODULUS;
             if (sinistrum != dextrum) {
                 printf("  FALLACIA: m=%" PRId64 " n=%" PRId64 "\n", m, n);
                 errores++;

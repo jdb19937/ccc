@@ -60,7 +60,7 @@ fac_simplicem(int numerositas, ...)
     for (int i = 0; i < numerositas - 1; i++) {
         for (int k = i + 1; k < numerositas; k++) {
             if (s.vertices[i] > s.vertices[k]) {
-                int temp = s.vertices[i];
+                int temp      = s.vertices[i];
                 s.vertices[i] = s.vertices[k];
                 s.vertices[k] = temp;
             }
@@ -75,7 +75,7 @@ fac_simplicem(int numerositas, ...)
  * Demonstrat va_copy (C99) — copia listae variadicae.
  */
 static const char *
-forma_textum(const char *forma, ...)
+    forma_textum(const char *forma, ...)
 {
     static char acervus[256];
     va_list argumenta;
@@ -131,15 +131,16 @@ adde_simplices(ComplexusSimplicialis *complexus, int numerositas_novorum, ...)
 static void
 initia_complexum(ComplexusSimplicialis *complexus)
 {
-    complexus->numerositas = 0;
+    complexus->numerositas     = 0;
     complexus->dimensio_maxima = -1;
 }
 
 /* Numerat simplices per dimensionem — f-vector */
 static void
-computa_f_vectorem(const ComplexusSimplicialis *complexus,
-                   int *f_vector, int maxima_dim)
-{
+computa_f_vectorem(
+    const ComplexusSimplicialis *complexus,
+    int *f_vector, int maxima_dim
+) {
     memset(f_vector, 0, (size_t)(maxima_dim + 1) * sizeof(int));
     for (int i = 0; i < complexus->numerositas; i++) {
         int dim = complexus->simplices[i].numerositas - 1;
@@ -180,27 +181,33 @@ construe_limitem_tetrahedri(ComplexusSimplicialis *complexus)
     initia_complexum(complexus);
 
     /* Vertices (0-simplices) */
-    adde_simplices(complexus, 4,
+    adde_simplices(
+        complexus, 4,
         fac_simplicem(1, 0),
         fac_simplicem(1, 1),
         fac_simplicem(1, 2),
-        fac_simplicem(1, 3));
+        fac_simplicem(1, 3)
+    );
 
     /* Latera (1-simplices) */
-    adde_simplices(complexus, 6,
+    adde_simplices(
+        complexus, 6,
         fac_simplicem(2, 0, 1),
         fac_simplicem(2, 0, 2),
         fac_simplicem(2, 0, 3),
         fac_simplicem(2, 1, 2),
         fac_simplicem(2, 1, 3),
-        fac_simplicem(2, 2, 3));
+        fac_simplicem(2, 2, 3)
+    );
 
     /* Facies (2-simplices) */
-    adde_simplices(complexus, 4,
+    adde_simplices(
+        complexus, 4,
         fac_simplicem(3, 0, 1, 2),
         fac_simplicem(3, 0, 1, 3),
         fac_simplicem(3, 0, 2, 3),
-        fac_simplicem(3, 1, 2, 3));
+        fac_simplicem(3, 1, 2, 3)
+    );
 }
 
 static void
@@ -214,19 +221,23 @@ construe_limitem_octahedri(ComplexusSimplicialis *complexus)
 
     /* 12 latera */
     int latera[][2] = {
-        {0,1},{0,2},{0,3},{0,4},{1,2},{1,4},{2,3},{3,4},{1,5},{2,5},{3,5},{4,5}
+        {0, 1}, {0, 2}, {0, 3}, {0, 4}, {1, 2}, {1, 4}, {2, 3}, {3, 4}, {1, 5}, {2, 5}, {3, 5}, {4, 5}
     };
     for (int i = 0; i < 12; i++)
-        adde_simplices(complexus, 1,
-            fac_simplicem(2, latera[i][0], latera[i][1]));
+        adde_simplices(
+            complexus, 1,
+            fac_simplicem(2, latera[i][0], latera[i][1])
+        );
 
     /* 8 facies */
     int facies[][3] = {
-        {0,1,2},{0,2,3},{0,3,4},{0,4,1},{5,1,2},{5,2,3},{5,3,4},{5,4,1}
+        {0, 1, 2}, {0, 2, 3}, {0, 3, 4}, {0, 4, 1}, {5, 1, 2}, {5, 2, 3}, {5, 3, 4}, {5, 4, 1}
     };
     for (int i = 0; i < 8; i++)
-        adde_simplices(complexus, 1,
-            fac_simplicem(3, facies[i][0], facies[i][1], facies[i][2]));
+        adde_simplices(
+            complexus, 1,
+            fac_simplicem(3, facies[i][0], facies[i][1], facies[i][2])
+        );
 }
 
 /* ===== Programma principale ===== */
@@ -241,8 +252,10 @@ main(void)
 
     /* Limes tetrahedri */
     construe_limitem_tetrahedri(&complexus);
-    printf("=== %s ===\n",
-           forma_textum("Limes Tetrahedri (%d simplices)", complexus.numerositas));
+    printf(
+        "=== %s ===\n",
+        forma_textum("Limes Tetrahedri (%d simplices)", complexus.numerositas)
+    );
 
     printf("Simplices:\n");
     for (int i = 0; i < complexus.numerositas; i++) {
@@ -254,7 +267,8 @@ main(void)
     computa_f_vectorem(&complexus, f_vector, MAXIMA_DIMENSIO);
     printf("f-vector: (");
     for (int d = 0; d <= complexus.dimensio_maxima; d++) {
-        if (d > 0) printf(", ");
+        if (d > 0)
+            printf(", ");
         printf("f%d=%d", d, f_vector[d]);
     }
     printf(")\n");
@@ -263,13 +277,16 @@ main(void)
 
     /* Limes octahedri */
     construe_limitem_octahedri(&complexus);
-    printf("=== %s ===\n",
-           forma_textum("Limes Octahedri (%d simplices)", complexus.numerositas));
+    printf(
+        "=== %s ===\n",
+        forma_textum("Limes Octahedri (%d simplices)", complexus.numerositas)
+    );
 
     computa_f_vectorem(&complexus, f_vector, MAXIMA_DIMENSIO);
     printf("f-vector: (");
     for (int d = 0; d <= complexus.dimensio_maxima; d++) {
-        if (d > 0) printf(", ");
+        if (d > 0)
+            printf(", ");
         printf("f%d=%d", d, f_vector[d]);
     }
     printf(")\n");
@@ -281,10 +298,12 @@ main(void)
     printf("  Tetrahedron: f0 - f1 + f2 = V - E + F\n");
     construe_limitem_tetrahedri(&complexus);
     computa_f_vectorem(&complexus, f_vector, MAXIMA_DIMENSIO);
-    printf("  f0=%d, f1=%d, f2=%d => %d - %d + %d = %d\n",
-           f_vector[0], f_vector[1], f_vector[2],
-           f_vector[0], f_vector[1], f_vector[2],
-           f_vector[0] - f_vector[1] + f_vector[2]);
+    printf(
+        "  f0=%d, f1=%d, f2=%d => %d - %d + %d = %d\n",
+        f_vector[0], f_vector[1], f_vector[2],
+        f_vector[0], f_vector[1], f_vector[2],
+        f_vector[0] - f_vector[1] + f_vector[2]
+    );
 
     printf("\nComputatio perfecta.\n");
     return 0;

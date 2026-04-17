@@ -59,8 +59,10 @@ inveni_gemellos(int limes)
     int gemelli_sinistri[magnitudo];  /* VLA secundus */
 
     /* sizeof VLA — valor tempore executionis computatur */
-    printf("Magnitudo VLA booliani: %zu octeti (%d elementa)\n",
-           sizeof(est_primus), magnitudo);
+    printf(
+        "Magnitudo VLA booliani: %zu octeti (%d elementa)\n",
+        sizeof(est_primus), magnitudo
+    );
 
     memset(est_primus, 1, sizeof(est_primus));
     cerne_cribrum(magnitudo, est_primus);

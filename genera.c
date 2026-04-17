@@ -13,6 +13,11 @@
 #include "fluat.h"
 #include <string.h>
 
+/* collēctor statīcārum locālium cum initiālizātōribus
+ * — scrībendae in sectiōnem dātōrum post generātiōnem cōdicis */
+static nodus_t *staticae_locales[1024];
+static int num_staticarum_localium = 0;
+
 /* acervus break/continue labels */
 static int break_labels[MAX_BREAK];
 static int continue_labels[MAX_BREAK];
@@ -87,6 +92,59 @@ static void genera_expr(nodus_t *n, int dest);
 static void genera_lval(nodus_t *n, int dest);
 static void genera_sententia(nodus_t *n);
 
+/* §6.7.2.1: quaerit informātiōnem campī bitōrum prō membrō */
+static membrum_t *quaere_membrum(typus_t *st, const char *nomen)
+{
+    if (!st || !nomen || st->genus != TY_STRUCT)
+        return NULL;
+    for (int i = 0; i < st->num_membrorum; i++)
+        if (strcmp(st->membra[i].nomen, nomen) == 0)
+            return &st->membra[i];
+    return NULL;
+}
+
+/* §6.7.8: numera elementa plana quae in initializatore structurae
+ * expectantur pro hoc typo. Recursivus pro sub-structuris.
+ * char[N] cum chorda = 1, alii arietes = N scalaria, struct = summa. */
+static int numera_elementa_init(typus_t *t)
+{
+    if (!t)
+        return 1;
+    if (
+        t->genus == TY_ARRAY && t->basis
+        && (t->basis->genus == TY_CHAR || t->basis->genus == TY_UCHAR)
+    )
+        return 1; /* char[N] = "..." — unum elementum */
+    if (t->genus == TY_ARRAY && t->basis) {
+        typus_t *f = t->basis;
+        while (f->genus == TY_ARRAY && f->basis)
+            f = f->basis;
+        int f_mag = typus_magnitudo(f);
+        if (f_mag < 1)
+            erratum("numera_elementa_init: magnitudo folii invalida");
+        return typus_magnitudo(t) / f_mag;
+    }
+    if (t->genus == TY_STRUCT && t->membra && t->num_membrorum > 0) {
+        int summa = 0;
+        for (int i = 0; i < t->num_membrorum; i++)
+            summa += numera_elementa_init(t->membra[i].typus);
+        return summa;
+    }
+    return 1; /* scalar */
+}
+
+/* §6.7.2.1: ēmitte UBFX/SBFX prō lectiōne campī bitōrum */
+static void genera_lectio_campi_bitorum(int r, membrum_t *mb)
+{
+    int lsb  = mb->campus_positus;
+    int imms = lsb + mb->campus_bitorum - 1;
+    emit_ldr32(r, r, 0);
+    if (mb->campus_signatus)
+        emit32(0x13000000 | (lsb << 16) | (imms << 10) | (r << 5) | r);
+    else
+        emit32(0x53000000 | (lsb << 16) | (imms << 10) | (r << 5) | r);
+}
+
 static int mag_typi(typus_t *t)
 {
     if (!t)
@@ -106,6 +164,62 @@ static int mag_typi_verus(typus_t *t)
     if (t->genus == TY_ARRAY)
         return t->magnitudo > 0 ? t->magnitudo : 8;
     return mag_typi(t);
+}
+
+/* §6.7.5.2: genera codicem quī magnitudinem totam typī (tabulae cum
+ * VLA dimēnsiōnibus aut scālāris) in x_dest pōnit.  Redit 1 sī VLA
+ * implicātur (dynamica), 0 sī tota magnitudo constans. */
+static int typus_habet_vla(typus_t *t)
+{
+    while (t && t->genus == TY_ARRAY) {
+        if (t->num_elementorum <= 0 && t->vla_dim)
+            return 1;
+        t = t->basis;
+    }
+    return 0;
+}
+
+static void genera_magnitudo_typi(typus_t *t, int dest_reg)
+{
+    int constant_mag = 1;
+    nodus_t *dims[16];
+    int ndims = 0;
+    typus_t *cur = t;
+    while (cur && cur->genus == TY_ARRAY) {
+        if (cur->num_elementorum > 0) {
+            constant_mag *= cur->num_elementorum;
+        } else if (cur->vla_dim) {
+            if (ndims >= 16)
+                erratum("nimis multae dimēnsiōnēs VLA");
+            dims[ndims++] = (nodus_t *)cur->vla_dim;
+        } else {
+            erratum("tabula sine magnitudine in computatione");
+        }
+        cur = cur->basis;
+    }
+    if (!cur)
+        erratum("typus VLA sine basi scalari");
+    int leaf_mag = typus_magnitudo(cur);
+    if (leaf_mag < 1)
+        erratum("magnitudo basis VLA invalida");
+    constant_mag *= leaf_mag;
+
+    int rarm = reg_arm(dest_reg);
+    if (ndims == 0) {
+        emit_movi(rarm, constant_mag);
+        return;
+    }
+    genera_expr(dims[0], dest_reg);
+    for (int i = 1; i < ndims; i++) {
+        int rt = reg_alloca();
+        genera_expr(dims[i], rt);
+        emit_mul(rarm, rarm, reg_arm(rt));
+        reg_libera(rt);
+    }
+    if (constant_mag > 1) {
+        emit_movi(17, constant_mag);
+        emit_mul(rarm, rarm, 17);
+    }
 }
 
 static int est_unsigned(typus_t *t)
@@ -205,6 +319,12 @@ static void emit_load_from_addr(int dest, typus_t *t)
     int mag = mag_typi(t);
     if (t && (t->genus == TY_STRUCT || t->genus == TY_ARRAY))
         return; /* iam adresse */
+    if (typus_est_fluat(t)) {
+        /* §6.2.5¶10: floāt/double — carrica in d-reg cum conversiōne
+         * ad doublem ut conventiō intra CCC servētur */
+        emit_fload_from_addr(dest, dest, t);
+        return;
+    }
     if (est_unsigned(t))
         emit_load_unsigned(dest, dest, 0, mag);
     else
@@ -249,6 +369,15 @@ static void genera_lval(nodus_t *n, int dest)
                 } else {
                     emit_addi(r, FP, off);
                 }
+                /* §6.9.1¶10: parametrus strūctūrae > 16 octētōrum
+                 * trānsfertur per indicātōrem (AAPCS64) —
+                 * dēferendum est ut adressam strūctūrae obtineāmus */
+                if (
+                    s->est_parametrus && s->typus
+                    && s->typus->genus == TY_STRUCT
+                    && s->typus->magnitudo > 16
+                )
+                    emit_ldr64(r, r, 0);
             }
             break;
         }
@@ -260,12 +389,22 @@ static void genera_lval(nodus_t *n, int dest)
             genera_expr(n->sinister, dest);
             int r2 = reg_alloca();
             genera_expr(n->dexter, r2);
-            int basis_mag = 1;
-            if (n->sinister->typus)
-                basis_mag = mag_typi_verus(typus_basis_indicis(n->sinister->typus));
-            if (basis_mag > 1) {
-                emit_movi(17, basis_mag);
-                emit_mul(reg_arm(r2), reg_arm(r2), 17);
+            typus_t *elem_t = n->sinister->typus
+                ? typus_basis_indicis(n->sinister->typus) : NULL;
+            if (elem_t && typus_habet_vla(elem_t)) {
+                /* §6.7.5.2: elementum habet VLA dim. — computa runtime */
+                int rsz = reg_alloca();
+                genera_magnitudo_typi(elem_t, rsz);
+                emit_mul(reg_arm(r2), reg_arm(r2), reg_arm(rsz));
+                reg_libera(rsz);
+            } else {
+                int basis_mag = 1;
+                if (elem_t)
+                    basis_mag = mag_typi_verus(elem_t);
+                if (basis_mag > 1) {
+                    emit_movi(17, basis_mag);
+                    emit_mul(reg_arm(r2), reg_arm(r2), 17);
+                }
             }
             emit_add(r, r, reg_arm(r2));
             reg_libera(r2);
@@ -684,33 +823,73 @@ static void genera_expr(nodus_t *n, int dest)
 
     case N_ASSIGN:
         {
+            /* §6.7.2.1: proba an sinister sit campus bitōrum */
+            membrum_t *cb_mem = NULL;
+            if (
+                n->sinister && (
+                    n->sinister->genus == N_MEMBER
+                    || n->sinister->genus == N_ARROW
+                )
+            ) {
+                typus_t *cb_st = NULL;
+                if (n->sinister->genus == N_MEMBER && n->sinister->sinister)
+                    cb_st = n->sinister->sinister->typus;
+                else if (
+                    n->sinister->genus == N_ARROW && n->sinister->sinister
+                    && n->sinister->sinister->typus
+                    && n->sinister->sinister->typus->genus == TY_PTR
+                )
+                    cb_st = n->sinister->sinister->typus->basis;
+                cb_mem = quaere_membrum(cb_st, n->sinister->nomen);
+                if (cb_mem && cb_mem->campus_bitorum == 0)
+                    cb_mem = NULL;
+            }
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);
             genera_expr(n->dexter, dest);
-            int mag = mag_typi(n->sinister->typus);
-            if (n->sinister->typus && n->sinister->typus->genus == TY_STRUCT) {
-                /* copia structurae */
-                for (int i = 0; i < mag; i += 8) {
-                    int rem = mag - i;
-                    if (rem >= 8) {
-                        emit_ldr64(17, r, i);
-                        emit_str64(17, reg_arm(r2), i);
-                    }else if (rem >= 4) {
-                        emit_ldr32(17, r, i);
-                        emit_str32(17, reg_arm(r2), i);
-                    }else {
-                        emit_ldrb(17, r, i);
-                        emit_strb(17, reg_arm(r2), i);
-                    }
-                }
-            } else if (typus_est_fluat(n->sinister->typus)) {
-                /* §6.5.16.1: assignatio fluitans — converte si necesse, salva per FP STR */
-                if (!typus_est_fluat(n->dexter->typus))
-                    emit_int_to_double(r, n->dexter->typus);
-                emit_fstore_to_addr(r, reg_arm(r2), n->sinister->typus);
+            if (cb_mem) {
+                /* scrīptiō campī bitōrum: lege-mūtā-scrībe */
+                int r3  = reg_alloca();
+                int ra2 = reg_arm(r2);
+                int ra3 = reg_arm(r3);
+                emit_ldr32(ra3, ra2, 0);
+                /* BFI Wd, Wn, #lsb, #width
+                 * immr = (32 - lsb) % 32, imms = width - 1 */
+                int bfi_immr = (32 - cb_mem->campus_positus) & 31;
+                int bfi_imms = cb_mem->campus_bitorum - 1;
+                emit32(
+                    0x33000000
+                    | (bfi_immr << 16) | (bfi_imms << 10)
+                    | (r << 5) | ra3
+                );
+                emit_str32(ra3, ra2, 0);
+                reg_libera(r3);
             } else {
-                emit_store(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
-            }
+                int mag = mag_typi(n->sinister->typus);
+                if (n->sinister->typus && n->sinister->typus->genus == TY_STRUCT) {
+                /* copia structurae */
+                    for (int i = 0; i < mag; i += 8) {
+                        int rem = mag - i;
+                        if (rem >= 8) {
+                            emit_ldr64(17, r, i);
+                            emit_str64(17, reg_arm(r2), i);
+                        }else if (rem >= 4) {
+                            emit_ldr32(17, r, i);
+                            emit_str32(17, reg_arm(r2), i);
+                        }else {
+                            emit_ldrb(17, r, i);
+                            emit_strb(17, reg_arm(r2), i);
+                        }
+                    }
+                } else if (typus_est_fluat(n->sinister->typus)) {
+                /* §6.5.16.1: assignatio fluitans — converte si necesse, salva per FP STR */
+                    if (!typus_est_fluat(n->dexter->typus))
+                        emit_int_to_double(r, n->dexter->typus);
+                    emit_fstore_to_addr(r, reg_arm(r2), n->sinister->typus);
+                } else {
+                    emit_store(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
+                }
+            } /* claudit rāmum else post campum bitōrum */
             reg_libera(r2);
             break;
         }
@@ -868,6 +1047,20 @@ static void genera_expr(nodus_t *n, int dest)
                 genera_expr(n->sinister, 0);
                 emit_str64(0, FP, -(fptr_spill));
             }
+            /* §6.9.1 AAPCS64: pro struct > 16 passim per valorem,
+             * computamus magnitudinem totalem et allocamus spatium
+             * dynamice sub SP ante copias. */
+            int struct_copy_tot = 0;
+            for (int i = 0; i < nargs; i++) {
+                typus_t *pt = n->membra[i]->typus;
+                if (pt && pt->genus == TY_STRUCT && pt->magnitudo > 16)
+                    struct_copy_tot += (pt->magnitudo + 15) & ~15;
+            }
+            int struct_copy_alloc = (struct_copy_tot + 15) & ~15;
+            if (struct_copy_alloc > 0)
+                emit_subi(SP, SP, struct_copy_alloc);
+            /* offset in novo spatio, incipit a 0 et crescit */
+            int struct_copy_cur = 0;
             for (int i = 0; i < nargs; i++) {
                 reg_vertex = 0;
                 genera_expr(n->membra[i], 0);
@@ -878,6 +1071,33 @@ static void genera_expr(nodus_t *n, int dest)
                     emit_movi(17, off);
                     emit_sub(17, FP, 17);
                     emit_fstr64(0, 17, 0);
+                } else if (
+                    n->membra[i]->typus
+                    && n->membra[i]->typus->genus == TY_STRUCT
+                    && n->membra[i]->typus->magnitudo > 16
+                ) {
+                    /* §6.9.1: struct > 16 — copia in spatium
+                     * sub SP allocatum, serva indicatorem in spill */
+                    int mag    = n->membra[i]->typus->magnitudo;
+                    int mag_al = (mag + 15) & ~15;
+                    /* x17 = SP + struct_copy_cur */
+                    emit_addi(17, SP, struct_copy_cur);
+                    for (int off = 0; off < mag; off += 8) {
+                        int rem = mag - off;
+                        if (rem >= 8) {
+                            emit_ldr64(16, 0, off);
+                            emit_str64(16, 17, off);
+                        } else if (rem >= 4) {
+                            emit_ldr32(16, 0, off);
+                            emit_str32(16, 17, off);
+                        } else {
+                            emit_ldrb(16, 0, off);
+                            emit_strb(16, 17, off);
+                        }
+                    }
+                    /* pone indicatorem in spill */
+                    emit_str64(17, FP, -(arg_spill_base + i * 8));
+                    struct_copy_cur += mag_al;
                 } else {
                     emit_str64(0, FP, -(arg_spill_base + i * 8));
                 }
@@ -917,8 +1137,28 @@ static void genera_expr(nodus_t *n, int dest)
                         emit_movi(17, off);
                         emit_sub(17, FP, 17);
                         emit_fldr64(num_fp_regs, 17, 0);
+                        /* §6.5.2.2¶4: parametrus tȳpī floāt accipit
+                         * valōrem singulae prāecisiōnis in s-registrō;
+                         * CCC internē adhibet doublem — convertendum est. */
+                        if (pt->genus == TY_FLOAT)
+                            emit_fcvt_sd(num_fp_regs, num_fp_regs);
                     }
                     num_fp_regs++;
+                } else if (
+                    pt && pt->genus == TY_STRUCT
+                    && pt->magnitudo <= 16 && pt->magnitudo > 0
+                ) {
+                    /* §6.9.1 AAPCS64: struct ≤ 16 oct. passitur in
+                     * consecutivis x-registris. Carrica bytes ex
+                     * structurae addresse (pointer in spill). */
+                    int num_regs = (pt->magnitudo + 7) / 8;
+                    if (num_gp_regs + num_regs <= 8) {
+                        /* x17 = pointer ad structuram */
+                        emit_ldr64(17, FP, -(arg_spill_base + i * 8));
+                        for (int k = 0; k < num_regs; k++)
+                            emit_ldr64(num_gp_regs + k, 17, k * 8);
+                    }
+                    num_gp_regs += num_regs;
                 } else {
                     if (num_gp_regs < 8)
                         emit_ldr64(num_gp_regs, FP, -(arg_spill_base + i * 8));
@@ -1007,6 +1247,9 @@ static void genera_expr(nodus_t *n, int dest)
                 int acervus_mag = ((acervus_args * 8) + 15) & ~15;
                 emit_addi(SP, SP, acervus_mag);
             }
+            /* restaura SP post struct > 16 copies */
+            if (struct_copy_alloc > 0)
+                emit_addi(SP, SP, struct_copy_alloc);
 
             /* resultatum: x0 pro integris, d0 pro fluitantibus */
             {
@@ -1014,11 +1257,13 @@ static void genera_expr(nodus_t *n, int dest)
                 if (func_typ)
                     ret_typ = func_typ->reditus;
                 if (typus_est_fluat(ret_typ)) {
-                    /* d0 → d(dest) */
-                    if (r != 0) {
-                        /* FMOV Dd, D0 — codificatio: 0x1E604000 | (src << 5) | dest */
+                    /* §6.3.1.5: funcitō redēns floāt pōnit valōrem
+                     * in s0; CCC internē tractat duplicēs in d-reg.
+                     * Prōmovē ad doublem ut conventiōnem servēmus. */
+                    if (ret_typ && ret_typ->genus == TY_FLOAT)
+                        emit_fcvt_ds(0, 0);
+                    if (r != 0)
                         emit32(0x1E604000 | (0 << 5) | r);
-                    }
                 } else {
                     if (r != 0)
                         emit_mov(r, 0);
@@ -1040,10 +1285,18 @@ static void genera_expr(nodus_t *n, int dest)
             genera_expr(n->sinister, dest);
             int r2 = reg_alloca();
             genera_expr(n->dexter, r2);
-            int basis_mag = mag_typi_verus(n->typus);
-            if (basis_mag > 1) {
-                emit_movi(17, basis_mag);
-                emit_mul(reg_arm(r2), reg_arm(r2), 17);
+            if (n->typus && typus_habet_vla(n->typus)) {
+                /* §6.7.5.2: elementum habet VLA dim. — stride runtime */
+                int rsz = reg_alloca();
+                genera_magnitudo_typi(n->typus, rsz);
+                emit_mul(reg_arm(r2), reg_arm(r2), reg_arm(rsz));
+                reg_libera(rsz);
+            } else {
+                int basis_mag = mag_typi_verus(n->typus);
+                if (basis_mag > 1) {
+                    emit_movi(17, basis_mag);
+                    emit_mul(reg_arm(r2), reg_arm(r2), 17);
+                }
             }
             emit_add(r, r, reg_arm(r2));
             reg_libera(r2);
@@ -1054,17 +1307,42 @@ static void genera_expr(nodus_t *n, int dest)
 
     case N_MEMBER:
         {
-            genera_lval(n, dest);
-            if (n->typus && n->typus->genus != TY_ARRAY && n->typus->genus != TY_STRUCT)
-                emit_load_from_addr(r, n->typus);
+            typus_t *st_mem = n->sinister ? n->sinister->typus : NULL;
+            membrum_t *mb   = quaere_membrum(st_mem, n->nomen);
+            if (mb && mb->campus_bitorum > 0) {
+                genera_lval(n, dest);
+                genera_lectio_campi_bitorum(r, mb);
+            } else {
+                genera_lval(n, dest);
+                if (
+                    n->typus && n->typus->genus != TY_ARRAY
+                    && n->typus->genus != TY_STRUCT
+                )
+                    emit_load_from_addr(r, n->typus);
+            }
             break;
         }
 
     case N_ARROW:
         {
-            genera_lval(n, dest);
-            if (n->typus && n->typus->genus != TY_ARRAY && n->typus->genus != TY_STRUCT)
-                emit_load_from_addr(r, n->typus);
+            typus_t *st_arr = NULL;
+            if (
+                n->sinister && n->sinister->typus
+                && n->sinister->typus->genus == TY_PTR
+            )
+                st_arr = n->sinister->typus->basis;
+            membrum_t *mb = quaere_membrum(st_arr, n->nomen);
+            if (mb && mb->campus_bitorum > 0) {
+                genera_lval(n, dest);
+                genera_lectio_campi_bitorum(r, mb);
+            } else {
+                genera_lval(n, dest);
+                if (
+                    n->typus && n->typus->genus != TY_ARRAY
+                    && n->typus->genus != TY_STRUCT
+                )
+                    emit_load_from_addr(r, n->typus);
+            }
             break;
         }
 
@@ -1084,10 +1362,10 @@ static void genera_expr(nodus_t *n, int dest)
             int dest_fluat = typus_est_fluat(n->typus_decl);
             int src_fluat  = typus_est_fluat(n->sinister->typus);
             if (dest_fluat && !src_fluat) {
-                /* §6.3.1.4¶2: integer → fluitans */
+                /* §6.3.1.4¶2: integer → fluitans.  CCC internē tenet
+                 * valōrem in d-reg ut doublem; narrowing ad floāt
+                 * solum fit ad tempus scrīptiōnis aut trānsmīssiōnis. */
                 emit_int_to_double(r, n->sinister->typus);
-                if (n->typus_decl->genus == TY_FLOAT)
-                    emit_fcvt_sd(r, r);  /* §6.3.1.5: demove ad float */
             } else if (!dest_fluat && src_fluat) {
                 /* §6.3.1.4¶1: fluitans → integer (truncatio) */
                 emit_double_to_int(r);
@@ -1114,11 +1392,9 @@ static void genera_expr(nodus_t *n, int dest)
                     }
                 }
             } else if (dest_fluat && src_fluat) {
-                /* §6.3.1.5: inter typos fluitantes */
-                if (n->typus_decl->genus == TY_FLOAT && n->sinister->typus->genus == TY_DOUBLE)
-                    emit_fcvt_sd(r, r);
-                else if (n->typus_decl->genus == TY_DOUBLE && n->sinister->typus->genus == TY_FLOAT)
-                    emit_fcvt_ds(r, r);
+                /* §6.3.1.5: inter typos fluitantes.  CCC semper tenet
+                 * doublem in d-reg; ergō cast inter floāt et doublem
+                 * nihil facit in registrō. */
             } else {
                 /* truncatio vel extensio integra */
                 int tm = mag_typi(n->typus_decl);
@@ -1205,11 +1481,19 @@ static void genera_expr(nodus_t *n, int dest)
             emit_str64(reg_arm(r3), reg_arm(r2), 0); /* ap = ap + 8 */
             reg_libera(r3);
             reg_libera(r2);
-            /* carrica valorem ex *ap */
-            if (n->typus_decl)
-                emit_load_from_addr(r, n->typus_decl);
-            else
+            /* carrica valorem ex *ap — §7.15.1.1, §6.9.1:
+             * structurae > 16 oct. in variadicis per indicatorem
+             * transmittuntur (AAPCS64) — deferendum est */
+            if (
+                n->typus_decl && n->typus_decl->genus == TY_STRUCT
+                && n->typus_decl->magnitudo > 16
+            ) {
                 emit_ldr64(r, r, 0);
+            } else if (n->typus_decl) {
+                emit_load_from_addr(r, n->typus_decl);
+            } else {
+                emit_ldr64(r, r, 0);
+            }
             break;
         }
 
@@ -1219,6 +1503,81 @@ static void genera_expr(nodus_t *n, int dest)
 
     case N_NOP:
         break;
+
+    /* §6.5.2.5: compound literal (typename){ init-list } — allocat
+     * spatium in acervo, initializat, reddit adressam */
+    case N_BLOCK:
+        {
+            if (!n->typus || n->typus->genus != TY_STRUCT)
+                erratum_ad(
+                    n->linea,
+                    "compound literal sine typo structurae"
+                );
+            int mag = n->typus->magnitudo;
+            if (mag <= 0)
+                erratum_ad(
+                    n->linea,
+                    "compound literal magnitudinis invalidae: %d", mag
+                );
+            int mag_al = (mag + 15) & ~15;
+            emit_subi(SP, SP, mag_al);
+            /* servā adressam (SP) in registro destinationis per ADD rd, SP, #0 */
+            emit_addi(r, SP, 0);
+            /* §6.7.8: imple regionem zeris primum, ne cloberetur
+             * priores membris per scripturas bitorum sequentes */
+            int rv_salvus = reg_vertex;
+            if (dest >= rv_salvus)
+                rv_salvus = dest + 1;
+            {
+                reg_vertex = rv_salvus;
+                int rz     = reg_alloca();
+                emit_movi(reg_arm(rz), 0);
+                for (int z = 0; z < mag; z += 8) {
+                    int rem = mag - z;
+                    if (rem >= 8)
+                        emit_str64(reg_arm(rz), r, z);
+                    else if (rem >= 4)
+                        emit_str32(reg_arm(rz), r, z);
+                    else
+                        emit_strb(reg_arm(rz), r, z);
+                }
+                reg_libera(rz);
+            }
+            /* scribe elementa per offset membri in struct-ordine */
+            int num_camp = n->typus->num_membrorum;
+            for (int i = 0; i < n->num_membrorum && i < num_camp; i++) {
+                reg_vertex = rv_salvus;
+                int r2     = reg_alloca();
+                genera_expr(n->membra[i], r2);
+                membrum_t *mb = &n->typus->membra[i];
+                if (mb->campus_bitorum > 0) {
+                    /* §6.7.2.1: campus bitorum — BFI lege-muta-scribe */
+                    int r3  = reg_alloca();
+                    int ra2 = reg_arm(r2);
+                    int ra3 = reg_arm(r3);
+                    emit_ldr32(ra3, r, mb->offset);
+                    int bfi_immr = (32 - mb->campus_positus) & 31;
+                    int bfi_imms = mb->campus_bitorum - 1;
+                    emit32(
+                        0x33000000
+                        | (bfi_immr << 16) | (bfi_imms << 10)
+                        | (ra2 << 5) | ra3
+                    );
+                    emit_str32(ra3, r, mb->offset);
+                    reg_libera(r3);
+                } else {
+                    int mmag = mag_typi(mb->typus);
+                    emit_store(
+                        reg_arm(r2), r, mb->offset,
+                        mmag > 8 ? 8 : mmag
+                    );
+                }
+                reg_libera(r2);
+            }
+            /* NOTA: SP nōn restauratur — compound literal habet
+             * permansum acervī durātiōnem §6.5.2.5¶5 */
+            break;
+        }
 
     default:
         erratum_ad(n->linea, "expressio non supportata: %d", n->genus);
@@ -1256,16 +1615,8 @@ static void genera_sententia(nodus_t *n)
             /* §6.7.5.2: VLA — allocatio dynamica in acervo */
             if (n->tertius && s && !s->est_globalis) {
                 reg_vertex = 0;
-                genera_expr(n->tertius, 0); /* magnitudo in x0 */
-                /* multiplica per magnitudinem elementi */
-                typus_t *elem = n->typus_decl ? n->typus_decl->basis : ty_int;
-                int emag      = typus_magnitudo(elem);
-                if (emag < 1)
-                    erratum_ad(n->linea, "magnitudo elementi invalida");
-                if (emag > 1) {
-                    emit_movi(17, emag);
-                    emit_mul(0, 0, 17);
-                }
+                /* magnitudo tota in x0 — tractat etiam VLA multidim. */
+                genera_magnitudo_typi(n->typus_decl, 0);
                 /* allinea ad 16 */
                 emit_addi(0, 0, 15);
                 emit_movi(17, ~(long)15);
@@ -1291,6 +1642,13 @@ static void genera_sententia(nodus_t *n)
                     int gid = globalis_adde(n->nomen, n->typus_decl, n->est_staticus, val);
                     s->globalis_index = gid;
                 }
+                /* servā statīcam locālem cum initiālizātōribus
+                 * prō scrīptiōne in sectiōnem dātōrum */
+                if (n->num_membrorum > 0 && n->membra) {
+                    if (num_staticarum_localium >= 1024)
+                        erratum("nimis multae staticae locales cum initializatoribus");
+                    staticae_locales[num_staticarum_localium++] = n;
+                }
             } else if (n->num_membrorum > 0 && n->membra) {
             /* §6.7.8: initiale tabulae vel structurae { expr, expr, ... } */
                 if (s) {
@@ -1302,23 +1660,79 @@ static void genera_sententia(nodus_t *n)
                         s->typus && s->typus->genus == TY_STRUCT &&
                         s->typus->membra && s->typus->num_membrorum > 0
                     ) {
-                        /* structura: utere offset et magnitudine cuiusque campi */
-                        for (int i = 0; i < n->num_membrorum && i < s->typus->num_membrorum; i++) {
-                            reg_vertex = 0;
-                            genera_expr(n->membra[i], 0);
-                            int moff = off_basis + s->typus->membra[i].offset;
-                            int mmag = mag_typi(s->typus->membra[i].typus);
+                        /* §6.7.8: structura locālis cum initializatōre —
+                         * parser iam computāvit init_offset pro omni elementō
+                         * (per designatōrem vel positiōnem naturālem) */
+                        for (int i = 0; i < n->num_membrorum; i++) {
+                            nodus_t *elem = n->membra[i];
+                            reg_vertex    = 0;
+                            genera_expr(elem, 0);
+                            int moff, mmag;
+                            int bitpos = elem->init_bitpos;
+                            int bitwd  = elem->init_bitwidth;
+                            if (elem->init_offset >= 0) {
+                                moff = off_basis + elem->init_offset;
+                                mmag = elem->init_size > 0
+                                    ? elem->init_size : 8;
+                            } else {
+                                if (i >= s->typus->num_membrorum)
+                                    erratum_ad(
+                                        n->linea,
+                                        "elementum %d extrā strūctūram "
+                                        "sine designātōre", i
+                                    );
+                                moff = off_basis
+                                    + s->typus->membra[i].offset;
+                                mmag = mag_typi(
+                                    s->typus->membra[i].typus
+                                );
+                                bitpos = s->typus->membra[i].campus_positus;
+                                bitwd  = s->typus->membra[i].campus_bitorum;
+                            }
                             emit_movi(17, -moff);
                             emit_sub(17, FP, 17);
-                            emit_store(0, 17, 0, mmag);
+                            if (bitwd > 0) {
+                                /* §6.7.2.1: campus bitōrum — BFI in 4-octētum */
+                                int rtmp = reg_alloca();
+                                int ra0  = 0;
+                                int rat  = reg_arm(rtmp);
+                                emit_ldr32(rat, 17, 0);
+                                int immr = (32 - bitpos) & 31;
+                                int imms = bitwd - 1;
+                                emit32(
+                                    0x33000000
+                                    | (immr << 16) | (imms << 10)
+                                    | (ra0 << 5) | rat
+                                );
+                                emit_str32(rat, 17, 0);
+                                reg_libera(rtmp);
+                            } else {
+                                emit_store(0, 17, 0, mmag > 8 ? 8 : mmag);
+                            }
                             reg_vertex = 0;
                         }
                     } else {
-                        /* tabula: elementa eiusdem magnitudinis */
+                        /* tabula: descende ad folium scalare
+                         * per arietes et structuras — §6.7.8 */
                         typus_t *elem_typus = (s->typus && s->typus->genus == TY_ARRAY) ?
                             s->typus->basis : ty_int;
-                        while (elem_typus && elem_typus->genus == TY_ARRAY)
-                            elem_typus = elem_typus->basis;
+                        while (
+                            elem_typus && (
+                                elem_typus->genus == TY_ARRAY ||
+                                elem_typus->genus == TY_STRUCT
+                            )
+                        ) {
+                            if (elem_typus->genus == TY_ARRAY && elem_typus->basis)
+                                elem_typus = elem_typus->basis;
+                            else if (
+                                elem_typus->genus == TY_STRUCT &&
+                                elem_typus->membra &&
+                                elem_typus->num_membrorum > 0
+                            )
+                                elem_typus = elem_typus->membra[0].typus;
+                            else
+                                break;
+                        }
                         int elem_mag = typus_magnitudo(elem_typus);
                         if (elem_mag < 1)
                             erratum_ad(
@@ -1331,7 +1745,10 @@ static void genera_sententia(nodus_t *n)
                             int elem_off = off_basis + i * elem_mag;
                             emit_movi(17, -elem_off);
                             emit_sub(17, FP, 17);
-                            emit_store(0, 17, 0, elem_mag);
+                            if (typus_est_fluat(elem_typus))
+                                emit_fstore_to_addr(0, 17, elem_typus);
+                            else
+                                emit_store(0, 17, 0, elem_mag > 8 ? 8 : elem_mag);
                             reg_vertex = 0;
                         }
                     }
@@ -1359,7 +1776,7 @@ static void genera_sententia(nodus_t *n)
                             int mmag = mag_typi(st->membra[i].typus);
                             emit_movi(17, -moff);
                             emit_sub(17, FP, 17);
-                            emit_store(0, 17, 0, mmag);
+                            emit_store(0, 17, 0, mmag > 8 ? 8 : mmag);
                             reg_vertex = 0;
                         }
                     } else {
@@ -1376,7 +1793,7 @@ static void genera_sententia(nodus_t *n)
                             genera_expr(n->sinister->membra[i], 0);
                             emit_movi(17, -(off + i * emag));
                             emit_sub(17, FP, 17);
-                            emit_store(0, 17, 0, emag);
+                            emit_store(0, 17, 0, emag > 8 ? 8 : emag);
                             reg_vertex = 0;
                         }
                     }
@@ -1625,6 +2042,13 @@ static void genera_sententia(nodus_t *n)
         if (n->sinister) {
             reg_vertex = 0;
             genera_expr(n->sinister, 0);
+            /* §6.3.1.5: functiō redēns floāt exspectat s0.  CCC tenet
+             * valōrem in d0 ut doublem — narrowing necessārium est. */
+            if (
+                cur_func_typus && cur_func_typus->reditus
+                && cur_func_typus->reditus->genus == TY_FLOAT
+            )
+                emit_fcvt_sd(0, 0);
         }
         /* epilogus */
         emit_addi(SP, FP, 0);
@@ -1717,27 +2141,46 @@ static void genera_functio(nodus_t *n)
 
     /* salva parametros in acervo.
      * si functio variadica, salva omnes x0-x7 ut va_start operetur.
-     * §5.4.2 AAPCS64: fluitantes in d0-d7, integri in x0-x7 (separatim). */
+     * §6.9.1 AAPCS64: fluitantes in d0-d7, integri in x0-x7.
+     * Struct ≤ 16 oct. occupat 1-2 x-registra consecutiva. */
     {
         int salva_n = nparams < 8 ? nparams : 8;
         if (cur_func_typus && cur_func_typus->est_variadicus && salva_n < 8)
             salva_n = 8;
-        int gp_reg = 0;  /* x-registrum proximum */
-        int fp_reg = 0;  /* d-registrum proximum */
+        int gp_reg = 0;
+        int fp_reg = 0;
+        /* slot_cur decrementatur prō singulīs slots — struct >8 oct
+         * occupāt num_regs slots contiguōs. */
+        int slot_cur = -16 - 8;  /* primus slot = -24 */
         for (int i = 0; i < salva_n; i++) {
-            int dest_off = -(16 + (i + 1) * 8);
             typus_t *pt  = NULL;
             if (cur_func_typus && i < cur_func_typus->num_parametrorum)
                 pt = cur_func_typus->parametri[i];
             if (pt && typus_est_fluat(pt)) {
-                /* parametrus fluitans: salva ex d-registro */
-                emit_movi(17, -dest_off);
+                emit_movi(17, -slot_cur);
                 emit_sub(17, FP, 17);
                 emit_fstr64(fp_reg, 17, 0);
                 fp_reg++;
+                slot_cur -= 8;
+            } else if (
+                pt && pt->genus == TY_STRUCT
+                && pt->magnitudo <= 16 && pt->magnitudo > 0
+            ) {
+                /* §6.9.1: struct ≤ 16 — salva registros consecutivos
+                 * in slots contiguōs (offsets iam computātī ā parsōre). */
+                int num_regs = (pt->magnitudo + 7) / 8;
+                int base_off = slot_cur - (num_regs - 1) * 8;
+                for (int k = 0; k < num_regs; k++) {
+                    if (gp_reg + k >= 8)
+                        break;
+                    emit_str64(gp_reg + k, FP, base_off + k * 8);
+                }
+                gp_reg += num_regs;
+                slot_cur -= num_regs * 8;
             } else {
-                emit_str64(gp_reg, FP, dest_off);
+                emit_str64(gp_reg, FP, slot_cur);
                 gp_reg++;
+                slot_cur -= 8;
             }
         }
     }
@@ -1835,7 +2278,23 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
             habet_init_data = 1;
         if (
             n->sinister && n->sinister->genus == N_STR &&
-            n->typus_decl && n->typus_decl->genus == TY_PTR
+            n->typus_decl && (
+                n->typus_decl->genus == TY_PTR
+                || (
+                    n->typus_decl->genus == TY_ARRAY
+                    && n->typus_decl->basis
+                    && (
+                        n->typus_decl->basis->genus == TY_CHAR
+                        || n->typus_decl->basis->genus == TY_UCHAR
+                    )
+                )
+            )
+        )
+            habet_init_data = 1;
+        /* §6.7.8¶4: indicātor functiōnis ut initiālizātor scālāris */
+        if (
+            n->sinister && n->sinister->genus == N_IDENT
+            && n->sinister->nomen
         )
             habet_init_data = 1;
         if (!habet_init_data)
@@ -1859,12 +2318,37 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
         globales[gid].data_offset = data_off;
 
         if (n->num_membrorum > 0 && n->membra) {
-            /* §6.7.8: tabula cum initiātōribus */
-            typus_t *elem_t = (n->typus_decl && n->typus_decl->basis) ?
-                n->typus_decl->basis : ty_int;
+            /* §6.7.8: tabula vel strūctūra cum initiātōribus */
+            typus_t *elem_t;
+            int singula_structura = 0;
+            if (
+                n->typus_decl && n->typus_decl->genus == TY_ARRAY
+                && n->typus_decl->basis
+            )
+                elem_t = n->typus_decl->basis;
+            else if (n->typus_decl && n->typus_decl->genus == TY_STRUCT) {
+                elem_t = n->typus_decl;
+                singula_structura = 1;
+            } else
+                elem_t = ty_int;
             int elem_mag = typus_magnitudo(elem_t);
             if (elem_mag < 1)
                 erratum("elementum tabulae '%s' magnitudo invalida", n->nomen);
+
+            /* §6.7.8: prō arietibus multidimensiōnālibus vel strūctūrīs
+             * cum arietibus, dēscende ad folium typī */
+            typus_t *folium_t = elem_t;
+            if (singula_structura && folium_t->genus == TY_STRUCT) {
+                /* strūctūra singula — quaere folium per membra */
+                if (folium_t->membra && folium_t->num_membrorum > 0)
+                    folium_t = folium_t->membra[0].typus;
+            }
+            while (folium_t->genus == TY_ARRAY && folium_t->basis)
+                folium_t = folium_t->basis;
+            int folium_mag = typus_magnitudo(folium_t);
+            if (folium_mag < 1)
+                erratum("magnitudo folii invalida");
+
             int est_struct = (
                 elem_t->genus == TY_STRUCT &&
                 elem_t->membra && elem_t->num_membrorum > 0
@@ -1874,36 +2358,307 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
                 nodus_t *elem = n->membra[j];
                 int elem_off;
                 int store_mag;
-                if (est_struct) {
-                    int idx_struct = j / num_camp;
-                    int idx_camp   = j % num_camp;
-                    elem_off = data_off + idx_struct * elem_mag
-                        + elem_t->membra[idx_camp].offset;
-                    store_mag = mag_typi(elem_t->membra[idx_camp].typus);
-                    if (store_mag < 1)
-                        erratum("campus structūrae magnitudo invalida");
+                int est_char_array = 0;
+                /* §6.7.8: si parser offset computavit (per designatorem
+                 * vel positionem naturalem), uti eo directe */
+                if (elem->init_offset >= 0 && elem->init_size > 0) {
+                    elem_off  = data_off + elem->init_offset;
+                    store_mag = elem->init_size;
+                    /* char[N] cum chorda — copia bytes in place */
+                    if (elem->genus == N_STR && elem->init_size > 8)
+                        est_char_array = 1;
+                } else if (singula_structura) {
+                    /* strūctūra singula — elementa plana per folium */
+                    elem_off  = data_off + j * folium_mag;
+                    store_mag = folium_mag;
+                } else if (est_struct) {
+                    int idx_struct  = j / num_camp;
+                    int idx_camp    = j % num_camp;
+                    typus_t *camp_t = elem_t->membra[idx_camp].typus;
+                    /* prō membrīs arietī, folium scālāre */
+                    typus_t *camp_fol = camp_t;
+                    while (
+                        camp_fol && camp_fol->genus == TY_ARRAY
+                        && camp_fol->basis
+                    )
+                        camp_fol = camp_fol->basis;
+                    int camp_fol_mag = typus_magnitudo(camp_fol);
+                    if (camp_fol_mag < 1)
+                        erratum("magnitudo folii campi invalida");
+                    if (camp_t->genus == TY_ARRAY) {
+                        /* §6.7.8: numera elementa plana per structuram,
+                         * counting sub-structs recursively */
+                        int scal_per_struct = 0;
+                        for (int mi = 0; mi < num_camp; mi++)
+                            scal_per_struct +=
+                                numera_elementa_init(elem_t->membra[mi].typus);
+                        if (scal_per_struct < 1)
+                            erratum("numerus scalarium per structuram invalidus");
+                        int si = j / scal_per_struct; /* index strūctūrae */
+                        int sj = j % scal_per_struct; /* index intrā strūctūram */
+                        /* quaere membrum (potentīāliter nestātum) cui sj pertinet */
+                        int run     = 0;
+                        int mem_off = 0;
+                        int sub_idx = sj;
+                        for (int mi = 0; mi < num_camp; mi++) {
+                            typus_t *mt = elem_t->membra[mi].typus;
+                            int cnt     = numera_elementa_init(mt);
+                            int is_ch_arr = (
+                                mt->genus == TY_ARRAY && mt->basis
+                                && (
+                                    mt->basis->genus == TY_CHAR
+                                    || mt->basis->genus == TY_UCHAR
+                                )
+                            );
+                            if (sj < run + cnt) {
+                                sub_idx = sj - run;
+                                mem_off = elem_t->membra[mi].offset;
+                                if (is_ch_arr) {
+                                    camp_fol_mag   = typus_magnitudo(mt);
+                                    est_char_array = 1;
+                                } else if (mt->genus == TY_STRUCT) {
+                                    /* sub-structura — descende ad folium */
+                                    typus_t *sf = mt;
+                                    while (
+                                        sf->membra && sf->num_membrorum > 0
+                                        && sf->genus == TY_STRUCT
+                                    )
+                                        sf = sf->membra[0].typus;
+                                    while (sf->genus == TY_ARRAY && sf->basis)
+                                        sf = sf->basis;
+                                    camp_fol_mag = typus_magnitudo(sf);
+                                    if (camp_fol_mag < 1)
+                                        erratum("magnitudo folii sub-strūctūrae invalida");
+                                } else {
+                                    camp_fol_mag = (mt->genus == TY_ARRAY)
+                                        ? typus_magnitudo(camp_fol) : mag_typi(mt);
+                                }
+                                break;
+                            }
+                            run += cnt;
+                        }
+                        elem_off = data_off + si * elem_mag
+                            + mem_off + sub_idx * camp_fol_mag;
+                        store_mag = camp_fol_mag;
+                    } else {
+                        elem_off = data_off + idx_struct * elem_mag
+                            + elem_t->membra[idx_camp].offset;
+                        store_mag = mag_typi(camp_t);
+                        if (store_mag < 1)
+                            erratum("campus structūrae magnitudo invalida");
+                    }
+                } else if (elem_t->genus == TY_ARRAY) {
+                    /* aries multidimensiōnālis — elementōs planōs per folium */
+                    elem_off  = data_off + j * folium_mag;
+                    store_mag = folium_mag;
                 } else {
                     elem_off  = data_off + j * elem_mag;
                     store_mag = elem_mag;
                 }
                 if (elem->genus == N_STR) {
-                    int sid = chorda_adde(elem->chorda, elem->lon_chordae);
-                    data_reloc_adde(
-                        elem_off, DR_CSTRING,
-                        chordae[sid].offset
-                    );
+                    /* §6.7.8p14: char[N] = "..." copiat chars in locum,
+                     * non creat indicatorem.  Ceteri casus: indicator. */
+                    if (est_struct && est_char_array) {
+                        int lon = elem->lon_chordae < store_mag
+                            ? elem->lon_chordae : store_mag;
+                        memcpy(init_data + elem_off, elem->chorda, lon);
+                        if (lon < store_mag)
+                            memset(
+                                init_data + elem_off + lon, 0,
+                                store_mag - lon
+                            );
+                    } else {
+                        int sid = chorda_adde(elem->chorda, elem->lon_chordae);
+                        data_reloc_adde(
+                            elem_off, DR_CSTRING,
+                            chordae[sid].offset
+                        );
+                    }
                 } else if (elem->genus == N_NUM) {
                     long v = elem->valor;
+                    if (elem->init_bitwidth > 0) {
+                        /* §6.7.2.1: campus bitōrum in 4-octētō unītāte */
+                        unsigned int mask = elem->init_bitwidth >= 32
+                            ? 0xffffffffu
+                            : ((1u << elem->init_bitwidth) - 1u);
+                        unsigned int u;
+                        memcpy(&u, init_data + elem_off, 4);
+                        u &= ~(mask << elem->init_bitpos);
+                        u |= ((unsigned int)v & mask) << elem->init_bitpos;
+                        memcpy(init_data + elem_off, &u, 4);
+                    } else {
+                        memcpy(init_data + elem_off, &v, store_mag);
+                    }
+                } else if (
+                    elem->genus == N_UNOP
+                    && elem->op == T_MINUS
+                    && elem->sinister
+                    && elem->sinister->genus == N_NUM
+                ) {
+                    /* valōrēs negātīvī in initiālizātōribus globālibus */
+                    long v = -elem->sinister->valor;
                     memcpy(init_data + elem_off, &v, store_mag);
+                } else if (elem->genus == N_NUM_FLUAT) {
+                    /* cōnstantēs fluitantēs in dātīs globālibus */
+                    if (store_mag == 4) {
+                        float fv = (float)elem->valor_f;
+                        memcpy(init_data + elem_off, &fv, 4);
+                    } else {
+                        double dv = elem->valor_f;
+                        memcpy(init_data + elem_off, &dv, store_mag);
+                    }
+                } else if (elem->genus == N_IDENT && elem->nomen) {
+                    /* §6.7.8¶4: indicātor ad functiōnem vel variābilem
+                     * globālem in initiālizātōre */
+                    int flabel = func_loc_quaere(elem->nomen);
+                    if (flabel >= 0 && labels[flabel] >= 0) {
+                        data_reloc_adde(elem_off, DR_TEXT, labels[flabel]);
+                    } else if (
+                        elem->sym
+                        && elem->sym->globalis_index >= 0
+                        && !globales[elem->sym->globalis_index].est_bss
+                    ) {
+                        /* variābilis globālis — adresse in init_data */
+                        data_reloc_adde(
+                            elem_off, DR_IDATA,
+                            globales[elem->sym->globalis_index].data_offset
+                        );
+                    } else {
+                        /* functiō externa — relocātiō ad symbolum GOT */
+                        char got_nomen[260];
+                        snprintf(got_nomen, 260, "_%s", elem->nomen);
+                        int gid = got_adde(got_nomen);
+                        data_reloc_adde(elem_off, DR_EXT_FUNC, gid);
+                    }
                 }
             }
-        } else {
-            /* index scālāris cum chordā litterālī (§6.7.8¶14) */
+        } else if (
+            n->sinister && n->sinister->genus == N_STR
+            && n->typus_decl
+            && n->typus_decl->genus == TY_ARRAY
+            && n->typus_decl->basis
+            && (
+                n->typus_decl->basis->genus == TY_CHAR
+                || n->typus_decl->basis->genus == TY_UCHAR
+            )
+        ) {
+            /* §6.7.8¶14: char[N] = "..." — copia bytes in loco */
+            int lon    = n->sinister->lon_chordae;
+            int cap    = globales[gid].magnitudo;
+            int n_copy = lon < cap ? lon : cap;
+            memcpy(init_data + data_off, n->sinister->chorda, n_copy);
+            if (n_copy < cap)
+                memset(init_data + data_off + n_copy, 0, cap - n_copy);
+        } else if (n->sinister && n->sinister->genus == N_STR) {
+            /* indicātor scālāris ad chordam litterālem (§6.7.8¶4) */
             int sid = chorda_adde(
                 n->sinister->chorda,
                 n->sinister->lon_chordae
             );
             data_reloc_adde(data_off, DR_CSTRING, chordae[sid].offset);
+        } else if (
+            n->sinister && n->sinister->genus == N_IDENT
+            && n->sinister->nomen
+        ) {
+            /* §6.7.8¶4, §6.6¶9: indicātor scālāris (functiō vel variābilis) */
+            int flabel = func_loc_quaere(n->sinister->nomen);
+            if (flabel >= 0 && labels[flabel] >= 0) {
+                data_reloc_adde(data_off, DR_TEXT, labels[flabel]);
+            } else if (
+                n->sinister->sym
+                && n->sinister->sym->globalis_index >= 0
+                && !globales[n->sinister->sym->globalis_index].est_bss
+            ) {
+                data_reloc_adde(
+                    data_off, DR_IDATA,
+                    globales[n->sinister->sym->globalis_index].data_offset
+                );
+            } else {
+                /* functiō externa — relocātiō ad symbolum GOT */
+                char got_nomen[260];
+                snprintf(got_nomen, 260, "_%s", n->sinister->nomen);
+                int gid = got_adde(got_nomen);
+                data_reloc_adde(data_off, DR_EXT_FUNC, gid);
+            }
+        } else {
+            erratum(
+                "initiālizātor globālis nōn tractātus prō '%s'",
+                n->nomen
+            );
+        }
+    }
+
+    /* statīcae locālēs cum initiālizātōribus — eādem logicā
+     * ac globālēs, sed ex collēctōre */
+    for (int si = 0; si < num_staticarum_localium; si++) {
+        nodus_t *n    = staticae_locales[si];
+        symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
+        if (!s || s->globalis_index < 0)
+            continue;
+        int gid = s->globalis_index;
+
+        if (!n->num_membrorum || !n->membra)
+            continue;
+
+        int mag = globales[gid].magnitudo;
+        if (mag < 1)
+            continue;
+        int col = globales[gid].colineatio;
+        if (col < 1)
+            col = 1;
+        init_data_lon = (init_data_lon + col - 1) & ~(col - 1);
+        int data_off  = init_data_lon;
+        if (init_data_lon + mag > MAX_DATA)
+            erratum("init_data nimis magna (static local)");
+        memset(init_data + data_off, 0, mag);
+        init_data_lon += mag;
+
+        globales[gid].est_bss     = 0;
+        globales[gid].data_offset = data_off;
+
+        /* folium typī */
+        typus_t *sl_t   = n->typus_decl;
+        typus_t *sl_fol = sl_t;
+        while (sl_fol && (sl_fol->genus == TY_ARRAY || sl_fol->genus == TY_STRUCT)) {
+            if (sl_fol->genus == TY_ARRAY && sl_fol->basis)
+                sl_fol = sl_fol->basis;
+            else if (
+                sl_fol->genus == TY_STRUCT && sl_fol->membra
+                && sl_fol->num_membrorum > 0
+            )
+                sl_fol = sl_fol->membra[0].typus;
+            else
+                break;
+        }
+        int sl_mag = typus_magnitudo(sl_fol);
+        if (sl_mag < 1)
+            erratum("magnitudo folii staticae localis invalida");
+
+        for (int j = 0; j < n->num_membrorum; j++) {
+            nodus_t *elem = n->membra[j];
+            int elem_off  = data_off + j * sl_mag;
+            if (elem_off + sl_mag > data_off + mag)
+                break;
+            if (elem->genus == N_STR) {
+                int sid = chorda_adde(elem->chorda, elem->lon_chordae);
+                data_reloc_adde(elem_off, DR_CSTRING, chordae[sid].offset);
+            } else if (elem->genus == N_NUM) {
+                long v = elem->valor;
+                memcpy(init_data + elem_off, &v, sl_mag);
+            } else if (
+                elem->genus == N_UNOP
+                && elem->op == T_MINUS
+                && elem->sinister
+                && elem->sinister->genus == N_NUM
+            ) {
+                long v = -elem->sinister->valor;
+                memcpy(init_data + elem_off, &v, sl_mag);
+            } else if (elem->genus == N_IDENT && elem->nomen) {
+                /* §6.7.8¶4: indicātor functiōnis in statīcā locālī */
+                int flabel = func_loc_quaere(elem->nomen);
+                if (flabel >= 0 && labels[flabel] >= 0)
+                    data_reloc_adde(elem_off, DR_TEXT, labels[flabel]);
+            }
         }
     }
 

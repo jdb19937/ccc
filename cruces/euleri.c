@@ -46,10 +46,11 @@ typedef struct {
  * si inter setjmp et longjmp mutatae sunt.
  */
 static int
-computa_latera(int numerositas_triangulorum,
-               const Triangulum *triangula,
-               int numerositas_verticium)
-{
+computa_latera(
+    int numerositas_triangulorum,
+    const Triangulum *triangula,
+    int numerositas_verticium
+) {
     /*
      * Matrice adiacentiae utimur ad latera unica numeranda.
      * 'volatile' quia post longjmp valor definitus esse debet.
@@ -58,8 +59,10 @@ computa_latera(int numerositas_triangulorum,
     int n = numerositas_verticium;
 
     /* Allocatio — si fallit, saltum facimus */
-    unsigned char *matrice = calloc((size_t)n * (size_t)n,
-                                    sizeof(unsigned char));
+    unsigned char *matrice = calloc(
+        (size_t)n * (size_t)n,
+        sizeof(unsigned char)
+    );
     if (matrice == NULL)
         longjmp(contextus_erroris, ERROR_ALLOCATIO);
 
@@ -69,8 +72,10 @@ computa_latera(int numerositas_triangulorum,
         int v2 = triangula[t].vertex[2];
 
         /* Verificatio limitum */
-        if (v0 < 0 || v0 >= n || v1 < 0 || v1 >= n ||
-            v2 < 0 || v2 >= n) {
+        if (
+            v0 < 0 || v0 >= n || v1 < 0 || v1 >= n ||
+            v2 < 0 || v2 >= n
+        ) {
             free(matrice);
             longjmp(contextus_erroris, ERROR_TRIANGULATIO);
         }
@@ -104,12 +109,14 @@ computa_latera(int numerositas_triangulorum,
 static int
 characteristica_euleri(const Superficies *sup)
 {
-    int latera = computa_latera(sup->numerositas_triangulorum,
-                                sup->triangula,
-                                sup->numerositas_verticium);
+    int latera = computa_latera(
+        sup->numerositas_triangulorum,
+        sup->triangula,
+        sup->numerositas_verticium
+    );
     return sup->numerositas_verticium
-           - latera
-           + sup->numerositas_triangulorum;
+        - latera
+        + sup->numerositas_triangulorum;
 }
 
 /*
@@ -190,44 +197,56 @@ main(void)
             (codex_erroris == ERROR_TOPOLOGIA) ? "topologia invalida" :
             (codex_erroris == ERROR_TRIANGULATIO) ? "triangulatio invalida" :
             "error ignotus";
-        fprintf(stderr, "Error in superficie %d: %s\n",
-                (int)index_superficiei, nuntium);
+        fprintf(
+            stderr, "Error in superficie %d: %s\n",
+            (int)index_superficiei, nuntium
+        );
         return codex_erroris;
     }
 
     printf("Genera Superficierum Clausarum\n");
     printf("Formula: chi = V - E + F = 2 - 2g\n\n");
-    printf("%-25s  %3s  %3s  %3s  %5s  %5s  %8s\n",
-           "Superficies", "V", "E", "F", "chi", "genus", "status");
-    printf("%-25s  %3s  %3s  %3s  %5s  %5s  %8s\n",
-           "-------------------------", "---", "---", "---",
-           "-----", "-----", "--------");
+    printf(
+        "%-25s  %3s  %3s  %3s  %5s  %5s  %8s\n",
+        "Superficies", "V", "E", "F", "chi", "genus", "status"
+    );
+    printf(
+        "%-25s  %3s  %3s  %3s  %5s  %5s  %8s\n",
+        "-------------------------", "---", "---", "---",
+        "-----", "-----", "--------"
+    );
 
     int errores = 0;
     for (int i = 0; i < NUMEROSITAS_SUPERFICIERUM; i++) {
-        index_superficiei = i;
+        index_superficiei      = i;
         const Superficies *sup = &superficies[i];
 
-        int chi = characteristica_euleri(sup);
+        int chi   = characteristica_euleri(sup);
         int genus = genus_ex_characteristica(chi);
 
-        int latera = computa_latera(sup->numerositas_triangulorum,
-                                    sup->triangula,
-                                    sup->numerositas_verticium);
+        int latera = computa_latera(
+            sup->numerositas_triangulorum,
+            sup->triangula,
+            sup->numerositas_verticium
+        );
 
         const char *status = "recte";
-        if (chi != sup->characteristica_expectata ||
-            genus != sup->genus_expectatum) {
+        if (
+            chi != sup->characteristica_expectata ||
+            genus != sup->genus_expectatum
+        ) {
             status = "FALLIT";
             errores++;
         }
 
-        printf("%-25s  %3d  %3d  %3d  %5d  %5d  %8s\n",
-               sup->nomen,
-               sup->numerositas_verticium,
-               latera,
-               sup->numerositas_triangulorum,
-               chi, genus, status);
+        printf(
+            "%-25s  %3d  %3d  %3d  %5d  %5d  %8s\n",
+            sup->nomen,
+            sup->numerositas_verticium,
+            latera,
+            sup->numerositas_triangulorum,
+            chi, genus, status
+        );
     }
 
     /* Theorema classificationis */

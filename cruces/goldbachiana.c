@@ -86,7 +86,7 @@ compara_decompositiones(const void *sinistrum, const void *dextrum)
     /* Primum per differentiam */
     if (a->differentia != b->differentia)
         return (a->differentia > b->differentia) -
-               (a->differentia < b->differentia);
+            (a->differentia < b->differentia);
 
     /* Deinde per numerum */
     return (a->numerus > b->numerus) - (a->numerus < b->numerus);
@@ -127,8 +127,8 @@ decompone(int n)
         if (est_in_tabula(q)) {
             int diff = q - p;
             if (diff < optima.differentia) {
-                optima.primus_p = p;
-                optima.primus_q = q;
+                optima.primus_p    = p;
+                optima.primus_q    = q;
                 optima.differentia = diff;
             }
         }
@@ -161,7 +161,8 @@ main(int argc, char *argv[])
 
     int errores = 0;
     DecompositioGoldbachii *recordi = malloc(
-        (size_t)MAXIMI_RECORDI * sizeof(DecompositioGoldbachii));
+        (size_t)MAXIMI_RECORDI * sizeof(DecompositioGoldbachii)
+    );
     if (recordi == NULL) {
         fprintf(stderr, "Error: allocatio memoriae fallit\n");
         return 1;
@@ -184,39 +185,47 @@ main(int argc, char *argv[])
     }
 
     /* Ordina recordos per differentiam descendentem per qsort */
-    qsort(recordi, (size_t)numerositas_recordorum,
-          sizeof(DecompositioGoldbachii),
-          compara_decompositiones);
+    qsort(
+        recordi, (size_t)numerositas_recordorum,
+        sizeof(DecompositioGoldbachii),
+        compara_decompositiones
+    );
 
     /* Scribe decompositiones cum minima differentia (primi inter se proximi) */
     printf("Decompositiones cum minima differentia:\n");
     int scripta = 0;
     for (int i = 0; i < numerositas_recordorum && scripta < 15; i++) {
         if (recordi[i].differentia <= 2) {
-            printf("  %d = %d + %d (diff = %d)\n",
-                   recordi[i].numerus,
-                   recordi[i].primus_p,
-                   recordi[i].primus_q,
-                   recordi[i].differentia);
+            printf(
+                "  %d = %d + %d (diff = %d)\n",
+                recordi[i].numerus,
+                recordi[i].primus_p,
+                recordi[i].primus_q,
+                recordi[i].differentia
+            );
             scripta++;
         }
     }
 
     /* Scribe decompositiones cum maxima differentia */
     printf("\nDecompositiones cum maxima differentia:\n");
-    for (int i = numerositas_recordorum - 1;
-         i >= 0 && i > numerositas_recordorum - 11; i--) {
-        printf("  %d = %d + %d (diff = %d)\n",
-               recordi[i].numerus,
-               recordi[i].primus_p,
-               recordi[i].primus_q,
-               recordi[i].differentia);
+    for (
+        int i = numerositas_recordorum - 1;
+        i >= 0 && i > numerositas_recordorum - 11; i--
+    ) {
+        printf(
+            "  %d = %d + %d (diff = %d)\n",
+            recordi[i].numerus,
+            recordi[i].primus_p,
+            recordi[i].primus_q,
+            recordi[i].differentia
+        );
     }
 
     /* Distributio differentiarum */
     printf("\nDistributio differentiarum:\n");
-    int census_0 = 0;
-    int census_2 = 0;
+    int census_0     = 0;
+    int census_2     = 0;
     int census_maior = 0;
     for (int i = 0; i < numerositas_recordorum; i++) {
         if (recordi[i].differentia == 0)

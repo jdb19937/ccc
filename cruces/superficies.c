@@ -69,8 +69,8 @@ computa_characteristicas(
     Characteristica * restrict eventus,
     const Genus * restrict genera,
     int numerositas,
-    FunctioCharacteristicae functio)
-{
+    FunctioCharacteristicae functio
+) {
     for (int i = 0; i < numerositas; i++)
         eventus[i] = functio(genera[i]);
 }
@@ -96,30 +96,44 @@ chi_non_orientabilis(Genus k)
  * Tota tabula est const — in sectione read-only memoriae.
  */
 static const SuperficiesConstans superficies_orientabiles[] = {
-    { .nomen = "Sphaera S^2",
-      .dimensio = 2, .genus = 0, .est_orientabilis = 1,
-      .chi = 2, .descriptio = "superficies simplicissima" },
-    { .nomen = "Torus T^2",
-      .dimensio = 2, .genus = 1, .est_orientabilis = 1,
-      .chi = 0, .descriptio = "annulus toroidalis" },
-    { .nomen = "Bitorus",
-      .dimensio = 2, .genus = 2, .est_orientabilis = 1,
-      .chi = -2, .descriptio = "summa connexa duorum tororum" },
-    { .nomen = "Tritorus",
-      .dimensio = 2, .genus = 3, .est_orientabilis = 1,
-      .chi = -4, .descriptio = "summa connexa trium tororum" },
+    {
+        .nomen = "Sphaera S^2",
+        .dimensio = 2, .genus = 0, .est_orientabilis = 1,
+        .chi = 2, .descriptio = "superficies simplicissima"
+    },
+    {
+        .nomen = "Torus T^2",
+        .dimensio = 2, .genus = 1, .est_orientabilis = 1,
+        .chi = 0, .descriptio = "annulus toroidalis"
+    },
+    {
+        .nomen = "Bitorus",
+        .dimensio = 2, .genus = 2, .est_orientabilis = 1,
+        .chi = -2, .descriptio = "summa connexa duorum tororum"
+    },
+    {
+        .nomen = "Tritorus",
+        .dimensio = 2, .genus = 3, .est_orientabilis = 1,
+        .chi = -4, .descriptio = "summa connexa trium tororum"
+    },
 };
 
 static const SuperficiesConstans superficies_non_orientabiles[] = {
-    { .nomen = "Planum proiectivum RP^2",
-      .dimensio = 2, .genus = 1, .est_orientabilis = 0,
-      .chi = 1, .descriptio = "crosscap singularis" },
-    { .nomen = "Amphora Kleinii",
-      .dimensio = 2, .genus = 2, .est_orientabilis = 0,
-      .chi = 0, .descriptio = "duo crosscaps" },
-    { .nomen = "Dymond",
-      .dimensio = 2, .genus = 3, .est_orientabilis = 0,
-      .chi = -1, .descriptio = "tres crosscaps" },
+    {
+        .nomen = "Planum proiectivum RP^2",
+        .dimensio = 2, .genus = 1, .est_orientabilis = 0,
+        .chi = 1, .descriptio = "crosscap singularis"
+    },
+    {
+        .nomen = "Amphora Kleinii",
+        .dimensio = 2, .genus = 2, .est_orientabilis = 0,
+        .chi = 0, .descriptio = "duo crosscaps"
+    },
+    {
+        .nomen = "Dymond",
+        .dimensio = 2, .genus = 3, .est_orientabilis = 0,
+        .chi = -1, .descriptio = "tres crosscaps"
+    },
 };
 
 #define NUMEROSITAS_ORIENTABILIUM \
@@ -159,35 +173,53 @@ main(void)
     printf("Magnitudines typorum (catenae typedef):\n");
     printf("  sizeof(Dimensio) = %zu\n", sizeof(Dimensio));
     printf("  sizeof(Characteristica) = %zu\n", sizeof(Characteristica));
-    printf("  sizeof(IndicatorCharacteristicae) = %zu\n",
-           sizeof(IndicatorCharacteristicae));
-    printf("  sizeof(IndicatorConstAdConstChar) = %zu\n",
-           sizeof(IndicatorConstAdConstChar));
-    printf("  sizeof(FunctioCharacteristicae) = %zu\n",
-           sizeof(FunctioCharacteristicae));
-    printf("  sizeof(TabulaFunctionum) = %zu\n",
-           sizeof(TabulaFunctionum));
-    printf("  sizeof(SuperficiesConstans) = %zu\n",
-           sizeof(SuperficiesConstans));
-    printf("  sizeof(CacheComputationis) = %zu\n\n",
-           sizeof(CacheComputationis));
+    printf(
+        "  sizeof(IndicatorCharacteristicae) = %zu\n",
+        sizeof(IndicatorCharacteristicae)
+    );
+    printf(
+        "  sizeof(IndicatorConstAdConstChar) = %zu\n",
+        sizeof(IndicatorConstAdConstChar)
+    );
+    printf(
+        "  sizeof(FunctioCharacteristicae) = %zu\n",
+        sizeof(FunctioCharacteristicae)
+    );
+    printf(
+        "  sizeof(TabulaFunctionum) = %zu\n",
+        sizeof(TabulaFunctionum)
+    );
+    printf(
+        "  sizeof(SuperficiesConstans) = %zu\n",
+        sizeof(SuperficiesConstans)
+    );
+    printf(
+        "  sizeof(CacheComputationis) = %zu\n\n",
+        sizeof(CacheComputationis)
+    );
 
     /* ===== Superficies orientabiles ===== */
     printf("Superficies Orientabiles (genus g, chi = 2 - 2g):\n");
-    printf("%-30s %5s %5s %5s  %s\n",
-           "Nomen", "dim", "genus", "chi", "Descriptio");
-    printf("%-30s %5s %5s %5s  %s\n",
-           "------------------------------", "-----", "-----", "-----",
-           "-------------------");
+    printf(
+        "%-30s %5s %5s %5s  %s\n",
+        "Nomen", "dim", "genus", "chi", "Descriptio"
+    );
+    printf(
+        "%-30s %5s %5s %5s  %s\n",
+        "------------------------------", "-----", "-----", "-----",
+        "-------------------"
+    );
 
     int errores = 0;
     for (int i = 0; i < NUMEROSITAS_ORIENTABILIUM; i++) {
         const SuperficiesConstans *s = &superficies_orientabiles[i];
-        Characteristica chi_comp = chi_orientabilis(s->genus);
+        Characteristica chi_comp     = chi_orientabilis(s->genus);
 
-        printf("%-30s %5d %5d %5d  %s",
-               s->nomen, s->dimensio, s->genus, s->chi,
-               s->descriptio);
+        printf(
+            "%-30s %5d %5d %5d  %s",
+            s->nomen, s->dimensio, s->genus, s->chi,
+            s->descriptio
+        );
 
         if (chi_comp != s->chi) {
             printf("  FALLACIA!");
@@ -200,10 +232,12 @@ main(void)
     printf("\nSuperficies Non-orientabiles (crosscap k, chi = 2 - k):\n");
     for (int i = 0; i < NUMEROSITAS_NON_ORIENTABILIUM; i++) {
         const SuperficiesConstans *s = &superficies_non_orientabiles[i];
-        Characteristica chi_comp = chi_non_orientabilis(s->genus);
+        Characteristica chi_comp     = chi_non_orientabilis(s->genus);
 
-        printf("  %-28s genus=%d chi=%d  %s",
-               s->nomen, s->genus, s->chi, s->descriptio);
+        printf(
+            "  %-28s genus=%d chi=%d  %s",
+            s->nomen, s->genus, s->chi, s->descriptio
+        );
 
         if (chi_comp != s->chi) {
             printf("  FALLACIA!");
@@ -255,10 +289,12 @@ main(void)
         cache.computationes_factae++;  /* volatile: non optimizatur */
     }
 
-    printf("\nCache (volatile): %d computationes, "
-           "ultima chi = %d\n",
-           (int)cache.computationes_factae,
-           cache.ultima_characteristica);
+    printf(
+        "\nCache (volatile): %d computationes, "
+        "ultima chi = %d\n",
+        (int)cache.computationes_factae,
+        cache.ultima_characteristica
+    );
 
     if (errores > 0) {
         fprintf(stderr, "Error: %d verificiones falluerunt\n", errores);

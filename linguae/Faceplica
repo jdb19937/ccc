@@ -1,0 +1,21 @@
+# Faceplica — linguae programmata
+#
+# Compilat omnia linguae programmata ad executabilia.
+
+CC     ?= cc
+CFLAGS ?= -Wall -Wextra -pedantic -std=c99 -O2
+
+NOMINA = \
+	agnitio cifra concordantia confabulator declinatio \
+	distantia hintikka kripke lambda metrum modelum \
+	neumanni palindromata radicatio syllogismus transformer
+
+omnia: $(NOMINA)
+
+%: %.c
+	$(CC) $(CFLAGS) -o $@ $<
+
+purga:
+	rm -f $(NOMINA)
+
+.PHONY: omnia purga
