@@ -81,6 +81,8 @@ void *realloc(void *, unsigned long);
 void *calloc(unsigned long, unsigned long);
 void free(void *);
 void exit(int);
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
 long strtol(const char *, char **, int);
 unsigned long long strtoull(const char *, char **, int);  /* §7.20.1.4 */
 long long strtoll(const char *, char **, int);            /* §7.20.1.3 */
@@ -89,6 +91,8 @@ char *strtok_r(char *str, const char *sep, char **lasts);
 
 char *strdup(const char *);
 int atoi(const char *);
+long atol(const char *);
+long long atoll(const char *);
 void abort(void);
 int atexit(void (*)(void));
 void qsort(void *, size_t, size_t, int (*)(const void *, const void *));    /* §7.20.5.2 */
@@ -107,6 +111,8 @@ void *memchr(const void *s, int c, size_t n);
 int memcmp(const void *, const void *, unsigned long);
 int strcmp(const char *, const char *);
 int strncmp(const char *, const char *, unsigned long);
+int strcasecmp(const char *, const char *);
+int strncasecmp(const char *, const char *, unsigned long);
 unsigned long strlen(const char *);
 char *strchr(const char *, int);
 char *strrchr(const char *, int);
@@ -331,6 +337,9 @@ int access(const char *, int);
 #define X_OK 1
 #define R_OK 4
 int isatty(int);
+int getopt(int, char *const *, const char *);
+extern char *optarg;
+extern int optind, opterr, optopt;
 int putchar(int);
 int fputc(int c, FILE *stream);
 int fputs(const char *, void *);
@@ -363,10 +372,54 @@ int msync(void *, unsigned long, int);
 
 /* sys/socket */
 #define AF_UNIX 1
+#define AF_INET 2
+#define AF_INET6 30
+#define AF_UNSPEC 0
 #define SOCK_STREAM 1
+#define SOCK_DGRAM 2
+typedef unsigned int socklen_t;
+typedef unsigned char sa_family_t;
+struct sockaddr {
+    unsigned char sa_len;
+    sa_family_t   sa_family;
+    char          sa_data[14];
+};
+#define SOL_SOCKET   0xffff
+#define SO_RCVTIMEO  0x1006
+#define SO_SNDTIMEO  0x1005
+#define SO_REUSEADDR 0x0004
+#define SO_KEEPALIVE 0x0008
+#define SO_ERROR     0x1007
+int socket(int, int, int);
+int connect(int, const struct sockaddr *, socklen_t);
+int bind(int, const struct sockaddr *, socklen_t);
+int listen(int, int);
+int accept(int, struct sockaddr *, socklen_t *);
+int shutdown(int, int);
+int setsockopt(int, int, int, const void *, socklen_t);
+int getsockopt(int, int, int, void *, socklen_t *);
 int socketpair(int, int, int, int *);
 long send(int, const void *, unsigned long, int);
 long recv(int, void *, unsigned long, int);
+
+/* netdb */
+#define AI_PASSIVE     0x0001
+#define AI_CANONNAME   0x0002
+#define AI_NUMERICHOST 0x0004
+#define AI_NUMERICSERV 0x1000
+struct addrinfo {
+    int              ai_flags;
+    int              ai_family;
+    int              ai_socktype;
+    int              ai_protocol;
+    socklen_t        ai_addrlen;
+    char            *ai_canonname;
+    struct sockaddr *ai_addr;
+    struct addrinfo *ai_next;
+};
+int  getaddrinfo(const char *, const char *, const struct addrinfo *, struct addrinfo **);
+void freeaddrinfo(struct addrinfo *);
+const char *gai_strerror(int);
 
 /* sys/utsname */
 struct utsname {
@@ -418,7 +471,7 @@ int select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
 int system(const char *command);
 int remove(const char *path);
 pid_t wait(int *stat_loc);
-int mkstemp(char *template);
+int mkstemp(char *forma);
 useconds_t ualarm(useconds_t useconds, useconds_t interval);
 pid_t setsid(void);
 
@@ -435,9 +488,12 @@ struct pollfd {
     short revents;  /* eventus qui acciderunt */
 };
 typedef unsigned int nfds_t;
-#define POLLIN  0x0001                                                                                  
-#define POLLOUT 0x0004                                                                                  
-#define POLLERR 0x0008   
+#define POLLIN  0x0001
+#define POLLPRI 0x0002
+#define POLLOUT 0x0004
+#define POLLERR 0x0008
+#define POLLHUP 0x0010
+#define POLLNVAL 0x0020
 int poll(struct pollfd fds[], nfds_t nfds, int timeout);
 
 #endif
