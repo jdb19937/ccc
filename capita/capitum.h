@@ -156,6 +156,7 @@ int *__error(void);
 #define EAGAIN 35
 #define EWOULDBLOCK EAGAIN
 #define EINTR 4
+#define ENOENT 2
 
 /* termios */
 #define NCCS 24
