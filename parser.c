@@ -1525,42 +1525,6 @@ static nodus_t *parse_blocum(void)
     return b;
 }
 
-/* ================================================================
- * §6.7.8: parse elementa initializationis recursive —
- * praetermittit designatores [N]= et .nomen= ad omnes gradus,
- * planat omnia elementa scalarium in arieto unum
- * ================================================================ */
-
-/* §6.7.8: numera elementa plana quae initializator typī exspectat.
- * char[N] cum chorda = 1, alii arietes = N scalaria, struct = summa. */
-static int numera_elementa_init_p(typus_t *t)
-{
-    if (!t)
-        return 1;
-    if (
-        t->genus == TY_ARRAY && t->basis
-        && (t->basis->genus == TY_CHAR || t->basis->genus == TY_UCHAR)
-    )
-        return 1;
-    if (t->genus == TY_ARRAY && t->basis) {
-        typus_t *f = t->basis;
-        while (f->genus == TY_ARRAY && f->basis)
-            f = f->basis;
-        int f_mag = typus_magnitudo(f);
-        if (f_mag < 1)
-            erratum("numera_elementa_init_p: folium invalidum");
-        return typus_magnitudo(t) / f_mag;
-    }
-    if (t->genus == TY_STRUCT && t->membra && t->num_membrorum > 0) {
-        int s = 0;
-        for (int i = 0; i < t->num_membrorum; i++)
-            s += numera_elementa_init_p(t->membra[i].typus);
-        return s;
-    }
-    return 1;
-}
-
-
 /* §6.7.8: initializer list parse. Computat offset per elementum
  * utens typō targetī et designatoribus. Reddit numerum elementōrum
  * huius līstae (nōn plānōrum scālārium, sed elementōrum directōrum
