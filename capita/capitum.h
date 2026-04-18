@@ -93,6 +93,7 @@ char *strdup(const char *);
 int atoi(const char *);
 long atol(const char *);
 long long atoll(const char *);
+double atof(const char *str);
 void abort(void);
 int atexit(void (*)(void));
 void qsort(void *, size_t, size_t, int (*)(const void *, const void *));    /* §7.20.5.2 */

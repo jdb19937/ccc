@@ -24,6 +24,8 @@ double round(double);
 double fmod(double, double);
 double fmin(double x, double y);
 double fmax(double x, double y);
+double acos(double x);
+double asin(double x);
 
 float fabsf(float);
 float sqrtf(float);
@@ -42,6 +44,8 @@ float roundf(float);
 float fmodf(float, float);
 float fminf(float x, float y);
 float fmaxf(float x, float y);
+float acosf(float x);
+float asinf(float x);
 
 #define M_PI  3.14159265358979323846
 #define M_E   2.7182818284590452354
