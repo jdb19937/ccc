@@ -22,6 +22,8 @@ double floor(double);
 double ceil(double);
 double round(double);
 double fmod(double, double);
+double fmin(double x, double y);
+double fmax(double x, double y);
 
 float fabsf(float);
 float sqrtf(float);
@@ -38,6 +40,8 @@ float floorf(float);
 float ceilf(float);
 float roundf(float);
 float fmodf(float, float);
+float fminf(float x, float y);
+float fmaxf(float x, float y);
 
 #define M_PI  3.14159265358979323846
 #define M_E   2.7182818284590452354

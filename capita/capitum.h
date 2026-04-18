@@ -102,6 +102,10 @@ long labs(long);
 int rand(void);
 void srand(unsigned);
 #define RAND_MAX 0x7fffffff
+double drand48(void);
+long lrand48(void);
+long mrand48(void);
+void srand48(long);
 
 /* string */
 void *memcpy(void *, const void *, unsigned long);
@@ -498,5 +502,7 @@ typedef unsigned int nfds_t;
 #define POLLHUP 0x0010
 #define POLLNVAL 0x0020
 int poll(struct pollfd fds[], nfds_t nfds, int timeout);
+
+FILE *open_memstream(char **bufp, size_t *sizep);
 
 #endif

@@ -1775,10 +1775,20 @@ static nodus_t *parse_declaratio(int est_globalis)
                  * cēdant. */
                 {
                     int slot_cur = -16 - 8;
+                    int gp_reg   = 0;
+                    int stk_off  = 16;
                     for (int i = 0; i < nparams; i++) {
                         typus_t *pt = psyms[i]->typus;
                         psyms[i]->est_globalis = 0;
-                        if (
+                        if (gp_reg >= 8) {
+                            /* §6.9.1 AAPCS64: argumentum in acervo vocantis */
+                            psyms[i]->offset = stk_off;
+                            if (pt && pt->genus == TY_STRUCT
+                                && pt->magnitudo <= 16 && pt->magnitudo > 0)
+                                stk_off += (pt->magnitudo + 7) & ~7;
+                            else
+                                stk_off += 8;
+                        } else if (
                             pt && pt->genus == TY_STRUCT
                             && pt->magnitudo <= 16 && pt->magnitudo > 0
                         ) {
@@ -1786,9 +1796,11 @@ static nodus_t *parse_declaratio(int est_globalis)
                             int base  = slot_cur - (nregs - 1) * 8;
                             psyms[i]->offset = base;
                             slot_cur -= nregs * 8;
+                            gp_reg   += nregs;
                         } else {
                             psyms[i]->offset = slot_cur;
                             slot_cur -= 8;
+                            gp_reg++;
                         }
                     }
                     ambitus_currens()->proximus_offset = slot_cur + 8;

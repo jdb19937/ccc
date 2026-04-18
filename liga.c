@@ -8,6 +8,7 @@
 #include "utilia.h"
 #include "emitte.h"
 #include "scribo.h"
+#include "biblio.h"
 
 /* ================================================================
  * structurae internae
@@ -89,11 +90,179 @@ static uint64_t lege64(const uint8_t *p) {
 }
 
 /* ================================================================
+ * patchā īnstrūctiōnem BRANCH26 (B aut BL) ut ad scopum saliat.
+ *
+ * Bitum 31 (vinculum) servātur ex īnstrūctiōne orīginālī: 0x14=B,
+ * 0x94=BL. Clang cauda-vocātiōnēs cum B ēmittit, quī LR nōn corrumpit;
+ * BL contemporat rēgistrum ligātiōnis. Ergō bitum 31 nōn mūtandum est.
+ * ================================================================ */
+
+static void patch_branch26(int inst_off, int target)
+{
+    int delta = (target - inst_off) / 4;
+    uint32_t old_inst;
+    memcpy(&old_inst, codex + inst_off, 4);
+    uint32_t inst = (old_inst & 0x80000000)
+        | 0x14000000 | (delta & 0x3FFFFFF);
+    memcpy(codex + inst_off, &inst, 4);
+}
+
+/* ================================================================
+ * stubs prō _objc_msgSend$<sel> — fabricātiō ABI ObjC moderna
+ *
+ * Clang, cum ObjC compīlat (ABI recens), pro quōque SEL uniquē ēmittit
+ * symbolum indēfīnītum `_objc_msgSend$<sel>` quem ligātor substituet
+ * stubō quī SEL ex `_sel_registerName` adipīscitur, deinde `_objc_msgSend`
+ * vocat. Hīc stubus cache sēgregātum habet ut SEL semel tantum registrētur.
+ * ================================================================ */
+
+#define MAX_OBJC_STUBS 1024
+
+typedef struct {
+    char nomen[260];
+    int  stub_off;
+} objc_stub_t;
+
+static objc_stub_t objc_stubs[MAX_OBJC_STUBS];
+static int num_objc_stubs = 0;
+
+static int objc_stub_quaere(const char *nomen)
+{
+    for (int i = 0; i < num_objc_stubs; i++)
+        if (strcmp(objc_stubs[i].nomen, nomen) == 0)
+            return objc_stubs[i].stub_off;
+    return -1;
+}
+
+static int objc_msgsend_stub_adde(const char *sym_nomen)
+{
+    /* dēdūplicā */
+    int iam = objc_stub_quaere(sym_nomen);
+    if (iam >= 0)
+        return iam;
+
+    if (num_objc_stubs >= MAX_OBJC_STUBS)
+        erratum("nimis multī stubī msgSend");
+
+    /* extractā selectōre post '$' */
+    const char *dollar = strchr(sym_nomen, '$');
+    if (!dollar || !dollar[1])
+        erratum("symbolum msgSend malformātum: '%s'", sym_nomen);
+    const char *sel = dollar + 1;
+    int sel_len = (int)strlen(sel);
+
+    /* reservā 8 octetos in init_data prō cache SEL (initiātus ad 0) */
+    if (init_data_lon + 8 > MAX_DATA)
+        erratum("init_data nimis magna (cache SEL)");
+    int cache_off = init_data_lon;
+    memset(init_data + cache_off, 0, 8);
+    init_data_lon += 8;
+
+    /* chorda prō nōmine selectōris in __cstring */
+    int cid = chorda_adde(sel, sel_len);
+
+    /* intrantēs GOT prō runtime ObjC */
+    int gid_reg = got_adde("_sel_registerName");
+    int gid_msg = got_adde("_objc_msgSend");
+
+    int stub_off = codex_lon;
+
+    /* ADRP x9, cache@PAGE */
+    fixup_adde(FIX_ADRP_IDATA, codex_lon, cache_off, 0);
+    emit32(0x90000000 | 9);
+    /* ADD x9, x9, cache@PAGEOFF */
+    fixup_adde(FIX_ADD_LO12_IDATA, codex_lon, cache_off, 0);
+    emit32(0x91000000 | (9 << 5) | 9);
+    /* LDR x1, [x9] */
+    emit_ldr64(1, 9, 0);
+
+    /* CBNZ x1, Ldone — via label */
+    int Ldone = label_novus();
+    emit_cbnz_label(1, Ldone);
+
+    /* — via lenta: registrā SEL cum sel_registerName — */
+    /* STP x29, x30, [sp, #-96]! */
+    emit_stp_pre(FP, LR, SP, -96);
+    /* MOV x29, sp */
+    emit_addi(FP, SP, 0);
+    /* servā x0 (self) et argumenta x2..x8 in stacō */
+    emit_str64(0, FP, 16);
+    emit_str64(2, FP, 24);
+    emit_str64(3, FP, 32);
+    emit_str64(4, FP, 40);
+    emit_str64(5, FP, 48);
+    emit_str64(6, FP, 56);
+    emit_str64(7, FP, 64);
+    emit_str64(8, FP, 72);
+
+    /* ADRP x0, sel_str@PAGE ; ADD x0, x0, sel_str@PAGEOFF */
+    fixup_adde(FIX_ADRP, codex_lon, cid, 0);
+    emit32(0x90000000 | 0);
+    fixup_adde(FIX_ADD_LO12, codex_lon, cid, 0);
+    emit32(0x91000000 | (0 << 5) | 0);
+
+    /* ADRP x17, _sel_registerName@GOTPAGE */
+    fixup_adde(FIX_ADRP_GOT, codex_lon, gid_reg, 0);
+    emit32(0x90000000 | 17);
+    /* LDR x17, [x17, _sel_registerName@GOTPAGEOFF] */
+    fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid_reg, 8);
+    emit32(0xF9400000 | (17 << 5) | 17);
+    /* BLR x17 */
+    emit32(0xD63F0000 | (17 << 5));
+
+    /* x0 = SEL; scribe in cache */
+    /* MOV x1, x0 (ORR Xd, XZR, Xm) */
+    emit32(0xAA0003E0 | (0 << 16) | 1);
+
+    /* recomputā cache adressa ut x17 nōn corrumpere opus sit */
+    /* ADRP x9, cache@PAGE ; ADD x9, x9, cache@PAGEOFF */
+    fixup_adde(FIX_ADRP_IDATA, codex_lon, cache_off, 0);
+    emit32(0x90000000 | 9);
+    fixup_adde(FIX_ADD_LO12_IDATA, codex_lon, cache_off, 0);
+    emit32(0x91000000 | (9 << 5) | 9);
+    /* STR x1, [x9] */
+    emit_str64(1, 9, 0);
+
+    /* restitue argumenta */
+    emit_ldr64(0, FP, 16);
+    emit_ldr64(2, FP, 24);
+    emit_ldr64(3, FP, 32);
+    emit_ldr64(4, FP, 40);
+    emit_ldr64(5, FP, 48);
+    emit_ldr64(6, FP, 56);
+    emit_ldr64(7, FP, 64);
+    emit_ldr64(8, FP, 72);
+
+    /* LDP x29, x30, [sp], #96 */
+    emit_ldp_post(FP, LR, SP, 96);
+
+    /* — Ldone: tail-call in _objc_msgSend — */
+    label_pone(Ldone);
+    /* ADRP x17, _objc_msgSend@GOTPAGE */
+    fixup_adde(FIX_ADRP_GOT, codex_lon, gid_msg, 0);
+    emit32(0x90000000 | 17);
+    /* LDR x17, [x17, _objc_msgSend@GOTPAGEOFF] */
+    fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid_msg, 8);
+    emit32(0xF9400000 | (17 << 5) | 17);
+    /* BR x17 */
+    emit32(0xD61F0000 | (17 << 5));
+
+    /* registrā in tabulā */
+    strncpy(objc_stubs[num_objc_stubs].nomen, sym_nomen, 259);
+    objc_stubs[num_objc_stubs].nomen[259] = '\0';
+    objc_stubs[num_objc_stubs].stub_off = stub_off;
+    num_objc_stubs++;
+
+    return stub_off;
+}
+
+/* ================================================================
  * ligatio
  * ================================================================ */
 
 void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
 {
+    num_objc_stubs = 0;
     emitte_initia();
     num_liga_sym = 0;
 
@@ -231,6 +400,14 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                             sect_genera[oi * MAX_SECT + sect_counter] = 3;
                             sect_is_bss[sect_counter] = 1;
                         }
+                    } else if (sect_counter < MAX_SECT) {
+                        /* sectiō ignōta (e.g. __objc_*, __cfstring,
+                         * __compact_unwind) — tractā ut datum;
+                         * S_ZEROFILL (typus 1) implētur cum zerīs */
+                        uint32_t s_flags = lege32(data + sect_off + 64);
+                        sect_genera[oi * MAX_SECT + sect_counter] = 3;
+                        if ((s_flags & 0xFF) == 1)
+                            sect_is_bss[sect_counter] = 1;
                     }
                     sect_off += 80;
                 }
@@ -565,6 +742,13 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     continue;
                 }
             }
+            /* externum dylib in dātīs — dyld ligābit post onerātiōnem */
+            if (biblio_num_dylib() > 0) {
+                uint64_t zero = 0;
+                memcpy(init_data + d->patch_off, &zero, 8);
+                data_bind_adde(d->patch_off, d->sym_nomen);
+                continue;
+            }
             erratum(
                 "symbolum '%s' in relocātiōne dātōrum nōn resolūtum",
                 d->sym_nomen
@@ -650,7 +834,10 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                 if (r->r_type == 4)
                     old_pc -= 4;
                 int old_target      = (int)((old_pc & ~0xFFF) + old_page_delta) + old_lo12;
-                int str_off_in_cstr = old_target - text_mags[oi];
+                /* Sectiōnēs nōn necessāriō contiguae: phantasma.o cum
+                 * sectiōnibus __objc_* interpositīs habet __cstring ad
+                 * VMADDR > __text size. Ūtere vmaddr sectiōnis __cstring. */
+                int str_off_in_cstr = old_target - cstr_vmaddrs[oi];
                 int global_cstr_off = cstr_bases[oi] + str_off_in_cstr;
 
                 /* quaere indicem chordae */
@@ -776,10 +963,7 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                 int target = liga_syms[sid].valor_globalis;
 
                 if (r->r_type == 2) {
-                    /* ARM64_RELOC_BRANCH26 — BL */
-                    int delta     = (target - inst_off) / 4;
-                    uint32_t inst = 0x94000000 | (delta & 0x3FFFFFF);
-                    memcpy(codex + inst_off, &inst, 4);
+                    patch_branch26(inst_off, target);
                 } else if (r->r_type == 3) {
                     fixup_adde(FIX_ADRP_TEXT, inst_off, target, 0);
                 } else if (r->r_type == 4) {
@@ -810,9 +994,7 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                 int target = codex_bases[oi] + r->sym_valor;
 
                 if (r->r_type == 2) {
-                    int delta     = (target - inst_off) / 4;
-                    uint32_t inst = 0x94000000 | (delta & 0x3FFFFFF);
-                    memcpy(codex + inst_off, &inst, 4);
+                    patch_branch26(inst_off, target);
                 } else if (r->r_type == 3 || r->r_type == 5) {
                     fixup_adde(FIX_ADRP_TEXT, inst_off, target, 0);
                 } else if (r->r_type == 4 || r->r_type == 6) {
@@ -869,6 +1051,16 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
             }
         } else {
             /* symbolum externum — adde ad GOT */
+
+            /* ObjC ABI recēns: _objc_msgSend$<sel> → fabricā stubum
+             * specializātum quī SEL registrat et _objc_msgSend vocat */
+            if (r->r_type == 2 &&
+                strncmp(r->sym_nomen, "_objc_msgSend$", 14) == 0) {
+                int stub_off = objc_msgsend_stub_adde(r->sym_nomen);
+                patch_branch26(inst_off, stub_off);
+                continue;
+            }
+
             int gid = got_adde(r->sym_nomen);
 
             if (r->r_type == 5)
@@ -896,10 +1088,8 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                     memcpy(codex + codex_lon, &br, 4);
                     codex_lon += 4;
                 }
-                /* patch BL ut ad truncum saliat */
-                int delta     = (stub_offsets[gid] - inst_off) / 4;
-                uint32_t inst = 0x94000000 | (delta & 0x3FFFFFF);
-                memcpy(codex + inst_off, &inst, 4);
+                /* patch B/BL ut ad truncum saliat */
+                patch_branch26(inst_off, stub_offsets[gid]);
             }
         }
     }

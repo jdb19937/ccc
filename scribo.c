@@ -316,7 +316,7 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     uint8_t bind_info[65536];
     int bind_lon = 0;
 
-    if (num_got > 0) {
+    if (num_got > 0 || num_data_binds > 0) {
         /* data segment index = 2 (after PAGEZERO=0, TEXT=1) */
         if (biblio_num_dylib() > 0)
             /* dynamic lookup: dyld quaerit per omnia libraria onerata */
@@ -340,6 +340,22 @@ void scribo_macho(const char *plica_exitus, int main_offset)
             memcpy(&bind_info[bind_lon], got[i].nomen, slen + 1);
             bind_lon += slen + 1;
             /* bind */
+            bind_info[bind_lon++] = BIND_OPCODE_DO_BIND;
+        }
+
+        /* ligātiōnēs dātōrum — dyld scrībit adressam symbolī in init_data */
+        for (int i = 0; i < num_data_binds; i++) {
+            bind_info[bind_lon++] = BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB | 2;
+            bind_lon += encode_uleb128(
+                &bind_info[bind_lon],
+                idata_sect_off + data_binds[i].idata_offset
+            );
+            bind_info[bind_lon++] = BIND_OPCODE_SET_SYMBOL_TRAILING_FLAGS_IMM | 0;
+            int slen = strlen(data_binds[i].sym_nomen);
+            if (bind_lon + slen + 3 > (int)sizeof(bind_info))
+                erratum("bind info nimis magna (> %d octeti)", (int)sizeof(bind_info));
+            memcpy(&bind_info[bind_lon], data_binds[i].sym_nomen, slen + 1);
+            bind_lon += slen + 1;
             bind_info[bind_lon++] = BIND_OPCODE_DO_BIND;
         }
         bind_info[bind_lon++] = BIND_OPCODE_DONE;

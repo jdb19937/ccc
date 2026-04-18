@@ -86,6 +86,25 @@ extern int num_data_relocs;
 void data_reloc_adde(int idata_offset, int genus, int target);
 
 /* ================================================================
+ * ligātiōnēs dātōrum ad symbola externa (dylib)
+ *
+ * Offset in init_data quem dyld implēbit cum adresse symboli
+ * externī post onerātiōnem. Ūsus typicus: __objc_classrefs.
+ * ================================================================ */
+
+typedef struct {
+    int  idata_offset;
+    char sym_nomen[256];
+} data_bind_t;
+
+#define MAX_DATA_BINDS 1024
+
+extern data_bind_t *data_binds;
+extern int num_data_binds;
+
+void data_bind_adde(int idata_offset, const char *sym_nomen);
+
+/* ================================================================
  * intransus GOT
  * ================================================================ */
 

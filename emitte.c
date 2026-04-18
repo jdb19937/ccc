@@ -40,6 +40,9 @@ int num_globalium = 0;
 data_reloc_t *data_relocs;
 int num_data_relocs = 0;
 
+data_bind_t *data_binds = NULL;
+int num_data_binds = 0;
+
 /* ================================================================
  * labels
  * ================================================================ */
@@ -148,6 +151,16 @@ void data_reloc_adde(int idata_offset, int genus, int target)
     num_data_relocs++;
 }
 
+void data_bind_adde(int idata_offset, const char *sym_nomen)
+{
+    if (num_data_binds >= MAX_DATA_BINDS)
+        erratum("nimis multae ligātiōnēs dātōrum");
+    data_binds[num_data_binds].idata_offset = idata_offset;
+    strncpy(data_binds[num_data_binds].sym_nomen, sym_nomen, 255);
+    data_binds[num_data_binds].sym_nomen[255] = '\0';
+    num_data_binds++;
+}
+
 /* ================================================================ */
 
 void emitte_initia(void)
@@ -197,6 +210,11 @@ void emitte_initia(void)
         if (!data_relocs)
             erratum("memoria exhausta");
     }
+    if (!data_binds) {
+        data_binds = malloc(MAX_DATA_BINDS * sizeof(data_bind_t));
+        if (!data_binds)
+            erratum("memoria exhausta");
+    }
     codex_lon       = 0;
     data_lon        = 0;
     init_data_lon   = 0;
@@ -207,6 +225,7 @@ void emitte_initia(void)
     num_labels      = 0;
     num_globalium   = 0;
     num_data_relocs = 0;
+    num_data_binds  = 0;
 }
 
 void emit32(uint32_t inst)
