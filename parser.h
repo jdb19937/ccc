@@ -119,6 +119,7 @@ struct ambitus {
 void     parse_initia(void);
 nodus_t *parse_translatio(void);
 nodus_t *nodus_novus(int genus);
+long     evalua_constans(nodus_t *n);
 /* ambitus */
 void         ambitus_intra(void);
 void         ambitus_exi(void);

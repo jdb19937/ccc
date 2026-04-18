@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 #
-# proba_corpus.py — compilat quemque casum cum clang et ccc,
-# comparat exitus et output.
+# proba_corpus.py — pro quoque casu (subdirectorio) compilat omnes .c cum
+# clang et ccc quattuor compositionibus, coniungit, currit, comparat exitus
+# et output.
 #
 
 import glob
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -13,16 +15,17 @@ import tempfile
 CCC = os.environ.get("CCC", "./ccc")
 LDI = os.environ.get("LDI", "./ldi")
 CC  = os.environ.get("CC", "cc")
-DIR = sys.argv[1] if len(sys.argv) > 1 else "casus"
+DIR = sys.argv[1] if len(sys.argv) > 1 else "../corpus/casus"
 TIMEOUT = 5
 
 # quattuor modi compilandi et coniungendi
+# nota: ccc locale probatur, ergo -Scapita adhibemus pro capitibus localibus
 MODI = [
-    # (nomen,  compilator,  flagella compilandi,            coniunctor, flagella coniungendi)
-    ("CC/LD",  CC,  ["-std=c99", "-O0"],                   CC,  []),
-    ("CCC/LDI", CCC, ["-Scapita"],                         LDI, []),
-    ("CC/LDI", CC,  ["-std=c99", "-O0"],                   LDI, []),
-    ("CCC/LD", CCC, ["-Scapita"],                          CC,  []),
+    # (nomen,   compilator, flagella compilandi,  coniunctor, flagella coniungendi)
+    ("CC/LD",   CC,  ["-std=c99", "-O0"],         CC,  []),
+    ("CCC/LDI", CCC, ["-Scapita"],                LDI, []),
+    ("CC/LDI",  CC,  ["-std=c99", "-O0"],         LDI, []),
+    ("CCC/LD",  CCC, ["-Scapita"],                CC,  []),
 ]
 
 R = "\033[31m"; Y = "\033[33m"; G = "\033[32m"; Z = "\033[0m"
@@ -44,16 +47,22 @@ def curre(argv, stdout_path=None):
             f.close()
         return None, False
 
-def compila_et_coniunge(comp, comp_flagella, coniunctor, coni_flagella, fons, obj, bin_):
-    """compilat et coniungit. reddit "0" si bene, "comp"/"link" si male."""
+def compila_et_coniunge(comp, comp_flagella, coniunctor, coni_flagella, fontes, tmp, nomen, idx):
+    """compilat omnes fontes in objecta, deinde coniungit. reddit (res, bin_).
+    res: "0" si bene, "comp" vel "link" si male."""
     quiet = dict(stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    argv = [comp] + comp_flagella + ["-c", "-o", obj, fons]
+    objs = []
+    for j, fons in enumerate(fontes):
+        obj = os.path.join(tmp, f"{nomen}_{idx}_{j}.o")
+        argv = [comp] + comp_flagella + ["-c", "-o", obj, fons]
+        if subprocess.run(argv, **quiet).returncode != 0:
+            return "comp", None
+        objs.append(obj)
+    bin_ = os.path.join(tmp, f"{nomen}_{idx}")
+    argv = [coniunctor] + coni_flagella + ["-o", bin_] + objs
     if subprocess.run(argv, **quiet).returncode != 0:
-        return "comp"
-    argv = [coniunctor] + coni_flagella + ["-o", bin_, obj]
-    if subprocess.run(argv, **quiet).returncode != 0:
-        return "link"
-    return "0"
+        return "link", None
+    return "0", bin_
 
 def color_comp(v):
     return f"{R}{v:>7}{Z}" if v in ("comp", "link") else f"{v:>7}"
@@ -65,8 +74,17 @@ def color_run(v):
     return f"{R}{v:>7}{Z}"
 
 def main():
-    fontes = sorted(glob.glob(os.path.join(DIR, "*.c")))
-    if not fontes:
+    programmae = []  # [(nomen, [fontes...])]
+    for entry in sorted(os.listdir(DIR)):
+        prog_dir = os.path.join(DIR, entry)
+        if not os.path.isdir(prog_dir):
+            continue
+        fontes = sorted(glob.glob(os.path.join(prog_dir, "*.c")))
+        if not fontes:
+            continue
+        programmae.append((entry, fontes))
+
+    if not programmae:
         print(f"nullus casus in {DIR}/")
         return
 
@@ -78,15 +96,19 @@ def main():
         # capita
         nomina = [m[0] for m in MODI]
         print(f"{'':16s}   -------- compilātiō ---------    ----------- cursus ----------")
-        print(f"{'PLICA':16s}", end="")
+        print(f"{'CASUS':16s}", end="")
         for n in nomina: print(f" {n:>7}", end="")
         print(" ", end="")
         for n in nomina: print(f" {n:>7}", end="")
         print()
 
-        for fons in fontes:
-            nomen = os.path.splitext(os.path.basename(fons))[0]
+        for nomen, fontes_orig in programmae:
             tot += 1
+
+            # copia programmatis directorium in tmp ne quid scribatur in fonte
+            prog_tmp = os.path.join(tmp, f"src_{nomen}")
+            shutil.copytree(os.path.dirname(fontes_orig[0]), prog_tmp)
+            fontes = sorted(glob.glob(os.path.join(prog_tmp, "*.c")))
 
             comp_res = []
             bins = []
@@ -94,10 +116,8 @@ def main():
 
             # compila singulos modos
             for i, (mn, comp, cf, coni, lf) in enumerate(MODI):
-                obj = os.path.join(tmp, f"{nomen}_{i}.o")
-                bin_ = os.path.join(tmp, f"{nomen}_{i}")
                 out = os.path.join(tmp, f"{nomen}_{i}.out")
-                r = compila_et_coniunge(comp, cf, coni, lf, fons, obj, bin_)
+                r, bin_ = compila_et_coniunge(comp, cf, coni, lf, fontes, tmp, nomen, i)
                 comp_res.append(r)
                 bins.append(bin_)
                 outs.append(out)

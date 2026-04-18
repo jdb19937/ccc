@@ -11,6 +11,7 @@
 #include <string.h>
 
 extern const char *nomen_programmi;
+extern const char *plica_currentis;  /* plica fontis currens; NULL si ignota */
 
 void erratum(const char *fmt, ...);
 void erratum_ad(int linea, const char *fmt, ...);

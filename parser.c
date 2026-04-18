@@ -156,7 +156,7 @@ static nodus_t *parse_expr_conditio(void);
 static nodus_t *parse_sententia(void);
 static nodus_t *parse_blocum(void);
 static nodus_t *parse_declaratio(int est_globalis);
-static void     parse_init_elementa(
+static int      parse_init_elementa(
     nodus_t **elems, int *nelem, int max,
     typus_t *t, int base_off
 );
@@ -444,7 +444,27 @@ static typus_t *parse_struct_vel_union(void)
  * Vocatur pro enumeratoribus et casibus switch.
  * ================================================================ */
 
-static long evalua_constans(nodus_t *n)
+static int constans_est(nodus_t *n)
+{
+    if (!n) return 0;
+    switch (n->genus) {
+    case N_NUM:
+        return 1;
+    case N_BINOP:
+        return constans_est(n->sinister) && constans_est(n->dexter);
+    case N_UNOP:
+        return constans_est(n->sinister);
+    case N_TERNARY:
+        return constans_est(n->sinister) && constans_est(n->dexter)
+            && constans_est(n->tertius);
+    case N_CAST:
+        return constans_est(n->sinister);
+    default:
+        return 0;
+    }
+}
+
+long evalua_constans(nodus_t *n)
 {
     if (!n)
         erratum("evalua_constans: nodus nullus");
@@ -635,10 +655,14 @@ static typus_t *parse_declarator(typus_t *basis, char *nomen, int max_nomen)
                 /* [] — dimensio ignota */
             } else {
                 nodus_t *e = parse_expr_assign();
-                if (e && e->genus == N_NUM)
+                if (e && e->genus == N_NUM) {
                     num = (int)e->valor;
-                else
+                } else if (e && constans_est(e)) {
+                    /* §6.7.5.2: arīes cum dīmēnsiōne cōnstantī */
+                    num = (int)evalua_constans(e);
+                } else {
                     ve = e; /* VLA — expressio non constans */
+                }
             }
             expecta(T_RBRACKET);
             if (ndims >= 64)
@@ -1065,6 +1089,11 @@ static nodus_t *parse_expr_postfixa(void)
 static nodus_t *parse_expr_unaria(void)
 {
     switch (sig.genus) {
+    case T_PLUS: {
+            /* §6.5.3.3: unary + — valor operandi (promoti); nihil ad opus */
+            lex_proximum();
+            return parse_expr_unaria();
+        }
     case T_MINUS: case T_TILDE: case T_BANG: {
             int op = sig.genus;
             lex_proximum();
@@ -1533,14 +1562,18 @@ static int numera_elementa_init_p(typus_t *t)
 
 
 /* §6.7.8: initializer list parse. Computat offset per elementum
- * utens typō targetī et designatoribus. */
-static void parse_init_elementa(
+ * utens typō targetī et designatoribus. Reddit numerum elementōrum
+ * huius līstae (nōn plānōrum scālārium, sed elementōrum directōrum
+ * quae comma dēlimitat — prō arīetibus strūctūrārum ūtile ut
+ * dimēnsiō computētur). */
+static int parse_init_elementa(
     nodus_t **elems, int *nelem, int max,
     typus_t *t, int base_off
 ) {
     expecta(T_LBRACE);
     int cur_off = base_off;
     int cur_idx = 0; /* index elementī currentīs intra t */
+    int max_idx = 0; /* maximum index+1 vīsum — prō dēsignātōribus [N]= */
     while (sig.genus != T_RBRACE && sig.genus != T_EOF) {
         /* §6.7.8: designatores possunt encatenari: [N].membrum[K] = val */
         typus_t *sub_t  = t;   /* typus currentis positionis */
@@ -1671,10 +1704,13 @@ static void parse_init_elementa(
             elems[(*nelem)++] = e;
         }
         cur_idx++;
+        if (cur_idx > max_idx)
+            max_idx = cur_idx;
         if (!congruet(T_COMMA))
             break;
     }
     expecta(T_RBRACE);
+    return max_idx;
 }
 
 /* ================================================================
@@ -1867,7 +1903,7 @@ static nodus_t *parse_declaratio(int est_globalis)
                  * per parse_init_elementa praetermittuntur */
                 nodus_t *elems[4096];
                 int nelem = 0;
-                parse_init_elementa(elems, &nelem, 4096, td, 0);
+                int n_top = parse_init_elementa(elems, &nelem, 4096, td, 0);
                 if (nelem > 0) {
                     vd->membra = calloc(nelem, sizeof(nodus_t *));
                     memcpy(vd->membra, elems, nelem * sizeof(nodus_t *));
@@ -1897,20 +1933,11 @@ static nodus_t *parse_declaratio(int est_globalis)
                         td->basis->genus == TY_STRUCT
                         && td->basis->num_membrorum > 0
                     ) {
-                        /* §6.7.8: tabula strūctūrārum — computa numerum
-                         * elementōrum planōrum per strūctūram recursive
-                         * (tractat sub-strūctūras et char[] rēctē) */
-                        int per_struct = 0;
-                        for (int mi = 0; mi < td->basis->num_membrorum; mi++)
-                            per_struct += numera_elementa_init_p(
-                                td->basis->membra[mi].typus
-                            );
-                        if (per_struct < 1)
-                            erratum_ad(
-                                sig_linea,
-                                "structura sine elementis in initializatore"
-                            );
-                        td->num_elementorum = nelem / per_struct;
+                        /* §6.7.8: tabula strūctūrārum — nūmerus elementōrum
+                         * est nūmerus initiālizātōrum directōrum (sīve
+                         * ūnusquisque { ... } vel expressiō singula cūm
+                         * parse_init_elementa praetermittit prō strūctūrā) */
+                        td->num_elementorum = n_top;
                         if (td->num_elementorum < 1)
                             td->num_elementorum = 1;
                     } else {

@@ -7,6 +7,7 @@
 #include <errno.h>
 
 const char *nomen_programmi = "ccc";
+const char *plica_currentis = NULL;
 
 void erratum(const char *fmt, ...)
 {
@@ -23,7 +24,8 @@ void erratum_ad(int linea, const char *fmt, ...)
 {
     va_list ap;
     va_start(ap, fmt);
-    fprintf(stderr, "%s:%d: erratum: ", nomen_programmi, linea);
+    const char *loc = plica_currentis ? plica_currentis : nomen_programmi;
+    fprintf(stderr, "%s:%d: erratum: ", loc, linea);
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     va_end(ap);

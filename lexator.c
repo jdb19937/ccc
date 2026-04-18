@@ -712,6 +712,7 @@ static int lege_effugium(void)
 
 static signum_t sig_spectans;
 static int habet_spectantem = 0;
+static const char *plica_spectans = NULL;
 
 /* ================================================================
  * lexator principalis
@@ -723,6 +724,7 @@ inicio:
     praetermitte_spatia();
     sig.linea = cur_linea;
     sig_linea = cur_linea;
+    plica_currentis = cur_nomen;
 
     int c = lege_c();
     if (c == -1) {
@@ -927,6 +929,7 @@ inicio:
                     signum_t sig_salva;
                     memcpy(&sig_salva, &sig, sizeof(signum_t));
                     int lin_salva = sig_linea;
+                    const char *plica_salva = plica_currentis;
                     int gen       = lege_signum_internum();
                     if (gen == T_STR) {
                         /* macra ad chordam expandēbātur — catenā */
@@ -939,12 +942,15 @@ inicio:
                         sig_salva.lon_chordae = i;
                         memcpy(&sig, &sig_salva, sizeof(signum_t));
                         sig_linea = lin_salva;
+                        plica_currentis = plica_salva;
                     } else {
                         /* nōn est chorda — servā signum ut spectantem */
                         memcpy(&sig_spectans, &sig, sizeof(signum_t));
+                        plica_spectans = plica_currentis;
                         habet_spectantem = 1;
                         memcpy(&sig, &sig_salva, sizeof(signum_t));
                         sig_linea = lin_salva;
+                        plica_currentis = plica_salva;
                         break;
                     }
                 } else {
@@ -1486,6 +1492,7 @@ void lex_initia(const char *nomen, const char *fons, int longitudo)
     cur_longitudo = longitudo;
     cur_positus   = 0;
     cur_linea     = 1;
+    plica_currentis = cur_nomen;
     vertex_plicarum = 0;
     vertex_expansionum = 0;
     habet_spectantem = 0;
@@ -1499,6 +1506,7 @@ void lex_proximum(void)
     if (habet_spectantem) {
         memcpy(&sig, &sig_spectans, sizeof(signum_t));
         sig_linea        = sig.linea;
+        plica_currentis  = plica_spectans;
         habet_spectantem = 0;
         return;
     }
@@ -1512,10 +1520,13 @@ int lex_specta(void)
     signum_t salva;
     memcpy(&salva, &sig, sizeof(signum_t));
     int salva_linea = sig_linea;
+    const char *salva_plica = plica_currentis;
     lege_signum_internum();
     memcpy(&sig_spectans, &sig, sizeof(signum_t));
+    plica_spectans = plica_currentis;
     memcpy(&sig, &salva, sizeof(signum_t));
     sig_linea        = salva_linea;
+    plica_currentis  = salva_plica;
     habet_spectantem = 1;
     return sig_spectans.genus;
 }

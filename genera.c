@@ -505,7 +505,7 @@ static void genera_expr(nodus_t *n, int dest)
             genera_lval(n, dest);
             if (s->typus && (s->typus->genus == TY_ARRAY)) {
             /* tabula → adresse iam in r */
-                if (s->typus->magnitudo == 0 && s->typus->num_elementorum <= 0)
+                if (s->typus->vla_dim)
                     emit_ldr64(r, r, 0); /* §6.7.5.2: VLA — carrica indicem ex slot */
             } else if (s->typus && s->typus->genus == TY_STRUCT) {
             /* structura → adresse */
@@ -2297,6 +2297,41 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
             && n->sinister->nomen
         )
             habet_init_data = 1;
+        /* §6.7.8¶4: quālibet expressio cōnstāns scālāris */
+        if (n->sinister && typus_est_integer(n->typus_decl))
+            habet_init_data = 1;
+        if (
+            n->sinister
+            && (
+                n->sinister->genus == N_NUM_FLUAT
+                || (
+                    n->sinister->genus == N_UNOP
+                    && n->sinister->op == T_MINUS
+                    && n->sinister->sinister
+                    && n->sinister->sinister->genus == N_NUM_FLUAT
+                )
+            )
+        )
+            habet_init_data = 1;
+        /* globales statīcae sine initiāle — pōne in init_data zerō-initiātās
+         * ut fiant symbola locālia in TU, nōn commūnia (ne collīdant) */
+        if (!habet_init_data && n->est_staticus) {
+            int mag0 = globales[gid].magnitudo;
+            if (mag0 < 1)
+                continue;
+            int col0 = globales[gid].colineatio;
+            if (col0 < 1)
+                col0 = 1;
+            init_data_lon = (init_data_lon + col0 - 1) & ~(col0 - 1);
+            int doff0 = init_data_lon;
+            if (init_data_lon + mag0 > MAX_DATA)
+                erratum("init_data nimis magna (static BSS)");
+            memset(init_data + doff0, 0, mag0);
+            init_data_lon += mag0;
+            globales[gid].est_bss     = 0;
+            globales[gid].data_offset = doff0;
+            continue;
+        }
         if (!habet_init_data)
             continue;
 
@@ -2530,6 +2565,21 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
                         int gid = got_adde(got_nomen);
                         data_reloc_adde(elem_off, DR_EXT_FUNC, gid);
                     }
+                } else if (elem->typus && typus_est_integer(elem->typus)) {
+                    /* §6.7.8¶4: expressio cōnstāns integer (cast, binop, etc.) */
+                    long v = evalua_constans(elem);
+                    if (elem->init_bitwidth > 0) {
+                        unsigned int mask = elem->init_bitwidth >= 32
+                            ? 0xffffffffu
+                            : ((1u << elem->init_bitwidth) - 1u);
+                        unsigned int u;
+                        memcpy(&u, init_data + elem_off, 4);
+                        u &= ~(mask << elem->init_bitpos);
+                        u |= ((unsigned int)v & mask) << elem->init_bitpos;
+                        memcpy(init_data + elem_off, &u, 4);
+                    } else {
+                        memcpy(init_data + elem_off, &v, store_mag);
+                    }
                 }
             }
         } else if (
@@ -2580,6 +2630,37 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
                 int gid = got_adde(got_nomen);
                 data_reloc_adde(data_off, DR_EXT_FUNC, gid);
             }
+        } else if (n->sinister && n->sinister->genus == N_NUM_FLUAT) {
+            int store_mag = globales[gid].magnitudo;
+            if (store_mag == 4) {
+                float fv = (float)n->sinister->valor_f;
+                memcpy(init_data + data_off, &fv, 4);
+            } else {
+                double dv = n->sinister->valor_f;
+                memcpy(init_data + data_off, &dv, store_mag > 8 ? 8 : store_mag);
+            }
+        } else if (
+            n->sinister
+            && n->sinister->genus == N_UNOP
+            && n->sinister->op == T_MINUS
+            && n->sinister->sinister
+            && n->sinister->sinister->genus == N_NUM_FLUAT
+        ) {
+            int store_mag = globales[gid].magnitudo;
+            if (store_mag == 4) {
+                float fv = (float)-n->sinister->sinister->valor_f;
+                memcpy(init_data + data_off, &fv, 4);
+            } else {
+                double dv = -n->sinister->sinister->valor_f;
+                memcpy(init_data + data_off, &dv, store_mag > 8 ? 8 : store_mag);
+            }
+        } else if (n->sinister && typus_est_integer(n->typus_decl)) {
+            /* §6.7.8¶4: expressio cōnstāns scālāris integer */
+            long v = evalua_constans(n->sinister);
+            int store_mag = globales[gid].magnitudo;
+            if (store_mag > 8)
+                store_mag = 8;
+            memcpy(init_data + data_off, &v, store_mag);
         } else {
             erratum(
                 "initiālizātor globālis nōn tractātus prō '%s'",
@@ -2597,8 +2678,25 @@ void genera_translatio(nodus_t *radix, const char *plica_exitus, int modus_objec
             continue;
         int gid = s->globalis_index;
 
-        if (!n->num_membrorum || !n->membra)
+        /* statīca locālis sine initiāle — zerō-initiā in init_data
+         * (ne fiat commūnis quae cum aliīs TU collīdat) */
+        if (!n->num_membrorum || !n->membra) {
+            int mag0 = globales[gid].magnitudo;
+            if (mag0 < 1)
+                continue;
+            int col0 = globales[gid].colineatio;
+            if (col0 < 1)
+                col0 = 1;
+            init_data_lon = (init_data_lon + col0 - 1) & ~(col0 - 1);
+            int doff0 = init_data_lon;
+            if (init_data_lon + mag0 > MAX_DATA)
+                erratum("init_data nimis magna (static local BSS)");
+            memset(init_data + doff0, 0, mag0);
+            init_data_lon += mag0;
+            globales[gid].est_bss     = 0;
+            globales[gid].data_offset = doff0;
             continue;
+        }
 
         int mag = globales[gid].magnitudo;
         if (mag < 1)
