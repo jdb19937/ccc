@@ -57,14 +57,15 @@ typedef struct {
     char parametri[MAX_PARAM_MACRAE][MAX_NOMEN_PARAM];
 } macra_t;
 
-static macra_t macrae[MAX_MACRAE];
+static macra_t **macrae = NULL;
+static int cap_macrarum = 0;
 static int num_macrarum = 0;
 
 static macra_t *macra_quaere(const char *nomen)
 {
     for (int i = 0; i < num_macrarum; i++)
-        if (macrae[i].activa && strcmp(macrae[i].nomen, nomen) == 0)
-            return &macrae[i];
+        if (macrae[i]->activa && strcmp(macrae[i]->nomen, nomen) == 0)
+            return macrae[i];
     return NULL;
 }
 
@@ -75,9 +76,18 @@ static macra_t *macra_defini(const char *nomen, const char *valor)
         strncpy(m->valor, valor, MAX_CHORDA - 1);
         return m;
     }
-    if (num_macrarum >= MAX_MACRAE)
-        erratum("nimis multae macrae");
-    m = &macrae[num_macrarum++];
+    if (num_macrarum >= cap_macrarum) {
+        int nova_cap = cap_macrarum ? cap_macrarum * 2 : 64;
+        macra_t **novus = realloc(macrae, nova_cap * sizeof(macra_t *));
+        if (!novus)
+            erratum("memoria exhausta");
+        macrae = novus;
+        cap_macrarum = nova_cap;
+    }
+    m = calloc(1, sizeof(macra_t));
+    if (!m)
+        erratum("memoria exhausta");
+    macrae[num_macrarum++] = m;
     strncpy(m->nomen, nomen, 255);
     strncpy(m->valor, valor, MAX_CHORDA - 1);
     m->activa = 1;
@@ -1497,6 +1507,10 @@ void lex_initia(const char *nomen, const char *fons, int longitudo)
     vertex_expansionum = 0;
     habet_spectantem = 0;
     cond_vertex = 0;
+    for (int i = 0; i < num_macrarum; i++) {
+        free(macrae[i]);
+        macrae[i] = NULL;
+    }
     num_macrarum = 0;
     num_typedef_nominum = 0;
 }

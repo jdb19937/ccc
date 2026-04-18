@@ -13,24 +13,35 @@
  * allocatores
  * ================================================================ */
 
-static nodus_t nodi_area[MAX_NODI];
+static nodus_t **nodi_area = NULL;
+static int nodi_cap = 0;
 static int nodi_vertex = 0;
 
 
-static symbolum_t symbola_area[MAX_SYMBOLA];
+static symbolum_t **symbola_area = NULL;
+static int symbola_cap = 0;
 static int symbola_vertex = 0;
 
-static ambitus_t ambitus_area[MAX_AMBITUS];
+static ambitus_t **ambitus_area = NULL;
+static int ambitus_cap = 0;
 static int ambitus_vertex = 0;
 
 static ambitus_t *cur_ambitus = NULL;
 
 nodus_t *nodus_novus(int genus)
 {
-    if (nodi_vertex >= MAX_NODI)
-        erratum("nimis multi nodi");
-    nodus_t *n = &nodi_area[nodi_vertex++];
-    memset(n, 0, sizeof(nodus_t));
+    if (nodi_vertex >= nodi_cap) {
+        int nova_cap = nodi_cap ? nodi_cap * 2 : 1024;
+        nodus_t **novus = realloc(nodi_area, nova_cap * sizeof(nodus_t *));
+        if (!novus)
+            erratum("memoria exhausta");
+        nodi_area = novus;
+        nodi_cap = nova_cap;
+    }
+    nodus_t *n = calloc(1, sizeof(nodus_t));
+    if (!n)
+        erratum("memoria exhausta");
+    nodi_area[nodi_vertex++] = n;
     n->genus       = genus;
     n->linea       = sig_linea;
     n->init_offset = -1; /* §6.7.8: nullus designator */
@@ -44,10 +55,18 @@ nodus_t *nodus_novus(int genus)
 
 void ambitus_intra(void)
 {
-    if (ambitus_vertex >= MAX_AMBITUS)
-        erratum("nimis multi ambitus");
-    ambitus_t *a = &ambitus_area[ambitus_vertex++];
-    memset(a, 0, sizeof(ambitus_t));
+    if (ambitus_vertex >= ambitus_cap) {
+        int nova_cap = ambitus_cap ? ambitus_cap * 2 : 64;
+        ambitus_t **novus = realloc(ambitus_area, nova_cap * sizeof(ambitus_t *));
+        if (!novus)
+            erratum("memoria exhausta");
+        ambitus_area = novus;
+        ambitus_cap = nova_cap;
+    }
+    ambitus_t *a = calloc(1, sizeof(ambitus_t));
+    if (!a)
+        erratum("memoria exhausta");
+    ambitus_area[ambitus_vertex++] = a;
     a->parens = cur_ambitus;
     a->proximus_offset = cur_ambitus ? cur_ambitus->proximus_offset : 0;
     cur_ambitus = a;
@@ -82,10 +101,18 @@ symbolum_t *ambitus_quaere_omnes(const char *nomen)
 
 symbolum_t *ambitus_adde(const char *nomen, int genus)
 {
-    if (symbola_vertex >= MAX_SYMBOLA)
-        erratum("nimis multa symbola");
-    symbolum_t *s = &symbola_area[symbola_vertex++];
-    memset(s, 0, sizeof(symbolum_t));
+    if (symbola_vertex >= symbola_cap) {
+        int nova_cap = symbola_cap ? symbola_cap * 2 : 256;
+        symbolum_t **novus = realloc(symbola_area, nova_cap * sizeof(symbolum_t *));
+        if (!novus)
+            erratum("memoria exhausta");
+        symbola_area = novus;
+        symbola_cap = nova_cap;
+    }
+    symbolum_t *s = calloc(1, sizeof(symbolum_t));
+    if (!s)
+        erratum("memoria exhausta");
+    symbola_area[symbola_vertex++] = s;
     strncpy(s->nomen, nomen, 255);
     s->genus = genus;
     s->globalis_index = -1;
@@ -1977,6 +2004,12 @@ static nodus_t *parse_declaratio(int est_globalis)
 
 void parse_initia(void)
 {
+    for (int i = 0; i < nodi_vertex; i++)
+        free(nodi_area[i]);
+    for (int i = 0; i < symbola_vertex; i++)
+        free(symbola_area[i]);
+    for (int i = 0; i < ambitus_vertex; i++)
+        free(ambitus_area[i]);
     nodi_vertex    = 0;
     symbola_vertex = 0;
     ambitus_vertex = 0;
