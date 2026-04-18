@@ -1,24 +1,9 @@
 /*
- * biblio.h — tractatio vexillorum -I, -L, -l
+ * biblio.h — tractatio vexillorum -L, -l
  */
 
 #ifndef BIBLIO_H
 #define BIBLIO_H
-
-/* ================================================================
- * viae inclusionis (-I)
- * ================================================================ */
-
-extern char **viae_includ;
-extern int    num_viarum_includ;
-
-void includ_adde(const char *via);
-
-/*
- * includ_quaere — quaerit plicam per vias -I.
- * reddit fontem (malloc) et *longitudo, vel NULL si non inventa.
- */
-char *includ_quaere(const char *nomen, int *longitudo, char *via_inventa, int via_mag);
 
 /* ================================================================
  * viae bibliothecarum (-L)

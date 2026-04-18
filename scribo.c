@@ -522,9 +522,14 @@ void scribo_macho(const char *plica_exitus, int main_offset)
      * scribo plicam
      * ================================================================ */
 
-    FILE *fp = fopen(plica_exitus, "wb");
+    char plica_tmp[1024];
+    int nxt = snprintf(plica_tmp, sizeof(plica_tmp), "%s.tmp", plica_exitus);
+    if (nxt < 0 || nxt >= (int)sizeof(plica_tmp))
+        erratum("nomen plicae nimis longum");
+    FILE *fp = fopen(plica_tmp, "wb");
     if (!fp)
-        erratum("non possum scribere '%s'", plica_exitus);
+        erratum("non possum scribere '%s'", plica_tmp);
+    plica_exitus_gl = plica_tmp;
 
     /* --- Mach-O header --- */
     scribe32(fp, MH_MAGIC_64);
@@ -836,24 +841,33 @@ void scribo_macho(const char *plica_exitus, int main_offset)
 
     fclose(fp);
 
-    /* fac executābilem et signa ad-hoc */
-    if (chmod(plica_exitus, 0755) != 0)
-        erratum("chmod '%s' defecit: %s", plica_exitus, strerror(errno));
+    /* fac executābilem et signa ad-hoc in plica temporaria */
+    if (chmod(plica_tmp, 0755) != 0)
+        erratum("chmod '%s' defecit: %s", plica_tmp, strerror(errno));
     {
         pid_t pid = fork();
         if (pid < 0)
             erratum("fork defecit: %s", strerror(errno));
         if (pid == 0) {
             /* prōcessus fīlius: codesign */
-            execlp("codesign", "codesign", "-s", "-", plica_exitus, NULL);
+            execlp("codesign", "codesign", "-s", "-", plica_tmp, NULL);
             _exit(1); /* sī execlp defecit */
         }
         int status;
         if (waitpid(pid, &status, 0) < 0)
             erratum("waitpid defecit: %s", strerror(errno));
         if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
-            erratum("codesign '%s' defecit", plica_exitus);
+            erratum("codesign '%s' defecit", plica_tmp);
     }
+
+    if (rename(plica_tmp, plica_exitus) != 0) {
+        remove(plica_tmp);
+        erratum(
+            "non possum renominare '%s' ad '%s': %s",
+            plica_tmp, plica_exitus, strerror(errno)
+        );
+    }
+    plica_exitus_gl = NULL;
 
     printf(
         "==> %s scriptum (%d octeti codis, %d GOT, %d globales)\n",
@@ -1283,9 +1297,14 @@ void scribo_obiectum(const char *plica_exitus)
      * scribo plicam
      * ================================================================ */
 
-    FILE *fp = fopen(plica_exitus, "wb");
+    char plica_tmp[1024];
+    int nxt = snprintf(plica_tmp, sizeof(plica_tmp), "%s.tmp", plica_exitus);
+    if (nxt < 0 || nxt >= (int)sizeof(plica_tmp))
+        erratum("nomen plicae nimis longum");
+    FILE *fp = fopen(plica_tmp, "wb");
     if (!fp)
-        erratum("non possum aperire '%s'", plica_exitus);
+        erratum("non possum aperire '%s'", plica_tmp);
+    plica_exitus_gl = plica_tmp;
 
     /* Mach-O caput */
     scribe32(fp, MH_MAGIC_64);
@@ -1506,6 +1525,15 @@ void scribo_obiectum(const char *plica_exitus)
     }
 
     fclose(fp);
+
+    if (rename(plica_tmp, plica_exitus) != 0) {
+        remove(plica_tmp);
+        erratum(
+            "non possum renominare '%s' ad '%s': %s",
+            plica_tmp, plica_exitus, strerror(errno)
+        );
+    }
+    plica_exitus_gl = NULL;
 
     printf(
         "==> %s obiectum (%d octeti codis, %d symbola)\n",

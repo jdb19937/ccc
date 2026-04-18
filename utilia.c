@@ -8,6 +8,7 @@
 
 const char *nomen_programmi = "ccc";
 const char *plica_currentis = NULL;
+const char *plica_exitus_gl = NULL;
 
 void erratum(const char *fmt, ...)
 {
@@ -17,6 +18,8 @@ void erratum(const char *fmt, ...)
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     va_end(ap);
+    if (plica_exitus_gl)
+        remove(plica_exitus_gl);
     exit(1);
 }
 
@@ -29,6 +32,8 @@ void erratum_ad(int linea, const char *fmt, ...)
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     va_end(ap);
+    if (plica_exitus_gl)
+        remove(plica_exitus_gl);
     exit(1);
 }
 

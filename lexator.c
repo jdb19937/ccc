@@ -1,14 +1,14 @@
 /*
- * lexator.c — CCC lexator et praeprocessor
+ * lexator.c — lexator C99 purus
  *
- * Lexator C99 cum praeprocessore simplici.
- * Capita interna pro functionibus systematis (stdio, stdlib,
- * termios, etc.) inclusa sunt.
+ * Operatur in inputo iam praeprocessato ab ic. Directivae praeprocessoris
+ * (#include, #define, #if, etc.) non tractantur hic — solum directiva
+ * lineae "# LINEA \"PLICA\" [vexillum]" agnoscitur ut positio in
+ * diagnosticis recte monstretur.
  */
 
 #include "utilia.h"
 #include "lexator.h"
-#include "biblio.h"
 
 /* ================================================================
  * vocabula clavis
@@ -44,66 +44,6 @@ static struct {
 };
 
 /* ================================================================
- * macrae (praeparatore)
- * ================================================================ */
-
-typedef struct {
-    char nomen[256];
-    char valor[MAX_CHORDA];
-    int activa;
-    int est_functionalis;       /* 1 si macra functionalis */
-    int est_variadica;          /* §6.10.3: 1 sī ... in parametrīs */
-    int num_parametrorum;
-    char parametri[MAX_PARAM_MACRAE][MAX_NOMEN_PARAM];
-} macra_t;
-
-static macra_t **macrae = NULL;
-static int cap_macrarum = 0;
-static int num_macrarum = 0;
-
-static macra_t *macra_quaere(const char *nomen)
-{
-    for (int i = 0; i < num_macrarum; i++)
-        if (macrae[i]->activa && strcmp(macrae[i]->nomen, nomen) == 0)
-            return macrae[i];
-    return NULL;
-}
-
-static macra_t *macra_defini(const char *nomen, const char *valor)
-{
-    macra_t *m = macra_quaere(nomen);
-    if (m) {
-        strncpy(m->valor, valor, MAX_CHORDA - 1);
-        return m;
-    }
-    if (num_macrarum >= cap_macrarum) {
-        int nova_cap = cap_macrarum ? cap_macrarum * 2 : 64;
-        macra_t **novus = realloc(macrae, nova_cap * sizeof(macra_t *));
-        if (!novus)
-            erratum("memoria exhausta");
-        macrae = novus;
-        cap_macrarum = nova_cap;
-    }
-    m = calloc(1, sizeof(macra_t));
-    if (!m)
-        erratum("memoria exhausta");
-    macrae[num_macrarum++] = m;
-    strncpy(m->nomen, nomen, 255);
-    strncpy(m->valor, valor, MAX_CHORDA - 1);
-    m->activa = 1;
-    m->est_functionalis = 0;
-    m->num_parametrorum = 0;
-    return m;
-}
-
-static void macra_dele(const char *nomen)
-{
-    macra_t *m = macra_quaere(nomen);
-    if (m)
-        m->activa = 0;
-}
-
-/* ================================================================
  * typedef nomina (pro disambiguatione in parsore)
  * ================================================================ */
 
@@ -126,39 +66,14 @@ void lex_registra_typedef(const char *nomen)
 }
 
 /* ================================================================
- * acervus plicarum (pro #include)
+ * contextus fontis
  * ================================================================ */
 
-typedef struct {
-    char *nomen;
-    const char *fons;
-    int longitudo;
-    int positus;
-    int linea;
-} plica_ctx_t;
-
-static plica_ctx_t acervus_plicarum[MAX_PLICAE_ACERVUS];
-static int vertex_plicarum = 0;
-
-/* contextus currens */
-static char *cur_nomen;
+static char       *cur_nomen;
 static const char *cur_fons;
-static int cur_longitudo;
-static int cur_positus;
-static int cur_linea;
-
-/* ================================================================
- * acervus expansionis macrorum
- * ================================================================ */
-
-typedef struct {
-    const char *fons;
-    int longitudo;
-    int positus;
-} expansio_ctx_t;
-
-static expansio_ctx_t acervus_expansionum[64];
-static int vertex_expansionum = 0;
+static int         cur_longitudo;
+static int         cur_positus;
+static int         cur_linea;
 
 /* ================================================================
  * signum currens (exportatum)
@@ -173,63 +88,22 @@ int sig_linea;
 
 static int lege_c(void)
 {
-    /* primum ex expansione macrorum */
-    while (vertex_expansionum > 0) {
-        expansio_ctx_t *e = &acervus_expansionum[vertex_expansionum - 1];
-        if (e->positus < e->longitudo)
-            return (unsigned char)e->fons[e->positus++];
-        vertex_expansionum--;
+    if (cur_positus < cur_longitudo) {
+        char c = cur_fons[cur_positus++];
+        if (c == '\n')
+            cur_linea++;
+        return (unsigned char)c;
     }
-
-    for (;;) {
-        if (cur_positus < cur_longitudo) {
-            char c = cur_fons[cur_positus++];
-            if (c == '\n')
-                cur_linea++;
-            /* continuatio lineae: \ ante novam lineam */
-            if (c == '\\' && cur_positus < cur_longitudo && cur_fons[cur_positus] == '\n') {
-                cur_positus++;
-                cur_linea++;
-                continue;
-            }
-            return (unsigned char)c;
-        }
-        /* fine plicae currentis — restitue ex acervo */
-        if (vertex_plicarum <= 0)
-            return -1;
-        vertex_plicarum--;
-        plica_ctx_t *p = &acervus_plicarum[vertex_plicarum];
-        free(cur_nomen);
-        cur_nomen     = p->nomen;
-        cur_fons      = p->fons;
-        cur_longitudo = p->longitudo;
-        cur_positus   = p->positus;
-        cur_linea     = p->linea;
-    }
+    return -1;
 }
 
 static void repone_c(void)
 {
-    /* repone unum characterem */
-    if (vertex_expansionum > 0) {
-        acervus_expansionum[vertex_expansionum - 1].positus--;
-        return;
-    }
     if (cur_positus > 0) {
         cur_positus--;
         if (cur_positus < cur_longitudo && cur_fons[cur_positus] == '\n')
             cur_linea--;
     }
-}
-
-static void pelle_expansionem(const char *fons, int lon)
-{
-    if (vertex_expansionum >= 64)
-        erratum("expansio macrorum nimis profunda");
-    expansio_ctx_t *e = &acervus_expansionum[vertex_expansionum++];
-    e->fons = fons;
-    e->longitudo = lon;
-    e->positus = 0;
 }
 
 /* ================================================================
@@ -245,11 +119,9 @@ static void praetermitte_spatia(void)
         if (c == '/') {
             int c2 = lege_c();
             if (c2 == '/') {
-                /* commentarium lineae */
                 while ((c = lege_c()) != -1 && c != '\n') {}
                 continue;
             } else if (c2 == '*') {
-                /* commentarium blocki */
                 int prec = 0;
                 while ((c = lege_c()) != -1) {
                     if (prec == '*' && c == '/')
@@ -267,399 +139,60 @@ static void praetermitte_spatia(void)
 }
 
 /* ================================================================
- * conditiones praeprocessoris (#if/#ifdef acervus)
+ * directiva lineae — "# LINEA \"PLICA\" [vexillum]"
+ *
+ * Emissa ab ic. Actualizat cur_linea et cur_nomen.
  * ================================================================ */
 
-static int cond_acervus[64];
-static int cond_vertex = 0;
-/* 1 = emittimus, 0 = suppressi, 2 = in ramo else suppressi */
-
-static int cond_activa(void)
+static void tracta_directivam_lineae(void)
 {
-    for (int i = 0; i < cond_vertex; i++)
-        if (cond_acervus[i] != 1)
-            return 0;
-    return 1;
-}
-
-/* ================================================================
- * praeprocessor — directiva
- * ================================================================ */
-
-static void lege_nomen_pp(char *alveus, int max)
-{
+    /* iam post '#' — praetermitte spatia */
+    int c;
+    while ((c = lege_c()) == ' ' || c == '\t') {}
+    /* lege numerum lineae */
+    if (c < '0' || c > '9')
+        erratum_ad(
+            cur_linea,
+            "directiva '#' malformata in plica praeprocessata "
+            "(expectabatur '# N \"plica\"')"
+        );
+    int linea_nova = 0;
+    while (c >= '0' && c <= '9') {
+        linea_nova = linea_nova * 10 + (c - '0');
+        c = lege_c();
+    }
+    /* praetermitte spatia ante nomen plicae */
+    while (c == ' ' || c == '\t')
+        c = lege_c();
+    /* nomen plicae in virgulis — obligatorium */
+    if (c != '"')
+        erratum_ad(
+            cur_linea,
+            "directiva '#' malformata: expectabatur '\"plica\"' post numerum"
+        );
+    char nomen_novum[1024];
     int i = 0;
-    int c;
-    praetermitte_spatia();
-    while ((c = lege_c()) != -1) {
-        if (
-            (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-            (c >= '0' && c <= '9') || c == '_'
-        ) {
-            if (i < max - 1)
-                alveus[i++] = c;
-        } else {
-            repone_c();
-            break;
+    while ((c = lege_c()) != -1 && c != '"' && c != '\n') {
+        if (c == '\\') {
+            int e = lege_c();
+            if (e == -1)
+                break;
+            c = e;
         }
+        if (i >= (int)sizeof(nomen_novum) - 1)
+            erratum_ad(cur_linea, "nomen plicae in directiva nimis longum");
+        nomen_novum[i++] = c;
     }
-    alveus[i] = '\0';
-}
-
-static void lege_residuum_lineae(char *alveus, int max)
-{
-    int i = 0;
-    int c;
-    /* praetermitte spatia initialia */
-    while ((c = lege_c()) != -1 && (c == ' ' || c == '\t')) {}
-    if (c != -1 && c != '\n') {
-        alveus[i++] = c;
-        while ((c = lege_c()) != -1 && c != '\n') {
-            if (i < max - 1)
-                alveus[i++] = c;
-        }
-    }
-    /* tolle spatia terminalia */
-    while (i > 0 && (alveus[i-1] == ' ' || alveus[i-1] == '\t' || alveus[i-1] == '\r'))
-        i--;
-    alveus[i] = '\0';
-}
-
-static void praetermitte_lineam(void)
-{
-    int c;
-    while ((c = lege_c()) != -1 && c != '\n') {}
-}
-
-static void pelle_plicam(char *nomen, const char *fons, int lon)
-{
-    if (vertex_plicarum >= MAX_PLICAE_ACERVUS)
-        erratum("nimis multae plicae inclusae");
-    plica_ctx_t *p = &acervus_plicarum[vertex_plicarum++];
-    p->nomen       = cur_nomen;
-    p->fons        = cur_fons;
-    p->longitudo   = cur_longitudo;
-    p->positus     = cur_positus;
-    p->linea       = cur_linea;
-
-    cur_nomen     = nomen;
-    cur_fons      = fons;
-    cur_longitudo = lon;
-    cur_positus   = 0;
-    cur_linea     = 1;
-}
-
-static int tracta_directivam(void)
-{
-    /* iamiam post '#' */
-    char directiva[64];
-    lege_nomen_pp(directiva, sizeof(directiva));
-
-    if (strcmp(directiva, "include") == 0) {
-        if (!cond_activa()) {
-            praetermitte_lineam();
-            return 1;
-        }
-        praetermitte_spatia();
-        int c = lege_c();
-        char via[512];
-        int i = 0;
-        if (c == '"') {
-            while ((c = lege_c()) != -1 && c != '"' && c != '\n')
-                if (i < 511)
-                    via[i++] = c;
-            via[i] = '\0';
-            praetermitte_lineam();
-
-            /* proba plicam localem (relativa ad plicam currentem) */
-            char *cur_dir = via_directoria(cur_nomen);
-            char via_plena[1024];
-            snprintf(via_plena, sizeof(via_plena), "%s%s", cur_dir, via);
-            free(cur_dir);
-            FILE *fp_proba = fopen(via_plena, "rb");
-            if (fp_proba) {
-                fclose(fp_proba);
-                int lon;
-                char *fons = lege_plicam(via_plena, &lon);
-                pelle_plicam(strdup(via_plena), fons, lon);
-            } else {
-                /* quaere per vias -I */
-                int lon;
-                char via_i[1024];
-                char *fons = includ_quaere(via, &lon, via_i, sizeof(via_i));
-                if (fons)
-                    pelle_plicam(strdup(via_i), fons, lon);
-                else
-                    erratum("caput non inventum: \"%s\"", via);
-            }
-        } else if (c == '<') {
-            while ((c = lege_c()) != -1 && c != '>' && c != '\n')
-                if (i < 511)
-                    via[i++] = c;
-            via[i] = '\0';
-            praetermitte_lineam();
-
-            /* proba vias -I primum */
-            int lon_i;
-            char via_i[1024];
-            char *fons_i = includ_quaere(via, &lon_i, via_i, sizeof(via_i));
-            if (fons_i) {
-                pelle_plicam(strdup(via_i), fons_i, lon_i);
-            } else {
-                erratum("caput non inventum: <%s>", via);
-            }
-        }
-        return 1;
-    }
-
-    if (strcmp(directiva, "define") == 0) {
-        if (!cond_activa()) {
-            praetermitte_lineam();
-            return 1;
-        }
-        char nomen[256];
-        lege_nomen_pp(nomen, sizeof(nomen));
-        /* proba si macra functionalis: '(' sine spatio post nomen */
-        int c_peek = lege_c();
-        if (c_peek == '(') {
-            /* macra functionalis — lege parametros */
-            char param_nomina[MAX_PARAM_MACRAE][MAX_NOMEN_PARAM];
-            int nparam = 0;
-            for (;;) {
-                char pn[128];
-                int pi = 0;
-                /* praetermitte spatia */
-                int pc;
-                while ((pc = lege_c()) == ' ' || pc == '\t') {}
-                if (pc == ')')
-                    break;
-                if (pc == ',' )
-                    continue;
-                /* lege nomen parametri */
-                pn[pi++] = pc;
-                while ((pc = lege_c()) != -1 && pc != ',' && pc != ')' && pc != ' ' && pc != '\t') {
-                    if (pi < 127)
-                        pn[pi++] = pc;
-                }
-                pn[pi] = '\0';
-                if (nparam >= MAX_PARAM_MACRAE)
-                    erratum_ad(
-                        cur_linea,
-                        "nimis multi parametri in macra"
-                    );
-                strncpy(param_nomina[nparam++], pn, MAX_NOMEN_PARAM - 1);
-                if (pc == ')')
-                    break;
-            }
-            /* §6.10.3: dēlige ... ex ultimō parametrō */
-            int est_var = 0;
-            if (
-                nparam > 0
-                && strcmp(param_nomina[nparam - 1], "...") == 0
-            ) {
-                nparam--;
-                est_var = 1;
-            }
-            char valor[MAX_CHORDA];
-            lege_residuum_lineae(valor, sizeof(valor));
-            macra_t *m = macra_defini(nomen, valor);
-            m->est_functionalis = 1;
-            m->est_variadica    = est_var;
-            m->num_parametrorum = nparam;
-            for (int i = 0; i < nparam; i++)
-                strncpy(m->parametri[i], param_nomina[i], MAX_NOMEN_PARAM - 1);
-        } else {
-            repone_c();
-            char valor[MAX_CHORDA];
-            lege_residuum_lineae(valor, sizeof(valor));
-            macra_defini(nomen, valor);
-        }
-        return 1;
-    }
-
-    if (strcmp(directiva, "undef") == 0) {
-        if (!cond_activa()) {
-            praetermitte_lineam();
-            return 1;
-        }
-        char nomen[256];
-        lege_nomen_pp(nomen, sizeof(nomen));
-        macra_dele(nomen);
-        praetermitte_lineam();
-        return 1;
-    }
-
-    if (strcmp(directiva, "ifdef") == 0) {
-        char nomen[256];
-        lege_nomen_pp(nomen, sizeof(nomen));
-        praetermitte_lineam();
-        if (cond_vertex >= 64)
-            erratum("#ifdef nimis profundum");
-        if (!cond_activa()) {
-            cond_acervus[cond_vertex++] = 0;
-        } else {
-            cond_acervus[cond_vertex++] = macra_quaere(nomen) ? 1 : 0;
-        }
-        return 1;
-    }
-
-    if (strcmp(directiva, "ifndef") == 0) {
-        char nomen[256];
-        lege_nomen_pp(nomen, sizeof(nomen));
-        praetermitte_lineam();
-        if (cond_vertex >= 64)
-            erratum("#ifndef nimis profundum");
-        if (!cond_activa()) {
-            cond_acervus[cond_vertex++] = 0;
-        } else {
-            cond_acervus[cond_vertex++] = macra_quaere(nomen) ? 0 : 1;
-        }
-        return 1;
-    }
-
-    if (strcmp(directiva, "if") == 0) {
-        if (cond_vertex >= 64)
-            erratum("#if nimis profundum");
-        if (!cond_activa()) {
-            cond_acervus[cond_vertex++] = 0;
-            praetermitte_lineam();
-            return 1;
-        }
-        /* evaluatio simplex: supportamus '0', '1', 'defined(X)' */
-        char expr[MAX_CHORDA];
-        lege_residuum_lineae(expr, sizeof(expr));
-        /* §6.10.1: macrae expanduntur ante evaluationem #if */
-        {
-            char expandata[MAX_CHORDA];
-            int ei = 0;
-            for (int ci = 0; expr[ci] && ei < MAX_CHORDA - 1; ) {
-                if (
-                    (expr[ci] >= 'a' && expr[ci] <= 'z') ||
-                    (expr[ci] >= 'A' && expr[ci] <= 'Z') || expr[ci] == '_'
-                ) {
-                    char tok[256];
-                    int ti = 0;
-                    while (
-                        expr[ci] && (
-                            (expr[ci] >= 'a' && expr[ci] <= 'z') ||
-                            (expr[ci] >= 'A' && expr[ci] <= 'Z') ||
-                            (expr[ci] >= '0' && expr[ci] <= '9') || expr[ci] == '_'
-                        )
-                    )
-                        if (ti < 255)
-                            tok[ti++] = expr[ci++];
-                    else
-                        ci++;
-                    tok[ti]         = '\0';
-                    macra_t *m      = macra_quaere(tok);
-                    const char *rep = (m && !m->est_functionalis) ? m->valor : tok;
-                    while (*rep && ei < MAX_CHORDA - 1)
-                        expandata[ei++] = *rep++;
-                } else {
-                    expandata[ei++] = expr[ci++];
-                }
-            }
-            expandata[ei] = '\0';
-            strncpy(expr, expandata, MAX_CHORDA - 1);
-        }
-        int val = 0;
-        if (strstr(expr, "defined")) {
-            /* extrahre nomen */
-            char *p = strstr(expr, "defined");
-            p += 7;
-            while (*p == ' ' || *p == '(')
-                p++;
-            char nomen[256];
-            int i = 0;
-            while (*p && *p != ')' && *p != ' ' && i < 255)
-                nomen[i++] = *p++;
-            nomen[i] = '\0';
-            val      = macra_quaere(nomen) ? 1 : 0;
-        } else {
-            /* evaluatio simplex expressionum: N > M, N == M, etc. */
-            char *gt = strstr(expr, ">=");
-            char *lt = strstr(expr, "<=");
-            char *eq = strstr(expr, "==");
-            char *ne = strstr(expr, "!=");
-            char *g  = !gt ? strchr(expr, '>') : NULL;
-            char *l  = !lt ? strchr(expr, '<') : NULL;
-            if (eq)
-                val = atoi(expr) == atoi(eq + 2);
-            else if (ne)
-                val = atoi(expr) != atoi(ne + 2);
-            else if (gt)
-                val = atoi(expr) >= atoi(gt + 2);
-            else if (lt)
-                val = atoi(expr) <= atoi(lt + 2);
-            else if (g)
-                val = atoi(expr) >  atoi(g + 1);
-            else if (l)
-                val = atoi(expr) <  atoi(l + 1);
-            else
-                val = atoi(expr);
-        }
-        cond_acervus[cond_vertex++] = val ? 1 : 0;
-        return 1;
-    }
-
-    if (strcmp(directiva, "elif") == 0) {
-        praetermitte_lineam();
-        if (cond_vertex <= 0)
-            erratum("#elif sine #if");
-        if (cond_acervus[cond_vertex - 1] == 1) {
-            cond_acervus[cond_vertex - 1] = 2; /* iam satisfactum */
-        } else if (cond_acervus[cond_vertex - 1] == 0) {
-            /* proba novam conditionem — simpliciter ponamus 0 */
-            cond_acervus[cond_vertex - 1] = 0;
-        }
-        return 1;
-    }
-
-    if (strcmp(directiva, "else") == 0) {
-        praetermitte_lineam();
-        if (cond_vertex <= 0)
-            erratum("#else sine #if");
-        if (cond_acervus[cond_vertex - 1] == 1)
-            cond_acervus[cond_vertex - 1] = 2;
-        else if (cond_acervus[cond_vertex - 1] == 0)
-            cond_acervus[cond_vertex - 1] = 1;
-        return 1;
-    }
-
-    if (strcmp(directiva, "endif") == 0) {
-        praetermitte_lineam();
-        if (cond_vertex <= 0)
-            erratum("#endif sine #if");
-        cond_vertex--;
-        return 1;
-    }
-
-    /* §6.10.5: #error — nuntium diagnosticum et cessatio */
-    if (strcmp(directiva, "error") == 0) {
-        if (cond_activa()) {
-            char nuntium[MAX_CHORDA];
-            lege_residuum_lineae(nuntium, sizeof(nuntium));
-            erratum_ad(cur_linea, "#error %s", nuntium);
-        }
-        praetermitte_lineam();
-        return 1;
-    }
-
-    if (
-        strcmp(directiva, "pragma") == 0 ||
-        strcmp(directiva, "warning") == 0 ||
-        strcmp(directiva, "line") == 0 ||
-        directiva[0] == '\0'
-    ) {
-        praetermitte_lineam();
-        return 1;
-    }
-
-    /* §6.10: directiva ignota */
-    if (cond_activa())
-        erratum_ad(cur_linea, "directiva ignota: #%s", directiva);
-    praetermitte_lineam();
-    return 1;
+    if (c != '"')
+        erratum_ad(cur_linea, "nomen plicae in directiva non terminatum");
+    nomen_novum[i] = '\0';
+    free(cur_nomen);
+    cur_nomen = strdup(nomen_novum);
+    /* praetermitte residuum lineae (vexilla optionalia) */
+    while (c != -1 && c != '\n')
+        c = lege_c();
+    /* linea nova inita — proxima linea ad legendum habebit numerum 'linea_nova' */
+    cur_linea = linea_nova;
 }
 
 /* ================================================================
@@ -716,11 +249,11 @@ static int lege_effugium(void)
 }
 
 /* ================================================================
- * signum spectans (peek) — declarationes ante lexatorem
+ * signum spectans (peek)
  * ================================================================ */
 
 static signum_t sig_spectans;
-static int habet_spectantem = 0;
+static int      habet_spectantem = 0;
 static const char *plica_spectans = NULL;
 
 /* ================================================================
@@ -741,29 +274,18 @@ inicio:
         return T_EOF;
     }
 
-    /* nova linea — potentialiter directiva */
+    /* nova linea — continua */
     if (c == '\n')
         goto inicio;
 
-    /* directiva praeprocessoris */
+    /* §6.10.4: directiva lineae emissa ab ic */
     if (c == '#') {
-        if (tracta_directivam())
-            goto inicio;
-        sig.genus = T_HASH;
-        return T_HASH;
-    }
-
-    /* lineas suppressas ignora */
-    if (!cond_activa()) {
-        /* praetermitte usque ad novam lineam */
-        while (c != '\n' && c != -1)
-            c = lege_c();
+        tracta_directivam_lineae();
         goto inicio;
     }
 
     /* numerus — §6.4.4.1 (integer), §6.4.4.2 (fluitans) */
     if (c >= '0' && c <= '9') {
-        /* collige characteres numeri in alveo pro strtod si fluitans */
         char num_buf[256];
         int num_len      = 0;
         int est_fluitans = 0;
@@ -792,8 +314,6 @@ inicio:
                     val = val * 8 + (c - '0');
                     num_buf[num_len++] = (char)c;
                 }
-            } else {
-                /* erat solum 0 (vel 0. sequitur) */
             }
         } else {
             val = c - '0';
@@ -823,13 +343,10 @@ inicio:
                 c = lege_c();
             }
         }
-        /* suffixum — §6.4.4.1: U, L pro integris; §6.4.4.2: f, F, l, L pro fluitantibus */
+        /* suffixum — §6.4.4.1, §6.4.4.2 */
         if (est_fluitans) {
-            if (c == 'f' || c == 'F') {
-                c = lege_c(); /* suffixum float — consumitur */
-            } else if (c == 'l' || c == 'L') {
-                c = lege_c(); /* suffixum long double — tractatur ut double */
-            }
+            if (c == 'f' || c == 'F' || c == 'l' || c == 'L')
+                c = lege_c();
         } else {
             while (
                 c == 'u' || c == 'U' || c == 'l' || c == 'L' ||
@@ -844,7 +361,6 @@ inicio:
             repone_c();
 
         if (est_fluitans) {
-            /* §6.4.4.2: converte per strtod */
             num_buf[num_len] = '\0';
             sig.genus        = T_NUM_FLUAT;
             sig.valor_f      = strtod(num_buf, NULL);
@@ -873,12 +389,10 @@ inicio:
         sig.lon_chordae = i;
         sig.genus       = T_STR;
 
-        /* §6.4.5p4: concatenatio chordarum litteralium adiacentium
-         * — etiam per macrōs expandendōs */
+        /* §6.4.5p4: concatenatio chordarum litteralium adiacentium */
         for (;;) {
             praetermitte_spatia();
             c = lege_c();
-            /* praetermitte novas lineas inter chordas */
             while (c == '\n') {
                 praetermitte_spatia();
                 c = lege_c();
@@ -897,76 +411,6 @@ inicio:
                 }
                 sig.chorda[i]   = '\0';
                 sig.lon_chordae = i;
-            } else if (
-                (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
-            ) {
-                /* §6.4.5: macra potentiālis quae ad chordam expanditur */
-                char mac_nom[256];
-                int mi        = 0;
-                mac_nom[mi++] = c;
-                while (
-                    (c = lege_c()) != -1 && (
-                        (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-                        (c >= '0' && c <= '9') || c == '_'
-                    )
-                ) {
-                    if (mi < 255)
-                        mac_nom[mi++] = c;
-                }
-                mac_nom[mi] = '\0';
-                if (c != -1)
-                    repone_c();
-                macra_t *mac = macra_quaere(mac_nom);
-                if (
-                    mac && !mac->est_functionalis
-                    && mac->valor[0] == '"'
-                ) {
-                    /* macra simplex expanditur ad chordam — catenā */
-                    const char *p = mac->valor + 1;
-                    while (*p && *p != '"') {
-                        if (i >= MAX_CHORDA - 1)
-                            break;
-                        sig.chorda[i++] = *p++;
-                    }
-                    sig.chorda[i]   = '\0';
-                    sig.lon_chordae = i;
-                } else if (mac) {
-                    /* macra (potentiāliter functiōnālis) — expande et
-                     * continuā catenātiōnem; expansiō forte chordam generat */
-                    pelle_expansionem(mac_nom, mi);
-                    /* lege signum ex expansiōne; sī est chorda, catenā */
-                    signum_t sig_salva;
-                    memcpy(&sig_salva, &sig, sizeof(signum_t));
-                    int lin_salva = sig_linea;
-                    const char *plica_salva = plica_currentis;
-                    int gen       = lege_signum_internum();
-                    if (gen == T_STR) {
-                        /* macra ad chordam expandēbātur — catenā */
-                        for (int si = 0; si < sig.lon_chordae; si++) {
-                            if (i >= MAX_CHORDA - 1)
-                                break;
-                            sig_salva.chorda[i++] = sig.chorda[si];
-                        }
-                        sig_salva.chorda[i]   = '\0';
-                        sig_salva.lon_chordae = i;
-                        memcpy(&sig, &sig_salva, sizeof(signum_t));
-                        sig_linea = lin_salva;
-                        plica_currentis = plica_salva;
-                    } else {
-                        /* nōn est chorda — servā signum ut spectantem */
-                        memcpy(&sig_spectans, &sig, sizeof(signum_t));
-                        plica_spectans = plica_currentis;
-                        habet_spectantem = 1;
-                        memcpy(&sig, &sig_salva, sizeof(signum_t));
-                        sig_linea = lin_salva;
-                        plica_currentis = plica_salva;
-                        break;
-                    }
-                } else {
-                    /* nōn est macra — repōne et exī */
-                    pelle_expansionem(mac_nom, mi);
-                    break;
-                }
             } else {
                 if (c != -1)
                     repone_c();
@@ -1017,280 +461,6 @@ inicio:
                 sig.genus = vocabula[j].genus;
                 return sig.genus;
             }
-        }
-
-        /* est macra? */
-        macra_t *m = macra_quaere(sig.chorda);
-        if (m && m->est_functionalis) {
-            /* macra functionalis — lege argumenta */
-            praetermitte_spatia();
-            int pc = lege_c();
-            if (pc == '\n') {
-                praetermitte_spatia();
-                pc = lege_c();
-            }
-            if (pc == '(') {
-                /* alveus planus pro argumentis — acervus pro casu communi,
-                 * malloc si excedit */
-                char arg_buf_acervus[MAX_CHORDA];
-                char *arg_buf   = arg_buf_acervus;
-                int arg_buf_cap = MAX_CHORDA;
-                int arg_buf_pos = 0;
-                int arg_initia[MAX_ARG_MACRAE];
-                int nargs   = 0;
-                int profund = 0;
-
-                arg_initia[0] = 0;
-                int in_chorda = 0;  /* intra chordam litterālem */
-                for (;;) {
-                    pc = lege_c();
-                    if (pc == -1)
-                        break;
-                    /* §6.10.3: chorda intra argūmenta — commata nōn dēlimitant */
-                    if (pc == '"' && !in_chorda) {
-                        in_chorda = 1;
-                        if (arg_buf_pos < arg_buf_cap)
-                            arg_buf[arg_buf_pos++] = pc;
-                        while ((pc = lege_c()) != -1) {
-                            if (arg_buf_pos < arg_buf_cap)
-                                arg_buf[arg_buf_pos++] = pc;
-                            if (pc == '\\') {
-                                pc = lege_c();
-                                if (pc != -1 && arg_buf_pos < arg_buf_cap)
-                                    arg_buf[arg_buf_pos++] = pc;
-                            } else if (pc == '"') {
-                                break;
-                            }
-                        }
-                        in_chorda = 0;
-                        continue;
-                    }
-                    if (pc == '\'' && !in_chorda) {
-                        /* character litterālis — praetermitte */
-                        if (arg_buf_pos < arg_buf_cap)
-                            arg_buf[arg_buf_pos++] = pc;
-                        pc = lege_c();
-                        if (pc == '\\') {
-                            if (arg_buf_pos < arg_buf_cap)
-                                arg_buf[arg_buf_pos++] = pc;
-                            pc = lege_c();
-                        }
-                        if (pc != -1 && arg_buf_pos < arg_buf_cap)
-                            arg_buf[arg_buf_pos++] = pc;
-                        pc = lege_c();
-                        if (pc != -1 && arg_buf_pos < arg_buf_cap)
-                            arg_buf[arg_buf_pos++] = pc;
-                        continue;
-                    }
-                    if (pc == '(') {
-                        profund++;
-                    } else if (pc == ')') {
-                        if (profund == 0) {
-                            if (arg_buf_pos >= arg_buf_cap)
-                                erratum_ad(
-                                    cur_linea,
-                                    "argumenta macrae nimis longa"
-                                );
-                            arg_buf[arg_buf_pos++] = '\0';
-                            if ((arg_buf_pos - 1) > arg_initia[nargs] || nargs > 0) {
-                                if (nargs >= MAX_ARG_MACRAE)
-                                    erratum_ad(
-                                        cur_linea,
-                                        "nimis multa argumenta in macra"
-                                    );
-                                nargs++;
-                            }
-                            break;
-                        }
-                        profund--;
-                    } else if (
-                        pc == ',' && profund == 0
-                        && !(
-                            m->est_variadica
-                            && nargs >= m->num_parametrorum
-                        )
-                    ) {
-                        /* §6.10.3: prō macrā variadicā, commata post ultimum
-                         * parametrum inclūduntur in __VA_ARGS__ */
-                        if (arg_buf_pos >= arg_buf_cap)
-                            erratum_ad(
-                                cur_linea,
-                                "argumenta macrae nimis longa"
-                            );
-                        arg_buf[arg_buf_pos++] = '\0';
-                        if (nargs >= MAX_ARG_MACRAE - 1)
-                            erratum_ad(
-                                cur_linea,
-                                "nimis multa argumenta in macra"
-                            );
-                        nargs++;
-                        arg_initia[nargs] = arg_buf_pos;
-                        continue;
-                    }
-                    /* cresc alveum si opus est */
-                    if (arg_buf_pos >= arg_buf_cap) {
-                        int nova_cap = arg_buf_cap * 2;
-                        char *novus  = malloc(nova_cap);
-                        if (!novus)
-                            erratum("memoria exhausta");
-                        memcpy(novus, arg_buf, arg_buf_pos);
-                        if (arg_buf != arg_buf_acervus)
-                            free(arg_buf);
-                        arg_buf     = novus;
-                        arg_buf_cap = nova_cap;
-                    }
-                    arg_buf[arg_buf_pos++] = pc;
-                }
-                /* substitue parametros in corpore macrae */
-                static char expansio_alvei[8][MAX_CHORDA * 2];
-                static int expansio_vertex = 0;
-                char *expansio = expansio_alvei[expansio_vertex % 8];
-                expansio_vertex++;
-                int ei = 0;
-                const char *corpus = m->valor;
-                int clon = (int)strlen(corpus);
-                for (int ci = 0; ci < clon; ) {
-                    /* §6.10.3.3: ## — coniūnctiō signōrum */
-                    if (
-                        corpus[ci] == '#' && ci + 1 < clon
-                        && corpus[ci + 1] == '#'
-                    ) {
-                        /* tolle spatia prōcēdentia ex expansiōne */
-                        while (
-                            ei > 0 && (
-                                expansio[ei-1] == ' '
-                                || expansio[ei-1] == '\t'
-                            )
-                        )
-                            ei--;
-                        ci += 2;
-                        /* praetermitte spatia post ## */
-                        while (
-                            ci < clon && (
-                                corpus[ci] == ' '
-                                || corpus[ci] == '\t'
-                            )
-                        )
-                            ci++;
-                        continue;
-                    }
-                    /* §6.10.3.2: # — stringificātiō */
-                    if (corpus[ci] == '#') {
-                        ci++;
-                        while (
-                            ci < clon && (
-                                corpus[ci] == ' '
-                                || corpus[ci] == '\t'
-                            )
-                        )
-                            ci++;
-                        /* lege nōmen parametrī */
-                        char stok[256];
-                        int sti = 0;
-                        while (
-                            ci < clon && (
-                                (corpus[ci] >= 'a' && corpus[ci] <= 'z') ||
-                                (corpus[ci] >= 'A' && corpus[ci] <= 'Z') ||
-                                (corpus[ci] >= '0' && corpus[ci] <= '9') ||
-                                corpus[ci] == '_'
-                            )
-                        ) {
-                            if (sti < 255)
-                                stok[sti++] = corpus[ci];
-                            ci++;
-                        }
-                        stok[sti] = '\0';
-                        /* quaere parametrum et stringificā */
-                        const char *str_val = stok;
-                        for (int pi = 0; pi < m->num_parametrorum; pi++) {
-                            if (
-                                strcmp(stok, m->parametri[pi]) == 0
-                                && pi < nargs
-                            ) {
-                                str_val = arg_buf + arg_initia[pi];
-                                break;
-                            }
-                        }
-                        if (ei < MAX_CHORDA * 2 - 1)
-                            expansio[ei++] = '"';
-                        while (*str_val && ei < MAX_CHORDA * 2 - 1)
-                            expansio[ei++] = *str_val++;
-                        if (ei < MAX_CHORDA * 2 - 1)
-                            expansio[ei++] = '"';
-                        continue;
-                    }
-                    /* proba si est nomen parametri */
-                    if (
-                        (corpus[ci] >= 'a' && corpus[ci] <= 'z') ||
-                        (corpus[ci] >= 'A' && corpus[ci] <= 'Z') ||
-                        corpus[ci] == '_'
-                    ) {
-                        char tok[256];
-                        int ti = 0;
-                        while (
-                            ci < clon && (
-                                (corpus[ci] >= 'a' && corpus[ci] <= 'z') ||
-                                (corpus[ci] >= 'A' && corpus[ci] <= 'Z') ||
-                                (corpus[ci] >= '0' && corpus[ci] <= '9') ||
-                                corpus[ci] == '_'
-                            )
-                        ) {
-                            if (ti < 255)
-                                tok[ti++] = corpus[ci];
-                            ci++;
-                        }
-                        tok[ti] = '\0';
-                        /* §6.10.3.1: __VA_ARGS__ prō macrīs variadicīs */
-                        int invenit = 0;
-                        if (
-                            m->est_variadica
-                            && strcmp(tok, "__VA_ARGS__") == 0
-                            && nargs > m->num_parametrorum
-                        ) {
-                            const char *arg =
-                                arg_buf + arg_initia[m->num_parametrorum];
-                            while (*arg == ' ' || *arg == '\t')
-                                arg++;
-                            while (*arg && ei < MAX_CHORDA * 2 - 1)
-                                expansio[ei++] = *arg++;
-                            invenit = 1;
-                        }
-                        /* quaere in parametris */
-                        if (!invenit)
-                            for (int pi = 0; pi < m->num_parametrorum; pi++) {
-                            if (strcmp(tok, m->parametri[pi]) == 0 && pi < nargs) {
-                                /* substitue argumentum — praetermitte spatia */
-                                const char *arg = arg_buf + arg_initia[pi];
-                                while (*arg == ' ' || *arg == '\t')
-                                    arg++;
-                                while (*arg && ei < MAX_CHORDA * 2 - 1)
-                                    expansio[ei++] = *arg++;
-                                invenit = 1;
-                                break;
-                            }
-                        }
-                        if (!invenit) {
-                            for (int ki = 0; ki < ti && ei < MAX_CHORDA * 2 - 1; ki++)
-                                expansio[ei++] = tok[ki];
-                        }
-                    } else {
-                        if (ei < MAX_CHORDA * 2 - 1)
-                            expansio[ei++] = corpus[ci];
-                        ci++;
-                    }
-                }
-                expansio[ei] = '\0';
-                if (arg_buf != arg_buf_acervus)
-                    free(arg_buf);
-                pelle_expansionem(expansio, ei);
-                goto inicio;
-            } else {
-                repone_c();
-            }
-        } else if (m && m->valor[0] != '\0') {
-            /* expande macram simplicem — pelle textum expansionis */
-            pelle_expansionem(m->valor, strlen(m->valor));
-            goto inicio;
         }
 
         sig.genus = T_IDENT;
@@ -1459,17 +629,17 @@ inicio:
             sig.genus = T_BANG;
             return T_BANG;
         }
-    case '~': sig.genus = T_TILDE; return T_TILDE;
-    case '?': sig.genus = T_QUESTION; return T_QUESTION;
-    case ':': sig.genus = T_COLON; return T_COLON;
+    case '~': sig.genus = T_TILDE;     return T_TILDE;
+    case '?': sig.genus = T_QUESTION;  return T_QUESTION;
+    case ':': sig.genus = T_COLON;     return T_COLON;
     case ';': sig.genus = T_SEMICOLON; return T_SEMICOLON;
-    case ',': sig.genus = T_COMMA; return T_COMMA;
-    case '(': sig.genus = T_LPAREN; return T_LPAREN;
-    case ')': sig.genus = T_RPAREN; return T_RPAREN;
-    case '[': sig.genus = T_LBRACKET; return T_LBRACKET;
-    case ']': sig.genus = T_RBRACKET; return T_RBRACKET;
-    case '{': sig.genus = T_LBRACE; return T_LBRACE;
-    case '}': sig.genus = T_RBRACE; return T_RBRACE;
+    case ',': sig.genus = T_COMMA;     return T_COMMA;
+    case '(': sig.genus = T_LPAREN;    return T_LPAREN;
+    case ')': sig.genus = T_RPAREN;    return T_RPAREN;
+    case '[': sig.genus = T_LBRACKET;  return T_LBRACKET;
+    case ']': sig.genus = T_RBRACKET;  return T_RBRACKET;
+    case '{': sig.genus = T_LBRACE;    return T_LBRACE;
+    case '}': sig.genus = T_RBRACE;    return T_RBRACE;
     case '.': {
             int c2 = lege_c();
             if (c2 == '.') {
@@ -1491,26 +661,19 @@ inicio:
 }
 
 /* ================================================================
- * signum spectans (peek)
+ * interfacies publica
  * ================================================================ */
 
 void lex_initia(const char *nomen, const char *fons, int longitudo)
 {
-    cur_nomen     = strdup(nomen);
-    cur_fons      = fons;
-    cur_longitudo = longitudo;
-    cur_positus   = 0;
-    cur_linea     = 1;
-    plica_currentis = cur_nomen;
-    vertex_plicarum = 0;
-    vertex_expansionum = 0;
-    habet_spectantem = 0;
-    cond_vertex = 0;
-    for (int i = 0; i < num_macrarum; i++) {
-        free(macrae[i]);
-        macrae[i] = NULL;
-    }
-    num_macrarum = 0;
+    free(cur_nomen);
+    cur_nomen         = strdup(nomen);
+    cur_fons          = fons;
+    cur_longitudo     = longitudo;
+    cur_positus       = 0;
+    cur_linea         = 1;
+    plica_currentis   = cur_nomen;
+    habet_spectantem  = 0;
     num_typedef_nominum = 0;
 }
 

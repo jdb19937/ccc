@@ -473,7 +473,8 @@ static typus_t *parse_struct_vel_union(void)
 
 static int constans_est(nodus_t *n)
 {
-    if (!n) return 0;
+    if (!n)
+        return 0;
     switch (n->genus) {
     case N_NUM:
         return 1;
@@ -1783,8 +1784,10 @@ static nodus_t *parse_declaratio(int est_globalis)
                         if (gp_reg >= 8) {
                             /* §6.9.1 AAPCS64: argumentum in acervo vocantis */
                             psyms[i]->offset = stk_off;
-                            if (pt && pt->genus == TY_STRUCT
-                                && pt->magnitudo <= 16 && pt->magnitudo > 0)
+                            if (
+                                pt && pt->genus == TY_STRUCT
+                                && pt->magnitudo <= 16 && pt->magnitudo > 0
+                            )
                                 stk_off += (pt->magnitudo + 7) & ~7;
                             else
                                 stk_off += 8;

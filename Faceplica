@@ -9,14 +9,19 @@ CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2
 
 CAPITA  = utilia.h emitte.h scribo.h genera.h parser.h lexator.h liga.h biblio.h fluat.h typus.h func.h
 
+IC_OBJECTA  = ic.o
 CCC_OBJECTA = ccc.o utilia.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
 LDI_OBJECTA = ldi.o utilia.o liga.o emitte.o scribo.o biblio.o typus.o func.o fluat.o
-OBJECTA     = ccc.o ldi.o utilia.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o fluat.o typus.o func.o
+OBJECTA     = ic.o ccc.o ldi.o utilia.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o fluat.o typus.o func.o
 
-omnia: ccc ldi
+omnia: ccc ldi ic
 
 %.o: %.c $(CAPITA)
 	$(CC) $(CFLAGS) -c $< -o $@
+
+ic: $(IC_OBJECTA)
+	$(CC) $(CFLAGS) -o $@ $(IC_OBJECTA)
+	@echo "==> ic aedificatum"
 
 ccc: $(CCC_OBJECTA)
 	$(CC) $(CFLAGS) -o $@ $(CCC_OBJECTA)
@@ -30,6 +35,7 @@ PREFIX = /opt/apotheca
 
 colloca: omnia
 	install -d $(PREFIX)/bin
+	install -m 755 ic $(PREFIX)/bin/
 	install -m 755 ccc $(PREFIX)/bin/
 	install -m 755 ldi $(PREFIX)/bin/
 	install -d $(PREFIX)/var/ccc/capita/sys
@@ -40,7 +46,7 @@ colloca: omnia
 	for f in capita/objc/*.h; do install -m 644 $$f $(PREFIX)/var/ccc/capita/objc/; done
 
 purga:
-	rm -f $(OBJECTA) ccc ldi
+	rm -f $(OBJECTA) ccc ldi ic
 	rm -f initia.fac reinitia.fac
 	rm -rf initia reinitia
 

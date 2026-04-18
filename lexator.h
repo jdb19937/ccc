@@ -1,5 +1,5 @@
 /*
- * lexator.h — declarationes lexatoris et praeprocessoris
+ * lexator.h — declarationes lexatoris
  */
 
 #ifndef LEXATOR_H
@@ -11,11 +11,6 @@
 
 #define MAX_CHORDA         4096   /* §5.2.4.1: minimum 4095 characters in string literal */
 #define MAX_SIGNA          262144
-#define MAX_MACRAE         4096  /* §5.2.4.1: minimum 4095 macro identifiers */
-#define MAX_PLICAE_ACERVUS 64    /* §5.2.4.1: minimum 15 nesting levels for #include */
-#define MAX_PARAM_MACRAE   128   /* §5.2.4.1: minimum 127 parameters in macro */
-#define MAX_ARG_MACRAE     128   /* §5.2.4.1: minimum 127 arguments in macro invocation */
-#define MAX_NOMEN_PARAM    256   /* §5.2.4.1: minimum 63 significant characters */
 
 /* ================================================================
  * genera signorum (token types)

@@ -619,7 +619,7 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                             data_relocs_dilatae = realloc(
                                 data_relocs_dilatae,
                                 cap_data_relocs_dilatae
-                                    * sizeof(liga_data_reloc_t)
+                                * sizeof(liga_data_reloc_t)
                             );
                             if (!data_relocs_dilatae)
                                 erratum("memoria exhausta");
@@ -628,7 +628,7 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
                             = patch_off;
                         strncpy(
                             data_relocs_dilatae[num_data_relocs_dilatae]
-                                .sym_nomen,
+                            .sym_nomen,
                             sym_nomen, 259
                         );
                         data_relocs_dilatae[num_data_relocs_dilatae]
@@ -729,8 +729,10 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
         liga_data_reloc_t *d = &data_relocs_dilatae[i];
         int sid = liga_sym_quaere(d->sym_nomen);
         if (sid < 0 || !liga_syms[sid].definita) {
-            if (sid >= 0 && liga_syms[sid].est_communis
-                && liga_syms[sid].globalis_index >= 0) {
+            if (
+                sid >= 0 && liga_syms[sid].est_communis
+                && liga_syms[sid].globalis_index >= 0
+            ) {
                 /* symbolum commune — in __bss/globales */
                 int gid = liga_syms[sid].globalis_index;
                 /* BSS offset scītur tantum in scribo_macho; ūtere
@@ -1054,8 +1056,10 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
 
             /* ObjC ABI recēns: _objc_msgSend$<sel> → fabricā stubum
              * specializātum quī SEL registrat et _objc_msgSend vocat */
-            if (r->r_type == 2 &&
-                strncmp(r->sym_nomen, "_objc_msgSend$", 14) == 0) {
+            if (
+                r->r_type == 2 &&
+                strncmp(r->sym_nomen, "_objc_msgSend$", 14) == 0
+            ) {
                 int stub_off = objc_msgsend_stub_adde(r->sym_nomen);
                 patch_branch26(inst_off, stub_off);
                 continue;

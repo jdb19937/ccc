@@ -1,8 +1,7 @@
 /*
- * biblio.c — tractatio vexillorum -I, -L, -l
+ * biblio.c — tractatio vexillorum -L, -l
  *
- * Resolvit vias inclusionis, quaerit bibliothecas,
- * legit archiva .a et extrahit objecta.
+ * Quaerit bibliothecas, legit archiva .a et extrahit objecta.
  */
 
 #include "utilia.h"
@@ -10,56 +9,6 @@
 #include "scribo.h"
 
 #include <errno.h>
-
-/* ================================================================
- * viae inclusionis (-I)
- * ================================================================ */
-
-char **viae_includ       = NULL;
-int    num_viarum_includ = 0;
-static int cap_includ    = 0;
-
-void includ_adde(const char *via)
-{
-    CRESC_SERIEM(viae_includ, num_viarum_includ, cap_includ, char *);
-    char *copia = strdup(via);
-    if (!copia)
-        erratum("memoria exhausta");
-    viae_includ[num_viarum_includ++] = copia;
-}
-
-char *includ_quaere(
-    const char *nomen, int *longitudo,
-    char *via_inventa, int via_mag
-) {
-    for (int i = 0; i < num_viarum_includ; i++) {
-        char via_plena[1024];
-        int n = snprintf(
-            via_plena, sizeof(via_plena), "%s/%s",
-            viae_includ[i], nomen
-        );
-        if (n < 0 || n >= (int)sizeof(via_plena))
-            continue;
-        FILE *fp = fopen(via_plena, "rb");
-        if (!fp)
-            continue;
-        fseek(fp, 0, SEEK_END);
-        long mag = ftell(fp);
-        fseek(fp, 0, SEEK_SET);
-        char *data = malloc(mag + 1);
-        if (!data)
-            erratum("memoria exhausta");
-        fread(data, 1, mag, fp);
-        data[mag] = '\0';
-        fclose(fp);
-        if (longitudo)
-            *longitudo = (int)mag;
-        if (via_inventa)
-            snprintf(via_inventa, via_mag, "%s", via_plena);
-        return data;
-    }
-    return NULL;
-}
 
 /* ================================================================
  * viae bibliothecarum (-L)
