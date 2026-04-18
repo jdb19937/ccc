@@ -301,7 +301,15 @@ struct stat {
     unsigned int st_uid;
     unsigned int st_gid;
     int st_rdev;
-    char __pad1[68];
+    int __pad0;
+    long st_atime;
+    long st_atime_nsec;
+    long st_mtime;
+    long st_mtime_nsec;
+    long st_ctime;
+    long st_ctime_nsec;
+    long st_birthtime;
+    long st_birthtime_nsec;
     long st_size;
     char __pad2[40];
 };

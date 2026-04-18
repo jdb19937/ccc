@@ -1029,22 +1029,41 @@ static nodus_t *parse_expr_postfixa(void)
             n = idx;
         } else if (sig.genus == T_DOT) {
             lex_proximum();
+            int mem_linea = sig_linea;
             nodus_t *mem  = nodus_novus(N_MEMBER);
             mem->sinister = n;
             mem->nomen    = strdup(sig.chorda);
             expecta(T_IDENT);
             /* typus membri */
             if (n->typus && n->typus->genus == TY_STRUCT) {
+                int invenit = 0;
                 for (int i = 0; i < n->typus->num_membrorum; i++) {
                     if (strcmp(n->typus->membra[i].nomen, mem->nomen) == 0) {
                         mem->typus = n->typus->membra[i].typus;
+                        invenit = 1;
                         break;
                     }
                 }
+                if (!invenit) {
+                    erratum_ad(
+                        mem_linea,
+                        "structura '%s' campum '%s' non habet",
+                        n->typus->nomen_tag[0] ?
+                            n->typus->nomen_tag : "(anonyma)",
+                        mem->nomen
+                    );
+                }
+            } else if (n->typus) {
+                erratum_ad(
+                    mem_linea,
+                    "'.' applicatus non-structurae (campus '%s')",
+                    mem->nomen
+                );
             }
             n = mem;
         } else if (sig.genus == T_ARROW) {
             lex_proximum();
+            int mem_linea = sig_linea;
             nodus_t *mem  = nodus_novus(N_ARROW);
             mem->sinister = n;
             mem->nomen    = strdup(sig.chorda);
@@ -1054,12 +1073,28 @@ static nodus_t *parse_expr_postfixa(void)
                 n->typus->basis->genus == TY_STRUCT
             ) {
                 typus_t *st = n->typus->basis;
+                int invenit = 0;
                 for (int i = 0; i < st->num_membrorum; i++) {
                     if (strcmp(st->membra[i].nomen, mem->nomen) == 0) {
                         mem->typus = st->membra[i].typus;
+                        invenit = 1;
                         break;
                     }
                 }
+                if (!invenit) {
+                    erratum_ad(
+                        mem_linea,
+                        "structura '%s' campum '%s' non habet",
+                        st->nomen_tag[0] ? st->nomen_tag : "(anonyma)",
+                        mem->nomen
+                    );
+                }
+            } else if (n->typus) {
+                erratum_ad(
+                    mem_linea,
+                    "'->' applicatus non-indici-structurae (campus '%s')",
+                    mem->nomen
+                );
             }
             n = mem;
         } else if (sig.genus == T_LPAREN) {
