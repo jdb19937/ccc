@@ -676,7 +676,6 @@ static int lege_effugium(void)
     case '\\': return '\\';
     case '\'': return '\'';
     case '"':  return '"';
-    case '0':  return '\0';
     case 'a':  return '\a';
     case 'b':  return '\b';
     case 'f':  return '\f';
