@@ -51,10 +51,10 @@ purga:
 	rm -rf initia reinitia
 
 proba:
-	./proba_corpus.py casus
-	./proba_corpus.py silva
-	./proba_corpus.py cruces
-	./proba_corpus.py linguae
+	./proba_corpus.py ../corpus/casus
+	./proba_corpus.py ../corpus/silva
+	./proba_corpus.py ../corpus/cruces
+	./proba_corpus.py ../corpus/linguae
 	$(FACE) initia
 	# $(FACE) reinitia
 
