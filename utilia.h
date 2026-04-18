@@ -13,6 +13,7 @@
 extern const char *nomen_programmi;
 extern const char *plica_currentis;  /* plica fontis currens; NULL si ignota */
 extern const char *plica_exitus_gl;  /* plica exitus delenda si erratum accidit */
+extern const char *plica_i_tmp_gl;   /* plica .i temporaria delenda si erratum */
 
 void erratum(const char *fmt, ...);
 void erratum_ad(int linea, const char *fmt, ...);

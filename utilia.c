@@ -9,6 +9,15 @@
 const char *nomen_programmi = "ccc";
 const char *plica_currentis = NULL;
 const char *plica_exitus_gl = NULL;
+const char *plica_i_tmp_gl  = NULL;
+
+static void cleanup_exitus(void)
+{
+    if (plica_exitus_gl)
+        remove(plica_exitus_gl);
+    if (plica_i_tmp_gl)
+        remove(plica_i_tmp_gl);
+}
 
 void erratum(const char *fmt, ...)
 {
@@ -18,8 +27,7 @@ void erratum(const char *fmt, ...)
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     va_end(ap);
-    if (plica_exitus_gl)
-        remove(plica_exitus_gl);
+    cleanup_exitus();
     exit(1);
 }
 
@@ -32,8 +40,7 @@ void erratum_ad(int linea, const char *fmt, ...)
     vfprintf(stderr, fmt, ap);
     fprintf(stderr, "\n");
     va_end(ap);
-    if (plica_exitus_gl)
-        remove(plica_exitus_gl);
+    cleanup_exitus();
     exit(1);
 }
 

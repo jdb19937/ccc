@@ -191,20 +191,19 @@ int main(int argc, char *argv[])
         plica_exitus = auto_exitus;
     }
 
-    /* si .c, invoca ic ad .i generandum */
-    char plica_i_buf[512];
+    /* si .c, invoca ic ad .i temporariam generandam in /tmp */
+    char plica_i_tmp[64];
     const char *plica_lex;
     if (est_c) {
-        int lon = (int)strlen(plica_fontis);
-        if (lon + 1 >= (int)sizeof(plica_i_buf))
-            erratum("nomen plicae nimis longum");
-        memcpy(plica_i_buf, plica_fontis, lon);
-        plica_i_buf[lon-1] = 'i';
-        plica_i_buf[lon]   = '\0';
+        snprintf(
+            plica_i_tmp, sizeof(plica_i_tmp),
+            "/tmp/ccc.%d.i", (int)getpid()
+        );
+        plica_i_tmp_gl = plica_i_tmp;
         char *ic_via = quaere_ic(argv[0]);
-        exsecute_ic(ic_via, plica_fontis, plica_i_buf, ic_args, num_ic_args);
+        exsecute_ic(ic_via, plica_fontis, plica_i_tmp, ic_args, num_ic_args);
         free(ic_via);
-        plica_lex = plica_i_buf;
+        plica_lex = plica_i_tmp;
     } else {
         plica_lex = plica_fontis;
     }
@@ -218,5 +217,11 @@ int main(int argc, char *argv[])
     genera_initia();
     genera_translatio(radix, plica_exitus, 1);
     free(fons);
+
+    /* remove .i temporariam si fuit creata */
+    if (est_c) {
+        remove(plica_i_tmp);
+        plica_i_tmp_gl = NULL;
+    }
     return 0;
 }
