@@ -1265,6 +1265,28 @@ static void genera_expr(nodus_t *n, int dest)
                     if (r != 0)
                         emit32(0x1E604000 | (0 << 5) | r);
                 } else {
+                    /* Conventio Apple arm64: pars superior x0 potest esse
+                     * sordida pro valoribus redditis minoribus 64 bitis.
+                     * Extende ad magnitudinem plenam priusquam utamur. */
+                    if (ret_typ) {
+                        int rm = mag_typi(ret_typ);
+                        if (rm == 1) {
+                            if (ret_typ->est_sine_signo)
+                                emit_uxtb(0, 0);
+                            else
+                                emit_sxtb(0, 0);
+                        } else if (rm == 2) {
+                            if (ret_typ->est_sine_signo)
+                                emit_uxth(0, 0);
+                            else
+                                emit_sxth(0, 0);
+                        } else if (rm == 4) {
+                            if (ret_typ->est_sine_signo)
+                                emit_uxtw(0, 0);
+                            else
+                                emit_sxtw(0, 0);
+                        }
+                    }
                     if (r != 0)
                         emit_mov(r, 0);
                 }

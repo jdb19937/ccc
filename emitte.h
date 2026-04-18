@@ -226,6 +226,7 @@ void emit_sxtb(int rd, int rn);
 void emit_sxth(int rd, int rn);
 void emit_uxtb(int rd, int rn);
 void emit_uxth(int rd, int rn);
+void emit_uxtw(int rd, int rn);
 void emit_load(int rd, int rn, int offset, int mag);
 void emit_load_unsigned(int rd, int rn, int offset, int mag);
 

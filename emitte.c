@@ -531,6 +531,12 @@ void emit_uxth(int rd, int rn)
     emit32(0x53003C00 | (rn << 5) | rd);
 }
 
+/* UXTW Xd, Wn: UBFM Xd, Xn, #0, #31 = AND Xd, Xn, #0xFFFFFFFF */
+void emit_uxtw(int rd, int rn)
+{
+    emit32(0xD3407C00 | (rn << 5) | rd);
+}
+
 /* ADRP Xd, #0 — placeholder, fixup resolves */
 void emit_adrp_fixup(int rd, int fix_genus, int target)
 {

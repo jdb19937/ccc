@@ -337,9 +337,11 @@ int access(const char *, int);
 #define X_OK 1
 #define R_OK 4
 int isatty(int);
-int getopt(int, char *const *, const char *);
+int getopt(int, char * const*, const char *);
 extern char *optarg;
-extern int optind, opterr, optopt;
+extern int optind;
+extern int opterr;
+extern int optopt;
 int putchar(int);
 int fputc(int c, FILE *stream);
 int fputs(const char *, void *);
