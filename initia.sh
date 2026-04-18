@@ -38,12 +38,15 @@ LDI     = $VIA_LDI
 
 CCC_OBJECTA = ccc.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o fluat.o typus.o func.o utilia.o
 LDI_OBJECTA = ldi.o liga.o emitte.o scribo.o biblio.o typus.o func.o fluat.o utilia.o
-OBJECTA     = ccc.o ldi.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o fluat.o typus.o func.o utilia.o
 
-omnia: ccc ldi
+omnia: ccc ldi ic
 
 %.o: %.c
 	\$(CCC) -S../capita \$<
+
+ic: ic.o
+	\$(LDI) -o \$@ \$^
+	@echo "==> ic initiatum"
 
 ccc: \$(CCC_OBJECTA)
 	\$(LDI) -o \$@ \$^
@@ -54,7 +57,7 @@ ldi: \$(LDI_OBJECTA)
 	@echo "==> ldi initiatum"
 
 purga:
-	rm -f \$(OBJECTA) ccc ldi
+	rm -f *.o ccc ldi ic
 
 .PHONY: omnia purga
 FINIS

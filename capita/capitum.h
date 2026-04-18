@@ -514,4 +514,6 @@ int poll(struct pollfd fds[], nfds_t nfds, int timeout);
 
 FILE *open_memstream(char **bufp, size_t *sizep);
 
+int rename(const char *old, const char *new);
+
 #endif

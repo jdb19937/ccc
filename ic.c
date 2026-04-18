@@ -1475,7 +1475,7 @@ static signum_t *expande_lista(signum_t *ts)
         }
 
         /* colliga __VA_ARGS__ si variadica */
-        signum_t *va_arg = NULL;
+        signum_t *va_caput = NULL;
         signum_t *va_ult = NULL;
         if (m->variadica) {
             for (int i = m->num_param; i < num; i++) {
@@ -1484,7 +1484,7 @@ static signum_t *expande_lista(signum_t *ts)
                     if (va_ult)
                         va_ult->seq = virg;
                     else
-                        va_arg = virg;
+                        va_caput = virg;
                     va_ult = virg;
                 }
                 signum_t *pc = copia_lista(args[i]);
@@ -1492,13 +1492,13 @@ static signum_t *expande_lista(signum_t *ts)
                     if (va_ult)
                         va_ult->seq = pc;
                     else
-                        va_arg = pc;
+                        va_caput = pc;
                     while (pc->seq)
                         pc = pc->seq;
                     va_ult = pc;
                 }
             }
-            args[m->num_param] = va_arg;
+            args[m->num_param] = va_caput;
         }
 
         /* hide set: intersectio(hs(nomen), hs()) ∪ {nomen} */
