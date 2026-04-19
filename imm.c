@@ -993,10 +993,6 @@ static void enc_ldrsw_r(int rt, int rn, int rm, int ext_genus, int S)
 }
 
 /* W-registra arithmetica */
-static void enc_add32(int rd, int rn, int rm)
-{
-    emit32(0x0B000000 | (rm << 16) | (rn << 5) | rd);
-}
 static void enc_sub32(int rd, int rn, int rm)
 {
     emit32(0x4B000000 | (rm << 16) | (rn << 5) | rd);
@@ -1072,19 +1068,11 @@ static void enc_subs32(int rd, int rn, int rm)
 {
     emit32(0x6B000000 | (rm << 16) | (rn << 5) | rd);
 }
-static void enc_adds32(int rd, int rn, int rm)
-{
-    emit32(0x2B000000 | (rm << 16) | (rn << 5) | rd);
-}
 
-/* 64-bit subs/adds */
+/* 64-bit subs */
 static void enc_subs64(int rd, int rn, int rm)
 {
     emit32(0xEB000000 | (rm << 16) | (rn << 5) | rd);
-}
-static void enc_adds64(int rd, int rn, int rm)
-{
-    emit32(0xAB000000 | (rm << 16) | (rn << 5) | rd);
 }
 static void enc_subsi64(int rd, int rn, int imm)
 {
@@ -1756,7 +1744,7 @@ static void ins_logic(const char *op)
         uint32_t fields;
         if (!enc_bitmask_imm((uint64_t)imm, w1 ? 0 : 1, &fields))
             erratum_ad(linea_num, "%s: immediatum #%ld non est bitmask valida", op, imm);
-        uint32_t base;
+        uint32_t base = 0;
         if (!strcmp(op, "and"))
             base = w1 ? 0x12000000 : 0x92000000;
         else if (!strcmp(op, "orr"))
