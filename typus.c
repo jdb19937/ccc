@@ -125,7 +125,7 @@ int typus_colineatio(const typus_t *t)
 /*
  * §6.2.5¶10: float et double sunt typi "real floating".
  * §6.2.5¶14: integer et real floating = typi arithmetici.
- */  
+ */
 int typus_est_fluat(const typus_t *t)
 {
     if (!t)

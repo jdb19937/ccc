@@ -1122,7 +1122,7 @@ void scribo_obiectum(const char *plica_exitus)
                 uint32_t b5 = (bit >> 5) & 1;
                 uint32_t b40 = bit & 0x1F;
                 inst = 0x36000000 | (b5 << 31) | (b40 << 19)
-                     | ((delta & 0x3FFF) << 5) | rt;
+                    | ((delta & 0x3FFF) << 5) | rt;
                 break;
             }
         case FIX_TBNZ: {
@@ -1133,7 +1133,7 @@ void scribo_obiectum(const char *plica_exitus)
                 uint32_t b5 = (bit >> 5) & 1;
                 uint32_t b40 = bit & 0x1F;
                 inst = 0x37000000 | (b5 << 31) | (b40 << 19)
-                     | ((delta & 0x3FFF) << 5) | rt;
+                    | ((delta & 0x3FFF) << 5) | rt;
                 break;
             }
         case FIX_BL_EXT: {

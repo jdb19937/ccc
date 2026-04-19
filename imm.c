@@ -103,8 +103,10 @@ static void saltus_spatii(void)
 {
     while (adest()) {
         char c = fons[pos];
-        if (c == ' ' || c == '\t') pos++;
-        else break;
+        if (c == ' ' || c == '\t')
+            pos++;
+        else
+            break;
     }
 }
 
@@ -136,7 +138,8 @@ static int lege_sym_cum_rel(char *buf, int max, char *rel, int rmax)
 {
     rel[0] = 0;
     int n = lege_nom(buf, max);
-    if (n == 0) return 0;
+    if (n == 0)
+        return 0;
     if (adest() && fons[pos] == '@') {
         pos++;
         int rn = 0;
@@ -150,7 +153,10 @@ static int lege_sym_cum_rel(char *buf, int max, char *rel, int rmax)
 static int matcha(char c)
 {
     saltus_spatii();
-    if (adest() && fons[pos] == c) { pos++; return 1; }
+    if (adest() && fons[pos] == c) {
+        pos++;
+        return 1;
+    }
     return 0;
 }
 
@@ -167,21 +173,31 @@ static long lege_num(void)
 {
     saltus_spatii();
     int neg = 0;
-    if (adest() && fons[pos] == '-') { neg = 1; pos++; }
-    else if (adest() && fons[pos] == '+') { pos++; }
+    if (adest() && fons[pos] == '-') {
+        neg = 1;
+        pos++;
+    }else if (adest() && fons[pos] == '+') {
+        pos++;
+    }
     if (!adest() || fons[pos] < '0' || fons[pos] > '9')
         erratum_ad(linea_num, "exspectavi numerum");
     long val = 0;
-    if (fons[pos] == '0' && pos + 1 < fons_lon
-        && (fons[pos+1] == 'x' || fons[pos+1] == 'X')) {
+    if (
+        fons[pos] == '0' && pos + 1 < fons_lon
+        && (fons[pos+1] == 'x' || fons[pos+1] == 'X')
+    ) {
         pos += 2;
         while (adest()) {
             char c = fons[pos];
             int d;
-            if (c >= '0' && c <= '9') d = c - '0';
-            else if (c >= 'a' && c <= 'f') d = c - 'a' + 10;
-            else if (c >= 'A' && c <= 'F') d = c - 'A' + 10;
-            else break;
+            if (c >= '0' && c <= '9')
+                d = c - '0';
+            else if (c >= 'a' && c <= 'f')
+                d = c - 'a' + 10;
+            else if (c >= 'A' && c <= 'F')
+                d = c - 'A' + 10;
+            else
+                break;
             val = val * 16 + d;
             pos++;
         }
@@ -269,25 +285,31 @@ static int parse_reg(int *est_w)
 static int est_prox_registrum(void)
 {
     saltus_spatii();
-    if (!adest()) return 0;
+    if (!adest())
+        return 0;
     char c = fons[pos];
     char c1 = (pos+1 < fons_lon) ? fons[pos+1] : 0;
     char c2 = (pos+2 < fons_lon) ? fons[pos+2] : 0;
     if (c == 'x' || c == 'X' || c == 'w' || c == 'W') {
-        if (c1 >= '0' && c1 <= '9') return 1;
-        if (c1 == 'z' && c2 == 'r') return 1;
+        if (c1 >= '0' && c1 <= '9')
+            return 1;
+        if (c1 == 'z' && c2 == 'r')
+            return 1;
         return 0;
     }
     if ((c == 's' || c == 'S') && (c1 == 'p' || c1 == 'P')) {
-        if (est_pars_nom(c2)) return 0;
+        if (est_pars_nom(c2))
+            return 0;
         return 1;
     }
     if ((c == 'f' || c == 'F') && (c1 == 'p' || c1 == 'P')) {
-        if (est_pars_nom(c2)) return 0;
+        if (est_pars_nom(c2))
+            return 0;
         return 1;
     }
     if ((c == 'l' || c == 'L') && (c1 == 'r' || c1 == 'R')) {
-        if (est_pars_nom(c2)) return 0;
+        if (est_pars_nom(c2))
+            return 0;
         return 1;
     }
     return 0;
@@ -296,21 +318,36 @@ static int est_prox_registrum(void)
 /* condicio: eq, ne, lt, ... → codicem */
 static int parse_cond(const char *s)
 {
-    if (!strcmp(s,"eq")) return 0x0;
-    if (!strcmp(s,"ne")) return 0x1;
-    if (!strcmp(s,"cs") || !strcmp(s,"hs")) return 0x2;
-    if (!strcmp(s,"cc") || !strcmp(s,"lo")) return 0x3;
-    if (!strcmp(s,"mi")) return 0x4;
-    if (!strcmp(s,"pl")) return 0x5;
-    if (!strcmp(s,"vs")) return 0x6;
-    if (!strcmp(s,"vc")) return 0x7;
-    if (!strcmp(s,"hi")) return 0x8;
-    if (!strcmp(s,"ls")) return 0x9;
-    if (!strcmp(s,"ge")) return 0xA;
-    if (!strcmp(s,"lt")) return 0xB;
-    if (!strcmp(s,"gt")) return 0xC;
-    if (!strcmp(s,"le")) return 0xD;
-    if (!strcmp(s,"al")) return 0xE;
+    if (!strcmp(s, "eq"))
+        return 0x0;
+    if (!strcmp(s, "ne"))
+        return 0x1;
+    if (!strcmp(s, "cs") || !strcmp(s, "hs"))
+        return 0x2;
+    if (!strcmp(s, "cc") || !strcmp(s, "lo"))
+        return 0x3;
+    if (!strcmp(s, "mi"))
+        return 0x4;
+    if (!strcmp(s, "pl"))
+        return 0x5;
+    if (!strcmp(s, "vs"))
+        return 0x6;
+    if (!strcmp(s, "vc"))
+        return 0x7;
+    if (!strcmp(s, "hi"))
+        return 0x8;
+    if (!strcmp(s, "ls"))
+        return 0x9;
+    if (!strcmp(s, "ge"))
+        return 0xA;
+    if (!strcmp(s, "lt"))
+        return 0xB;
+    if (!strcmp(s, "gt"))
+        return 0xC;
+    if (!strcmp(s, "le"))
+        return 0xD;
+    if (!strcmp(s, "al"))
+        return 0xE;
     return -1;
 }
 
@@ -340,25 +377,32 @@ static int parse_chorda_lit(char *out, int max)
             case 'f': c = '\f'; break;
             case 'v': c = '\v'; break;
             case 'x': {
-                int v = 0, k = 0;
-                while (k < 2 && adest()) {
-                    char d = fons[pos];
-                    int x;
-                    if (d >= '0' && d <= '9') x = d - '0';
-                    else if (d >= 'a' && d <= 'f') x = d - 'a' + 10;
-                    else if (d >= 'A' && d <= 'F') x = d - 'A' + 10;
-                    else break;
-                    v = v*16 + x; pos++; k++;
+                    int v = 0, k = 0;
+                    while (k < 2 && adest()) {
+                        char d = fons[pos];
+                        int x;
+                        if (d >= '0' && d <= '9')
+                            x = d - '0';
+                        else if (d >= 'a' && d <= 'f')
+                            x = d - 'a' + 10;
+                        else if (d >= 'A' && d <= 'F')
+                            x = d - 'A' + 10;
+                        else
+                            break;
+                        v = v*16 + x;
+                        pos++;
+                        k++;
+                    }
+                    c = (char)v;
+                    break;
                 }
-                c = (char)v;
-                break;
-            }
             default:
                 if (e >= '0' && e <= '7') {
                     int v = e - '0', k = 1;
                     while (k < 3 && adest() && fons[pos] >= '0' && fons[pos] <= '7') {
                         v = v*8 + (fons[pos] - '0');
-                        pos++; k++;
+                        pos++;
+                        k++;
                     }
                     c = (char)v;
                 } else
@@ -379,16 +423,20 @@ static int parse_chorda_lit(char *out, int max)
 
 static void saltus_ad_eol(void)
 {
-    while (adest() && fons[pos] != '\n') pos++;
+    while (adest() && fons[pos] != '\n')
+        pos++;
 }
 
 static int est_eol(void)
 {
     saltus_spatii();
-    if (!adest()) return 1;
-    if (fons[pos] == '\n') return 1;
+    if (!adest())
+        return 1;
+    if (fons[pos] == '\n')
+        return 1;
     if (fons[pos] == ';') { /* commentum ; ... */ return 1; }
-    if (fons[pos] == '/' && pos+1 < fons_lon && fons[pos+1] == '/') return 1;
+    if (fons[pos] == '/' && pos+1 < fons_lon && fons[pos+1] == '/')
+        return 1;
     return 0;
 }
 
@@ -422,22 +470,33 @@ static void parse_mem(mem_t *m)
     exige('[');
     int ew;
     m->rn = parse_reg(&ew);
-    if (ew) erratum_ad(linea_num, "memoriae base debet esse X-reg");
+    if (ew)
+        erratum_ad(linea_num, "memoriae base debet esse X-reg");
     if (matcha(',')) {
         saltus_spatii();
         /* intus potest esse #imm, Xm, vel _sym@PAGEOFF */
         if (spectus() == '#') {
             m->habet_imm = 1;
             m->imm = lege_imm();
-        } else if (est_initium_nom(spectus())
-                   && !(spectus() == 'x' || spectus() == 'X'
-                        || spectus() == 'w' || spectus() == 'W'
-                        || (spectus() == 's' && pos+1 < fons_lon
-                            && (fons[pos+1]=='p'||fons[pos+1]=='P'))
-                        || (spectus() == 'f' && pos+1 < fons_lon
-                            && (fons[pos+1]=='p'||fons[pos+1]=='P'))
-                        || (spectus() == 'l' && pos+1 < fons_lon
-                            && (fons[pos+1]=='r'||fons[pos+1]=='R')))) {
+        } else if (
+            est_initium_nom(spectus())
+            && !(
+                spectus() == 'x' || spectus() == 'X'
+                || spectus() == 'w' || spectus() == 'W'
+                || (
+                    spectus() == 's' && pos+1 < fons_lon
+                    && (fons[pos+1] == 'p' || fons[pos+1] == 'P')
+                )
+                || (
+                    spectus() == 'f' && pos+1 < fons_lon
+                    && (fons[pos+1] == 'p' || fons[pos+1] == 'P')
+                )
+                || (
+                    spectus() == 'l' && pos+1 < fons_lon
+                    && (fons[pos+1] == 'r' || fons[pos+1] == 'R')
+                )
+            )
+        ) {
             m->habet_rel_sym = 1;
             lege_sym_cum_rel(m->rel_sym, 256, m->rel, 32);
         } else {
@@ -451,11 +510,16 @@ static void parse_mem(mem_t *m)
                 /* shift vel extend */
                 char ext[16];
                 lege_nom(ext, 16);
-                if (!strcmp(ext,"lsl")) m->ext_genus = 0;
-                else if (!strcmp(ext,"sxtw")) m->ext_genus = 1;
-                else if (!strcmp(ext,"uxtw")) m->ext_genus = 2;
-                else if (!strcmp(ext,"sxtx")) m->ext_genus = 3;
-                else erratum_ad(linea_num, "extendere ignotum '%s'", ext);
+                if (!strcmp(ext, "lsl"))
+                    m->ext_genus = 0;
+                else if (!strcmp(ext, "sxtw"))
+                    m->ext_genus = 1;
+                else if (!strcmp(ext, "uxtw"))
+                    m->ext_genus = 2;
+                else if (!strcmp(ext, "sxtx"))
+                    m->ext_genus = 3;
+                else
+                    erratum_ad(linea_num, "extendere ignotum '%s'", ext);
                 saltus_spatii();
                 if (spectus() == '#')
                     m->ext_shift = (int)lege_imm();
@@ -465,7 +529,8 @@ static void parse_mem(mem_t *m)
         }
     }
     exige(']');
-    if (matcha('!')) m->pre_index = 1;
+    if (matcha('!'))
+        m->pre_index = 1;
     else if (matcha(',')) {
         /* post-index: [Xn], #imm */
         m->post_index = 1;
@@ -484,21 +549,36 @@ static void parse_mem(mem_t *m)
 
 static int directiva_ignoranda(const char *d)
 {
-    if (!strncmp(d, ".cfi_", 5)) return 1;
-    if (!strcmp(d, ".build_version")) return 1;
-    if (!strcmp(d, ".subsections_via_symbols")) return 1;
-    if (!strcmp(d, ".file")) return 1;
-    if (!strcmp(d, ".loc")) return 1;
-    if (!strcmp(d, ".private_extern")) return 1;
-    if (!strcmp(d, ".weak_def_can_be_hidden")) return 1;
-    if (!strcmp(d, ".weak_definition")) return 1;
-    if (!strcmp(d, ".weak_reference")) return 1;
-    if (!strcmp(d, ".no_dead_strip")) return 1;
-    if (!strcmp(d, ".addrsig")) return 1;
-    if (!strcmp(d, ".addrsig_sym")) return 1;
-    if (!strcmp(d, ".debug_info")) return 1;
-    if (!strcmp(d, ".ident")) return 1;
-    if (!strcmp(d, ".align")) return 0; /* non ignorata */
+    if (!strncmp(d, ".cfi_", 5))
+        return 1;
+    if (!strcmp(d, ".build_version"))
+        return 1;
+    if (!strcmp(d, ".subsections_via_symbols"))
+        return 1;
+    if (!strcmp(d, ".file"))
+        return 1;
+    if (!strcmp(d, ".loc"))
+        return 1;
+    if (!strcmp(d, ".private_extern"))
+        return 1;
+    if (!strcmp(d, ".weak_def_can_be_hidden"))
+        return 1;
+    if (!strcmp(d, ".weak_definition"))
+        return 1;
+    if (!strcmp(d, ".weak_reference"))
+        return 1;
+    if (!strcmp(d, ".no_dead_strip"))
+        return 1;
+    if (!strcmp(d, ".addrsig"))
+        return 1;
+    if (!strcmp(d, ".addrsig_sym"))
+        return 1;
+    if (!strcmp(d, ".debug_info"))
+        return 1;
+    if (!strcmp(d, ".ident"))
+        return 1;
+    if (!strcmp(d, ".align"))
+        return 0; /* non ignorata */
     return 0;
 }
 
@@ -522,7 +602,10 @@ static void pass1(void)
     while (adest()) {
         saltus_spatii();
         if (!adest() || fons[pos] == '\n') {
-            if (adest()) { pos++; linea_num++; }
+            if (adest()) {
+                pos++;
+                linea_num++;
+            }
             continue;
         }
         if (fons[pos] == ';' || (fons[pos] == '/' && pos+1 < fons_lon && fons[pos+1] == '/')) {
@@ -569,26 +652,42 @@ static void pass1(void)
         }
         /* directiva? */
         if (nom[0] == '.') {
-            if (!strcmp(nom, ".text")) sect = SEC_TEXT;
-            else if (!strcmp(nom, ".data")) sect = SEC_DATA;
-            else if (!strcmp(nom, ".const")) sect = SEC_CONST;
-            else if (!strcmp(nom, ".cstring")) sect = SEC_CSTRING;
-            else if (!strcmp(nom, ".bss")) sect = SEC_BSS;
+            if (!strcmp(nom, ".text"))
+                sect = SEC_TEXT;
+            else if (!strcmp(nom, ".data"))
+                sect = SEC_DATA;
+            else if (!strcmp(nom, ".const"))
+                sect = SEC_CONST;
+            else if (!strcmp(nom, ".cstring"))
+                sect = SEC_CSTRING;
+            else if (!strcmp(nom, ".bss"))
+                sect = SEC_BSS;
             else if (!strcmp(nom, ".section")) {
                 /* .section __TEXT,__text ...  */
                 char seg[64], sct[64];
                 lege_nom(seg, 64);
-                if (matcha(',')) lege_nom(sct, 64);
-                else sct[0] = 0;
-                if (!strcmp(sct, "__text")) sect = SEC_TEXT;
-                else if (!strcmp(sct, "__cstring")) sect = SEC_CSTRING;
-                else if (!strcmp(sct, "__const")) sect = SEC_CONST;
-                else if (!strcmp(sct, "__data")) sect = SEC_DATA;
-                else if (!strcmp(sct, "__bss")) sect = SEC_BSS;
-                else if (!strcmp(sct, "__literal8")) sect = SEC_CONST;
-                else if (!strcmp(sct, "__literal4")) sect = SEC_CONST;
-                else if (!strcmp(sct, "__literal16")) sect = SEC_CONST;
-                else erratum_ad(linea_num, "sectio ignota: %s", sct);
+                if (matcha(','))
+                    lege_nom(sct, 64);
+                else
+                    sct[0] = 0;
+                if (!strcmp(sct, "__text"))
+                    sect = SEC_TEXT;
+                else if (!strcmp(sct, "__cstring"))
+                    sect = SEC_CSTRING;
+                else if (!strcmp(sct, "__const"))
+                    sect = SEC_CONST;
+                else if (!strcmp(sct, "__data"))
+                    sect = SEC_DATA;
+                else if (!strcmp(sct, "__bss"))
+                    sect = SEC_BSS;
+                else if (!strcmp(sct, "__literal8"))
+                    sect = SEC_CONST;
+                else if (!strcmp(sct, "__literal4"))
+                    sect = SEC_CONST;
+                else if (!strcmp(sct, "__literal16"))
+                    sect = SEC_CONST;
+                else
+                    erratum_ad(linea_num, "sectio ignota: %s", sct);
             } else if (!strcmp(nom, ".globl") || !strcmp(nom, ".global")) {
                 char sn[256];
                 lege_nom(sn, 256);
@@ -601,7 +700,8 @@ static void pass1(void)
                 exige(',');
                 long sz = lege_num();
                 long col = 1;
-                if (matcha(',')) col = lege_num();
+                if (matcha(','))
+                    col = lege_num();
                 int si = sym_quaere_vel_crea(sn);
                 if (num_globalium >= MAX_GLOBALES)
                     erratum("nimis multae globales");
@@ -619,14 +719,20 @@ static void pass1(void)
                 symbola[si].genus = SYM_GLOB;
                 symbola[si].id = gi;
                 symbola[si].definitum = 1;
-                if (!strcmp(nom, ".comm")) symbola[si].est_globalis = 1;
+                if (!strcmp(nom, ".comm"))
+                    symbola[si].est_globalis = 1;
             } else if (!strcmp(nom, ".zerofill")) {
                 char seg[32], sct[32], sn[256];
-                lege_nom(seg, 32); exige(','); lege_nom(sct, 32); exige(',');
-                lege_nom(sn, 256); exige(',');
+                lege_nom(seg, 32);
+                exige(',');
+                lege_nom(sct, 32);
+                exige(',');
+                lege_nom(sn, 256);
+                exige(',');
                 long sz = lege_num();
                 long col = 0;
-                if (matcha(',')) col = lege_num();
+                if (matcha(','))
+                    col = lege_num();
                 int si = sym_quaere_vel_crea(sn);
                 if (num_globalium >= MAX_GLOBALES)
                     erratum("nimis multae globales");
@@ -642,7 +748,8 @@ static void pass1(void)
                 symbola[si].genus = SYM_GLOB;
                 symbola[si].id = gi;
                 symbola[si].definitum = 1;
-                (void)seg; (void)sct;
+                (void)seg;
+                (void)sct;
             }
             saltus_ad_eol();
             continue;
@@ -662,7 +769,8 @@ static void pass1(void)
 
 static void alinea_data(int col)
 {
-    if (col <= 1) return;
+    if (col <= 1)
+        return;
     int rem = init_data_lon % col;
     if (rem) {
         int pad = col - rem;
@@ -786,10 +894,14 @@ static void enc_ldp64_post(int t1, int t2, int rn, int imm)
 static uint32_t enc_option(int ext_genus, int rm_w)
 {
     /* lsl → opt = 011 (UXTX) pro X-reg, sed clang '[Xn, Wm, sxtw ...]' */
-    if (ext_genus == 0) return 3; /* LSL/UXTX */
-    if (ext_genus == 1) return 6; /* SXTW */
-    if (ext_genus == 2) return 2; /* UXTW */
-    if (ext_genus == 3) return 7; /* SXTX */
+    if (ext_genus == 0)
+        return 3; /* LSL/UXTX */
+    if (ext_genus == 1)
+        return 6; /* SXTW */
+    if (ext_genus == 2)
+        return 2; /* UXTW */
+    if (ext_genus == 3)
+        return 7; /* SXTX */
     (void)rm_w;
     return 3;
 }
@@ -897,12 +1009,18 @@ static void enc_asrv32(int rd, int rn, int rm)
 }
 static void enc_addi32(int rd, int rn, int imm)
 {
-    if (imm < 0) { emit32(0x51000000 | ((-imm & 0xFFF) << 10) | (rn << 5) | rd); return; }
+    if (imm < 0) {
+        emit32(0x51000000 | ((-imm & 0xFFF) << 10) | (rn << 5) | rd);
+        return;
+    }
     emit32(0x11000000 | ((imm & 0xFFF) << 10) | (rn << 5) | rd);
 }
 static void enc_subi32(int rd, int rn, int imm)
 {
-    if (imm < 0) { enc_addi32(rd, rn, -imm); return; }
+    if (imm < 0) {
+        enc_addi32(rd, rn, -imm);
+        return;
+    }
     emit32(0x51000000 | ((imm & 0xFFF) << 10) | (rn << 5) | rd);
 }
 static void enc_subsi32(int rd, int rn, int imm)
@@ -914,7 +1032,10 @@ static void enc_subsi32(int rd, int rn, int imm)
 }
 static void enc_addsi32(int rd, int rn, int imm)
 {
-    if (imm < 0) { enc_subsi32(rd, rn, -imm); return; }
+    if (imm < 0) {
+        enc_subsi32(rd, rn, -imm);
+        return;
+    }
     emit32(0x31000000 | ((imm & 0xFFF) << 10) | (rn << 5) | rd);
 }
 static void enc_subs32(int rd, int rn, int rm)
@@ -944,7 +1065,10 @@ static void enc_subsi64(int rd, int rn, int imm)
 }
 static void enc_addsi64(int rd, int rn, int imm)
 {
-    if (imm < 0) { enc_subsi64(rd, rn, -imm); return; }
+    if (imm < 0) {
+        enc_subsi64(rd, rn, -imm);
+        return;
+    }
     emit32(0xB1000000 | ((imm & 0xFFF) << 10) | (rn << 5) | rd);
 }
 
@@ -965,7 +1089,10 @@ static void enc_addi64(int rd, int rn, int imm)
 }
 static void enc_subi64(int rd, int rn, int imm)
 {
-    if (imm < 0) { enc_addi64(rd, rn, -imm); return; }
+    if (imm < 0) {
+        enc_addi64(rd, rn, -imm);
+        return;
+    }
     if (imm <= 4095)
         emit32(0xD1000000 | (imm << 10) | (rn << 5) | rd);
     else if ((imm & 0xFFF) == 0 && imm <= 0xFFFFFF)
@@ -1000,8 +1127,14 @@ static void enc_movn32(int rd, uint16_t imm, int shift)
 static void enc_movi32(int rd, long imm)
 {
     uint32_t v = (uint32_t)(imm & 0xFFFFFFFF);
-    if (v == 0) { enc_movz32(rd, 0, 0); return; }
-    if ((int32_t)v > 0 && v < 65536) { enc_movz32(rd, (uint16_t)v, 0); return; }
+    if (v == 0) {
+        enc_movz32(rd, 0, 0);
+        return;
+    }
+    if ((int32_t)v > 0 && v < 65536) {
+        enc_movz32(rd, (uint16_t)v, 0);
+        return;
+    }
     /* MOVN: ~v in 16 bit */
     if (((int32_t)imm) < 0 && ((uint32_t)~(uint32_t)imm & 0xFFFF0000) == 0) {
         enc_movn32(rd, (uint16_t)(~v), 0);
@@ -1158,12 +1291,16 @@ static void dir_asciz(int addo_nul)
     if (sectio_currens == SEC_CSTRING) {
         /* adde chordam — ordo debet concordare cum pass1 */
         int cid = chorda_adde(buf, n);
-        if (ultimum_data_sym >= 0
+        if (
+            ultimum_data_sym >= 0
             && symbola[ultimum_data_sym].genus == SYM_CHORDA
-            && symbola[ultimum_data_sym].id != cid) {
-            erratum_ad(linea_num,
+            && symbola[ultimum_data_sym].id != cid
+        ) {
+            erratum_ad(
+                linea_num,
                 "ordo chordarum: exspectavi id=%d, accepit id=%d",
-                symbola[ultimum_data_sym].id, cid);
+                symbola[ultimum_data_sym].id, cid
+            );
         }
     } else {
         scribe_data(buf, n);
@@ -1189,7 +1326,8 @@ static void dir_p2align(void)
     if (sectio_currens != SEC_TEXT && sectio_currens != SEC_CSTRING)
         alinea_data(col);
     /* potentialiter ", value" — ignora */
-    if (matcha(',')) lege_num();
+    if (matcha(','))
+        lege_num();
 }
 
 /* definitio labeli cum effectu in alveis */
@@ -1262,18 +1400,28 @@ static void ins_mov(void)
     saltus_spatii();
     if (spectus() == '#') {
         long v = lege_imm();
-        if (w1) enc_movi32(rd, v); else emit_movi(rd, v);
+        if (w1)
+            enc_movi32(rd, v);
+        else
+            emit_movi(rd, v);
         return;
     }
     int rn = parse_reg(&w2);
     int rn_sp = (reg_kind_ult == 1);
-    if (w1 != w2) erratum_ad(linea_num, "mov: mixta magnitudo");
+    if (w1 != w2)
+        erratum_ad(linea_num, "mov: mixta magnitudo");
     if (rd_sp || rn_sp) {
         /* MOV to/from SP = ADD Rd, Rn, #0 */
-        if (w1) enc_addi32(rd, rn, 0); else enc_addi64(rd, rn, 0);
+        if (w1)
+            enc_addi32(rd, rn, 0);
+        else
+            enc_addi64(rd, rn, 0);
         return;
     }
-    if (w1) enc_mov32_reg(rd, rn); else emit_mov(rd, rn);
+    if (w1)
+        enc_mov32_reg(rd, rn);
+    else
+        emit_mov(rd, rn);
 }
 
 static void ins_mov_variant(const char *op)
@@ -1293,14 +1441,20 @@ static void ins_mov_variant(const char *op)
         shift = (int)lege_imm();
     }
     if (!strcmp(op, "movz")) {
-        if (w) enc_movz32(rd, (uint16_t)imm, shift);
-        else   emit_movz(rd, (uint16_t)imm, shift);
+        if (w)
+            enc_movz32(rd, (uint16_t)imm, shift);
+        else
+            emit_movz(rd, (uint16_t)imm, shift);
     } else if (!strcmp(op, "movk")) {
-        if (w) enc_movk32(rd, (uint16_t)imm, shift);
-        else   emit_movk(rd, (uint16_t)imm, shift);
+        if (w)
+            enc_movk32(rd, (uint16_t)imm, shift);
+        else
+            emit_movk(rd, (uint16_t)imm, shift);
     } else if (!strcmp(op, "movn")) {
-        if (w) enc_movn32(rd, (uint16_t)imm, shift);
-        else   emit_movn(rd, (uint16_t)imm, shift);
+        if (w)
+            enc_movn32(rd, (uint16_t)imm, shift);
+        else
+            emit_movn(rd, (uint16_t)imm, shift);
     }
 }
 
@@ -1325,15 +1479,23 @@ static void ins_add_sub_generic(int est_sub, int est_s)
         }
         long eff = imm << sh;
         if (w1) {
-            if (est_s && est_sub) enc_subsi32(rd, rn, eff);
-            else if (est_s) enc_addsi32(rd, rn, eff);
-            else if (est_sub) enc_subi32(rd, rn, eff);
-            else enc_addi32(rd, rn, eff);
+            if (est_s && est_sub)
+                enc_subsi32(rd, rn, eff);
+            else if (est_s)
+                enc_addsi32(rd, rn, eff);
+            else if (est_sub)
+                enc_subi32(rd, rn, eff);
+            else
+                enc_addi32(rd, rn, eff);
         } else {
-            if (est_s && est_sub) enc_subsi64(rd, rn, eff);
-            else if (est_s) enc_addsi64(rd, rn, eff);
-            else if (est_sub) enc_subi64(rd, rn, eff);
-            else enc_addi64(rd, rn, eff);
+            if (est_s && est_sub)
+                enc_subsi64(rd, rn, eff);
+            else if (est_s)
+                enc_addsi64(rd, rn, eff);
+            else if (est_sub)
+                enc_subi64(rd, rn, eff);
+            else
+                enc_addi64(rd, rn, eff);
         }
         return;
     }
@@ -1356,29 +1518,40 @@ static void ins_add_sub_generic(int est_sub, int est_s)
         } else {
             erratum_ad(linea_num, "add @PAGEOFF: symbolum '%s' non est data", sn);
         }
-        (void)w1; (void)w2;
+        (void)w1;
+        (void)w2;
         return;
     }
     int rm = parse_reg(&w3);
-    if (w1 != w2) erratum_ad(linea_num, "add/sub: mixta magnitudo");
+    if (w1 != w2)
+        erratum_ad(linea_num, "add/sub: mixta magnitudo");
     /* shift option? */
     if (matcha(',')) {
         /* skippa lsl/lsr/asr #n — non supportatum plene */
         char nm[16];
         lege_nom(nm, 16);
         saltus_spatii();
-        if (spectus() == '#') lege_imm();
+        if (spectus() == '#')
+            lege_imm();
     }
     if (w1) {
-        if (est_s && est_sub) enc_subs32(rd, rn, rm);
-        else if (est_s) enc_adds32(rd, rn, rm);
-        else if (est_sub) enc_sub32(rd, rn, rm);
-        else enc_add32(rd, rn, rm);
+        if (est_s && est_sub)
+            enc_subs32(rd, rn, rm);
+        else if (est_s)
+            enc_adds32(rd, rn, rm);
+        else if (est_sub)
+            enc_sub32(rd, rn, rm);
+        else
+            enc_add32(rd, rn, rm);
     } else {
-        if (est_s && est_sub) enc_subs64(rd, rn, rm);
-        else if (est_s) enc_adds64(rd, rn, rm);
-        else if (est_sub) emit_sub(rd, rn, rm);
-        else emit_add(rd, rn, rm);
+        if (est_s && est_sub)
+            enc_subs64(rd, rn, rm);
+        else if (est_s)
+            enc_adds64(rd, rn, rm);
+        else if (est_sub)
+            emit_sub(rd, rn, rm);
+        else
+            emit_add(rd, rn, rm);
     }
     (void)w3;
 }
@@ -1392,7 +1565,10 @@ static void ins_mul(int est_sub /*msub-like variant unused*/)
     int rn = parse_reg(&w2);
     exige(',');
     int rm = parse_reg(&w3);
-    if (w1) enc_mul32(rd, rn, rm); else emit_mul(rd, rn, rm);
+    if (w1)
+        enc_mul32(rd, rn, rm);
+    else
+        emit_mul(rd, rn, rm);
 }
 
 static void ins_div(int signed_div)
@@ -1404,9 +1580,15 @@ static void ins_div(int signed_div)
     exige(',');
     int rm = parse_reg(&w3);
     if (w1) {
-        if (signed_div) enc_sdiv32(rd, rn, rm); else enc_udiv32(rd, rn, rm);
+        if (signed_div)
+            enc_sdiv32(rd, rn, rm);
+        else
+            enc_udiv32(rd, rn, rm);
     } else {
-        if (signed_div) emit_sdiv(rd, rn, rm); else emit_udiv(rd, rn, rm);
+        if (signed_div)
+            emit_sdiv(rd, rn, rm);
+        else
+            emit_udiv(rd, rn, rm);
     }
 }
 
@@ -1426,22 +1608,35 @@ static void ins_logic(const char *op)
         char nm[16];
         lege_nom(nm, 16);
         saltus_spatii();
-        if (spectus() == '#') lege_imm();
+        if (spectus() == '#')
+            lege_imm();
     }
     if (w1) {
-        if (!strcmp(op,"and")) enc_and32(rd, rn, rm);
-        else if (!strcmp(op,"orr")) enc_orr32(rd, rn, rm);
-        else if (!strcmp(op,"eor")) enc_eor32(rd, rn, rm);
-        else if (!strcmp(op,"lsl") || !strcmp(op,"lslv")) enc_lslv32(rd, rn, rm);
-        else if (!strcmp(op,"lsr") || !strcmp(op,"lsrv")) enc_lsrv32(rd, rn, rm);
-        else if (!strcmp(op,"asr") || !strcmp(op,"asrv")) enc_asrv32(rd, rn, rm);
+        if (!strcmp(op, "and"))
+            enc_and32(rd, rn, rm);
+        else if (!strcmp(op, "orr"))
+            enc_orr32(rd, rn, rm);
+        else if (!strcmp(op, "eor"))
+            enc_eor32(rd, rn, rm);
+        else if (!strcmp(op, "lsl") || !strcmp(op, "lslv"))
+            enc_lslv32(rd, rn, rm);
+        else if (!strcmp(op, "lsr") || !strcmp(op, "lsrv"))
+            enc_lsrv32(rd, rn, rm);
+        else if (!strcmp(op, "asr") || !strcmp(op, "asrv"))
+            enc_asrv32(rd, rn, rm);
     } else {
-        if (!strcmp(op,"and")) emit_and(rd, rn, rm);
-        else if (!strcmp(op,"orr")) emit_orr(rd, rn, rm);
-        else if (!strcmp(op,"eor")) emit_eor(rd, rn, rm);
-        else if (!strcmp(op,"lsl") || !strcmp(op,"lslv")) emit_lsl(rd, rn, rm);
-        else if (!strcmp(op,"lsr") || !strcmp(op,"lsrv")) emit_lsr(rd, rn, rm);
-        else if (!strcmp(op,"asr") || !strcmp(op,"asrv")) emit_asr(rd, rn, rm);
+        if (!strcmp(op, "and"))
+            emit_and(rd, rn, rm);
+        else if (!strcmp(op, "orr"))
+            emit_orr(rd, rn, rm);
+        else if (!strcmp(op, "eor"))
+            emit_eor(rd, rn, rm);
+        else if (!strcmp(op, "lsl") || !strcmp(op, "lslv"))
+            emit_lsl(rd, rn, rm);
+        else if (!strcmp(op, "lsr") || !strcmp(op, "lsrv"))
+            emit_lsr(rd, rn, rm);
+        else if (!strcmp(op, "asr") || !strcmp(op, "asrv"))
+            emit_asr(rd, rn, rm);
     }
 }
 
@@ -1456,12 +1651,19 @@ static void ins_neg(int est_s)
         char nm[16];
         lege_nom(nm, 16);
         saltus_spatii();
-        if (spectus() == '#') lege_imm();
+        if (spectus() == '#')
+            lege_imm();
     }
     if (w1) {
-        if (est_s) enc_subs32(rd, 31, rm); else enc_sub32(rd, 31, rm);
+        if (est_s)
+            enc_subs32(rd, 31, rm);
+        else
+            enc_sub32(rd, 31, rm);
     } else {
-        if (est_s) enc_subs64(rd, 31, rm); else emit_sub(rd, 31, rm);
+        if (est_s)
+            enc_subs64(rd, 31, rm);
+        else
+            emit_sub(rd, 31, rm);
     }
 }
 
@@ -1486,11 +1688,15 @@ static void ins_cmp(int est_n /* cmn si 1 */)
     if (spectus() == '#') {
         long imm = lege_imm();
         if (w1) {
-            if (est_n) emit32(0x31000000 | ((imm & 0xFFF) << 10) | (rn << 5) | 31);
-            else enc_cmpi32(rn, (int)imm);
+            if (est_n)
+                emit32(0x31000000 | ((imm & 0xFFF) << 10) | (rn << 5) | 31);
+            else
+                enc_cmpi32(rn, (int)imm);
         } else {
-            if (est_n) emit32(0xB1000000 | ((imm & 0xFFF) << 10) | (rn << 5) | 31);
-            else emit_cmpi(rn, (int)imm);
+            if (est_n)
+                emit32(0xB1000000 | ((imm & 0xFFF) << 10) | (rn << 5) | 31);
+            else
+                emit_cmpi(rn, (int)imm);
         }
         return;
     }
@@ -1499,14 +1705,19 @@ static void ins_cmp(int est_n /* cmn si 1 */)
         char nm[16];
         lege_nom(nm, 16);
         saltus_spatii();
-        if (spectus() == '#') lege_imm();
+        if (spectus() == '#')
+            lege_imm();
     }
     if (w1) {
-        if (est_n) emit32(0x2B00001F | (rm << 16) | (rn << 5));
-        else enc_cmp32(rn, rm);
+        if (est_n)
+            emit32(0x2B00001F | (rm << 16) | (rn << 5));
+        else
+            enc_cmp32(rn, rm);
     } else {
-        if (est_n) emit32(0xAB00001F | (rm << 16) | (rn << 5));
-        else emit_cmp(rn, rm);
+        if (est_n)
+            emit32(0xAB00001F | (rm << 16) | (rn << 5));
+        else
+            emit_cmp(rn, rm);
     }
 }
 
@@ -1520,8 +1731,10 @@ static void ins_tst(void)
     if (spectus() == '#')
         erratum_ad(linea_num, "tst cum immediato nondum supportatum");
     int rm = parse_reg(&w2);
-    if (w1) emit32(0x6A00001F | (rm << 16) | (rn << 5));
-    else    emit32(0xEA00001F | (rm << 16) | (rn << 5));
+    if (w1)
+        emit32(0x6A00001F | (rm << 16) | (rn << 5));
+    else
+        emit32(0xEA00001F | (rm << 16) | (rn << 5));
 }
 
 static void ins_cset(void)
@@ -1532,35 +1745,53 @@ static void ins_cset(void)
     char c[8];
     lege_nom(c, 8);
     int cond = parse_cond(c);
-    if (cond < 0) erratum_ad(linea_num, "cset: condicio ignota '%s'", c);
-    if (w1) enc_cset32(rd, cond); else emit_cset(rd, cond);
+    if (cond < 0)
+        erratum_ad(linea_num, "cset: condicio ignota '%s'", c);
+    if (w1)
+        enc_cset32(rd, cond);
+    else
+        emit_cset(rd, cond);
 }
 
 static void ins_csel(void)
 {
     /* CSEL Rd, Rn, Rm, cond */
-    int w1,w2,w3;
-    int rd = parse_reg(&w1); exige(',');
-    int rn = parse_reg(&w2); exige(',');
-    int rm = parse_reg(&w3); exige(',');
-    char c[8]; lege_nom(c, 8);
+    int w1, w2, w3;
+    int rd = parse_reg(&w1);
+    exige(',');
+    int rn = parse_reg(&w2);
+    exige(',');
+    int rm = parse_reg(&w3);
+    exige(',');
+    char c[8];
+    lege_nom(c, 8);
     int cond = parse_cond(c);
-    if (cond < 0) erratum_ad(linea_num, "csel: cond");
-    if (w1) emit32(0x1A800000 | (rm << 16) | (cond << 12) | (rn << 5) | rd);
-    else    emit32(0x9A800000 | (rm << 16) | (cond << 12) | (rn << 5) | rd);
+    if (cond < 0)
+        erratum_ad(linea_num, "csel: cond");
+    if (w1)
+        emit32(0x1A800000 | (rm << 16) | (cond << 12) | (rn << 5) | rd);
+    else
+        emit32(0x9A800000 | (rm << 16) | (cond << 12) | (rn << 5) | rd);
 }
 
 static void ins_csinc(void)
 {
-    int w1,w2,w3;
-    int rd = parse_reg(&w1); exige(',');
-    int rn = parse_reg(&w2); exige(',');
-    int rm = parse_reg(&w3); exige(',');
-    char c[8]; lege_nom(c, 8);
+    int w1, w2, w3;
+    int rd = parse_reg(&w1);
+    exige(',');
+    int rn = parse_reg(&w2);
+    exige(',');
+    int rm = parse_reg(&w3);
+    exige(',');
+    char c[8];
+    lege_nom(c, 8);
     int cond = parse_cond(c);
-    if (cond < 0) erratum_ad(linea_num, "csinc: cond");
-    if (w1) emit32(0x1A800400 | (rm << 16) | (cond << 12) | (rn << 5) | rd);
-    else    emit32(0x9A800400 | (rm << 16) | (cond << 12) | (rn << 5) | rd);
+    if (cond < 0)
+        erratum_ad(linea_num, "csinc: cond");
+    if (w1)
+        emit32(0x1A800400 | (rm << 16) | (cond << 12) | (rn << 5) | rd);
+    else
+        emit32(0x9A800400 | (rm << 16) | (cond << 12) | (rn << 5) | rd);
 }
 
 static void ins_ext(const char *op)
@@ -1570,16 +1801,24 @@ static void ins_ext(const char *op)
     int rd = parse_reg(&w1);
     exige(',');
     int rn = parse_reg(&w2);
-    if (!strcmp(op,"sxtw")) emit_sxtw(rd, rn);
-    else if (!strcmp(op,"uxtw")) emit_uxtw(rd, rn);
-    else if (!strcmp(op,"sxtb")) {
-        if (w1) enc_sxtb_w(rd, rn); else emit_sxtb(rd, rn);
-    }
-    else if (!strcmp(op,"sxth")) {
-        if (w1) enc_sxth_w(rd, rn); else emit_sxth(rd, rn);
-    }
-    else if (!strcmp(op,"uxtb")) emit_uxtb(rd, rn);
-    else if (!strcmp(op,"uxth")) emit_uxth(rd, rn);
+    if (!strcmp(op, "sxtw"))
+        emit_sxtw(rd, rn);
+    else if (!strcmp(op, "uxtw"))
+        emit_uxtw(rd, rn);
+    else if (!strcmp(op, "sxtb")) {
+        if (w1)
+            enc_sxtb_w(rd, rn);
+        else
+            emit_sxtb(rd, rn);
+    } else if (!strcmp(op, "sxth")) {
+        if (w1)
+            enc_sxth_w(rd, rn);
+        else
+            emit_sxth(rd, rn);
+    } else if (!strcmp(op, "uxtb"))
+        emit_uxtb(rd, rn);
+    else if (!strcmp(op, "uxth"))
+        emit_uxth(rd, rn);
 }
 
 /* ================================================================
@@ -1593,13 +1832,18 @@ static void ins_b(int est_bl)
     int si = sym_quaere_vel_crea(nom);
     sym_t *s = &symbola[si];
     if (s->genus == SYM_TXT_LAB) {
-        if (s->id < 0) s->id = label_novus();
-        if (est_bl) emit_bl_label(s->id);
-        else        emit_b_label(s->id);
+        if (s->id < 0)
+            s->id = label_novus();
+        if (est_bl)
+            emit_bl_label(s->id);
+        else
+            emit_b_label(s->id);
     } else if (s->genus == SYM_FUNC) {
         int lab = func_loci[s->id].label;
-        if (est_bl) emit_bl_label(lab);
-        else        emit_b_label(lab);
+        if (est_bl)
+            emit_bl_label(lab);
+        else
+            emit_b_label(lab);
     } else if (s->genus == SYM_IGNOTUS) {
         if (est_bl) {
             /* ad externum — emit FIX_BL_EXT */
@@ -1614,7 +1858,8 @@ static void ins_b(int est_bl)
             emit_b_label(s->id);
         }
     } else if (s->genus == SYM_EXT) {
-        if (!est_bl) erratum_ad(linea_num, "b ad externum illicit");
+        if (!est_bl)
+            erratum_ad(linea_num, "b ad externum illicit");
         fixup_adde(FIX_BL_EXT, codex_lon, s->id, 0);
         emit32(0x94000000);
     } else {
@@ -1629,7 +1874,8 @@ static void ins_bcond(int cond)
     int si = sym_quaere_vel_crea(nom);
     sym_t *s = &symbola[si];
     if (s->genus == SYM_TXT_LAB || s->genus == SYM_IGNOTUS) {
-        if (s->id < 0) s->id = label_novus();
+        if (s->id < 0)
+            s->id = label_novus();
         s->genus = SYM_TXT_LAB;
         emit_bcond_label(cond, s->id);
     } else
@@ -1645,12 +1891,15 @@ static void ins_cbz_cbnz(int est_cbnz)
     lege_nom(nom, 256);
     int si = sym_quaere_vel_crea(nom);
     sym_t *s = &symbola[si];
-    if (s->id < 0) s->id = label_novus();
+    if (s->id < 0)
+        s->id = label_novus();
     s->genus = SYM_TXT_LAB;
     /* clang utitur CBZ/CBNZ utrumque 32-bit et 64-bit — hic utimur
      * 64-bit encoding per emit_cbz/cbnz. Pro W-reg, sf=0 flag. */
-    if (est_cbnz) fixup_adde(FIX_CBNZ, codex_lon, s->id, 0);
-    else          fixup_adde(FIX_CBZ, codex_lon, s->id, 0);
+    if (est_cbnz)
+        fixup_adde(FIX_CBNZ, codex_lon, s->id, 0);
+    else
+        fixup_adde(FIX_CBZ, codex_lon, s->id, 0);
     uint32_t sf = w1 ? 0 : 0x80000000;
     uint32_t base = est_cbnz ? 0x35000000 : 0x34000000;
     emit32(sf | base | rt);
@@ -1667,7 +1916,8 @@ static void ins_tbz_tbnz(int est_tbnz)
     lege_nom(nom, 256);
     int si = sym_quaere_vel_crea(nom);
     sym_t *s = &symbola[si];
-    if (s->id < 0) s->id = label_novus();
+    if (s->id < 0)
+        s->id = label_novus();
     s->genus = SYM_TXT_LAB;
     fixup_adde(est_tbnz ? FIX_TBNZ : FIX_TBZ, codex_lon, s->id, (int)bit);
     uint32_t base = est_tbnz ? 0x37000000 : 0x36000000;
@@ -1690,8 +1940,10 @@ static void ins_br_blr(int est_blr)
 {
     int w;
     int rn = parse_reg(&w);
-    if (est_blr) emit_blr(rn);
-    else emit32(0xD61F0000 | (rn << 5));
+    if (est_blr)
+        emit_blr(rn);
+    else
+        emit32(0xD61F0000 | (rn << 5));
 }
 
 /* ADRP Xd, symbol@PAGE */
@@ -1711,8 +1963,10 @@ static void ins_adrp(void)
             emit_adrp_fixup(rd, FIX_ADRP_DATA, s->id);
         } else if (s->genus == SYM_IGNOTUS) {
             /* adsumimus globalem/chordam — resolvetur postea si defigitur */
-            erratum_ad(linea_num,
-                "adrp @PAGE ad symbolum non definitum: %s", sn);
+            erratum_ad(
+                linea_num,
+                "adrp @PAGE ad symbolum non definitum: %s", sn
+            );
         } else
             erratum_ad(linea_num, "adrp @PAGE: symbolum tex/extern");
     } else if (!strcmp(rel, "GOTPAGE")) {
@@ -1735,7 +1989,8 @@ static void ins_adr(void)
     sym_t *s = &symbola[si];
     if (s->genus != SYM_TXT_LAB && s->genus != SYM_IGNOTUS)
         erratum_ad(linea_num, "adr: symbolum '%s' non label", sn);
-    if (s->id < 0) s->id = label_novus();
+    if (s->id < 0)
+        s->id = label_novus();
     s->genus = SYM_TXT_LAB;
     enc_adr_fixup(rd, s->id);
 }
@@ -1752,9 +2007,10 @@ static void ins_adr(void)
  *   LDR Xt, [Xn, _sym@...OFF]                 — via fixup
  * ================================================================ */
 
-static void enc_ldr_str_mem(int est_store, int rt, int is_w,
-                            mem_t *m, int magn, int signed_ld)
-{
+static void enc_ldr_str_mem(
+    int est_store, int rt, int is_w,
+    mem_t *m, int magn, int signed_ld
+) {
     /*
      * magn: 8, 4, 2, 1 octeti.
      * signed_ld: 1 si LDRSW/LDRSB/LDRSH (sign-extend).
@@ -1781,15 +2037,21 @@ static void enc_ldr_str_mem(int est_store, int rt, int is_w,
                 }
                 /* emit placeholder ldr/str Xt, [Xn, #0] — scribo assumes generic */
                 uint32_t op;
-                if (magn == 8) op = est_store ? 0xF9000000 : 0xF9400000;
-                else if (magn == 4) op = est_store ? 0xB9000000 : (signed_ld ? 0xB9800000 : 0xB9400000);
-                else if (magn == 2) op = est_store ? 0x79000000 : (signed_ld ? 0x79800000 : 0x79400000);
-                else              op = est_store ? 0x39000000 : (signed_ld ? 0x39800000 : 0x39400000);
+                if (magn == 8)
+                    op = est_store ? 0xF9000000 : 0xF9400000;
+                else if (magn == 4)
+                    op = est_store ? 0xB9000000 : (signed_ld ? 0xB9800000 : 0xB9400000);
+                else if (magn == 2)
+                    op = est_store ? 0x79000000 : (signed_ld ? 0x79800000 : 0x79400000);
+                else
+                    op = est_store ? 0x39000000 : (signed_ld ? 0x39800000 : 0x39400000);
                 emit32(op | (m->rn << 5) | rt);
                 return;
             }
-            erratum_ad(linea_num,
-                "ldr/str @PAGEOFF ad non-data symbolum '%s'", m->rel_sym);
+            erratum_ad(
+                linea_num,
+                "ldr/str @PAGEOFF ad non-data symbolum '%s'", m->rel_sym
+            );
         }
         erratum_ad(linea_num, "ldr/str cum @%s", m->rel);
     }
@@ -1813,43 +2075,69 @@ static void enc_ldr_str_mem(int est_store, int rt, int is_w,
     if (m->habet_rm) {
         /* register offset */
         int S = m->ext_shift;
-        if (S < 0) S = 0;
+        if (S < 0)
+            S = 0;
         if (magn == 8) {
-            if (est_store) enc_str64_r(rt, m->rn, m->rm, m->ext_genus, S);
-            else if (signed_ld) erratum_ad(linea_num, "ldrsw reg-form unsupp");
-            else enc_ldr64_r(rt, m->rn, m->rm, m->ext_genus, S);
+            if (est_store)
+                enc_str64_r(rt, m->rn, m->rm, m->ext_genus, S);
+            else if (signed_ld)
+                erratum_ad(linea_num, "ldrsw reg-form unsupp");
+            else
+                enc_ldr64_r(rt, m->rn, m->rm, m->ext_genus, S);
         } else if (magn == 4) {
-            if (est_store) enc_str32_r(rt, m->rn, m->rm, m->ext_genus, S);
-            else if (signed_ld) enc_ldrsw_r(rt, m->rn, m->rm, m->ext_genus, S);
-            else enc_ldr32_r(rt, m->rn, m->rm, m->ext_genus, S);
+            if (est_store)
+                enc_str32_r(rt, m->rn, m->rm, m->ext_genus, S);
+            else if (signed_ld)
+                enc_ldrsw_r(rt, m->rn, m->rm, m->ext_genus, S);
+            else
+                enc_ldr32_r(rt, m->rn, m->rm, m->ext_genus, S);
         } else if (magn == 2) {
-            if (est_store) enc_strh_r(rt, m->rn, m->rm, m->ext_genus, S);
-            else enc_ldrh_r(rt, m->rn, m->rm, m->ext_genus, S);
+            if (est_store)
+                enc_strh_r(rt, m->rn, m->rm, m->ext_genus, S);
+            else
+                enc_ldrh_r(rt, m->rn, m->rm, m->ext_genus, S);
         } else {
-            if (est_store) enc_strb_r(rt, m->rn, m->rm, m->ext_genus, S);
-            else enc_ldrb_r(rt, m->rn, m->rm, m->ext_genus, S);
+            if (est_store)
+                enc_strb_r(rt, m->rn, m->rm, m->ext_genus, S);
+            else
+                enc_ldrb_r(rt, m->rn, m->rm, m->ext_genus, S);
         }
         return;
     }
     /* immediate form */
     int imm = (int)m->imm;
     if (magn == 8) {
-        if (est_store) emit_str64(rt, m->rn, imm);
-        else emit_ldr64(rt, m->rn, imm);
+        if (est_store)
+            emit_str64(rt, m->rn, imm);
+        else
+            emit_ldr64(rt, m->rn, imm);
     } else if (magn == 4) {
-        if (est_store) emit_str32(rt, m->rn, imm);
-        else if (signed_ld) emit_ldrsw(rt, m->rn, imm);
-        else emit_ldr32(rt, m->rn, imm);
+        if (est_store)
+            emit_str32(rt, m->rn, imm);
+        else if (signed_ld)
+            emit_ldrsw(rt, m->rn, imm);
+        else
+            emit_ldr32(rt, m->rn, imm);
     } else if (magn == 2) {
-        if (est_store) emit_strh(rt, m->rn, imm);
+        if (est_store)
+            emit_strh(rt, m->rn, imm);
         else if (signed_ld) {
-            if (is_w) enc_ldrsh_w(rt, m->rn, imm); else emit_ldrsh(rt, m->rn, imm);
-        } else emit_ldrh(rt, m->rn, imm);
+            if (is_w)
+                enc_ldrsh_w(rt, m->rn, imm);
+            else
+                emit_ldrsh(rt, m->rn, imm);
+        } else
+            emit_ldrh(rt, m->rn, imm);
     } else {
-        if (est_store) emit_strb(rt, m->rn, imm);
+        if (est_store)
+            emit_strb(rt, m->rn, imm);
         else if (signed_ld) {
-            if (is_w) enc_ldrsb_w(rt, m->rn, imm); else emit_ldrsb(rt, m->rn, imm);
-        } else emit_ldrb(rt, m->rn, imm);
+            if (is_w)
+                enc_ldrsb_w(rt, m->rn, imm);
+            else
+                emit_ldrsb(rt, m->rn, imm);
+        } else
+            emit_ldrb(rt, m->rn, imm);
     }
 }
 
@@ -1860,7 +2148,8 @@ static void ins_ldr_str(int est_store, int magn, int signed_ld)
     exige(',');
     mem_t m;
     parse_mem(&m);
-    if (magn == 0) magn = w ? 4 : 8;
+    if (magn == 0)
+        magn = w ? 4 : 8;
     enc_ldr_str_mem(est_store, rt, w, &m, magn, signed_ld);
 }
 
@@ -1872,27 +2161,39 @@ static void ins_ur(int est_store, int magn, int signed_ld)
     exige(',');
     mem_t m;
     parse_mem(&m);
-    if (magn == 0) magn = w ? 4 : 8;
+    if (magn == 0)
+        magn = w ? 4 : 8;
     if (m.habet_rm || m.pre_index || m.post_index || m.habet_rel_sym)
         erratum_ad(linea_num, "stur/ldur: forma invalida");
     int imm = (int)m.imm;
     if (imm < -256 || imm > 255)
         erratum_ad(linea_num, "stur/ldur: immediatum extra rangum (simm9)");
     if (magn == 8) {
-        if (est_store) enc_stur64(rt, m.rn, imm);
-        else enc_ldur64(rt, m.rn, imm);
+        if (est_store)
+            enc_stur64(rt, m.rn, imm);
+        else
+            enc_ldur64(rt, m.rn, imm);
     } else if (magn == 4) {
-        if (est_store) enc_stur32(rt, m.rn, imm);
-        else if (signed_ld) enc_ldursw(rt, m.rn, imm);
-        else enc_ldur32(rt, m.rn, imm);
+        if (est_store)
+            enc_stur32(rt, m.rn, imm);
+        else if (signed_ld)
+            enc_ldursw(rt, m.rn, imm);
+        else
+            enc_ldur32(rt, m.rn, imm);
     } else if (magn == 2) {
-        if (est_store) enc_sturh(rt, m.rn, imm);
-        else if (signed_ld) enc_ldursh_w(rt, m.rn, imm);
-        else enc_ldurh(rt, m.rn, imm);
+        if (est_store)
+            enc_sturh(rt, m.rn, imm);
+        else if (signed_ld)
+            enc_ldursh_w(rt, m.rn, imm);
+        else
+            enc_ldurh(rt, m.rn, imm);
     } else {
-        if (est_store) enc_sturb(rt, m.rn, imm);
-        else if (signed_ld) enc_ldursb_w(rt, m.rn, imm);
-        else enc_ldurb(rt, m.rn, imm);
+        if (est_store)
+            enc_sturb(rt, m.rn, imm);
+        else if (signed_ld)
+            enc_ldursb_w(rt, m.rn, imm);
+        else
+            enc_ldurb(rt, m.rn, imm);
     }
     (void)w;
 }
@@ -1900,33 +2201,54 @@ static void ins_ur(int est_store, int magn, int signed_ld)
 static void ins_ldp_stp(int est_load)
 {
     int w1, w2;
-    int t1 = parse_reg(&w1); exige(',');
-    int t2 = parse_reg(&w2); exige(',');
+    int t1 = parse_reg(&w1);
+    exige(',');
+    int t2 = parse_reg(&w2);
+    exige(',');
     mem_t m;
     parse_mem(&m);
-    if (w1 || w2) erratum_ad(linea_num, "ldp/stp W nondum supp");
+    if (w1 || w2)
+        erratum_ad(linea_num, "ldp/stp W nondum supp");
     int imm = (int)m.imm;
     if (m.post_index) {
-        if (est_load) enc_ldp64_post(t1, t2, m.rn, imm);
-        else          enc_stp64_post(t1, t2, m.rn, imm);
+        if (est_load)
+            enc_ldp64_post(t1, t2, m.rn, imm);
+        else
+            enc_stp64_post(t1, t2, m.rn, imm);
     } else if (m.pre_index) {
-        if (est_load) enc_ldp64_pre(t1, t2, m.rn, imm);
-        else          enc_stp64_pre(t1, t2, m.rn, imm);
+        if (est_load)
+            enc_ldp64_pre(t1, t2, m.rn, imm);
+        else
+            enc_stp64_pre(t1, t2, m.rn, imm);
     } else {
-        if (est_load) enc_ldp64(t1, t2, m.rn, imm);
-        else          enc_stp64(t1, t2, m.rn, imm);
+        if (est_load)
+            enc_ldp64(t1, t2, m.rn, imm);
+        else
+            enc_stp64(t1, t2, m.rn, imm);
     }
 }
 
 static void ins_madd_msub(int est_sub)
 {
-    int w1,w2,w3,w4;
-    int rd = parse_reg(&w1); exige(',');
-    int rn = parse_reg(&w2); exige(',');
-    int rm = parse_reg(&w3); exige(',');
+    int w1, w2, w3, w4;
+    int rd = parse_reg(&w1);
+    exige(',');
+    int rn = parse_reg(&w2);
+    exige(',');
+    int rm = parse_reg(&w3);
+    exige(',');
     int ra = parse_reg(&w4);
-    if (w1) { if (est_sub) enc_msub32(rd,rn,rm,ra); else enc_madd32(rd,rn,rm,ra); }
-    else    { if (est_sub) enc_msub64(rd,rn,rm,ra); else enc_madd64(rd,rn,rm,ra); }
+    if (w1) {
+        if (est_sub)
+            enc_msub32(rd, rn, rm, ra);
+        else
+            enc_madd32(rd, rn, rm, ra);
+    }else    {
+        if (est_sub)
+            enc_msub64(rd, rn, rm, ra);
+        else
+            enc_madd64(rd, rn, rm, ra);
+    }
 }
 
 /* ================================================================
@@ -1938,73 +2260,259 @@ static void processa_instructionem(const char *op)
     /* condicio-branch */
     if (op[0] == 'b' && op[1] == '.') {
         int c = parse_cond(op + 2);
-        if (c < 0) erratum_ad(linea_num, "b.%s condicio ignota", op+2);
+        if (c < 0)
+            erratum_ad(linea_num, "b.%s condicio ignota", op+2);
         ins_bcond(c);
         return;
     }
-    if (!strcmp(op, "mov"))   { ins_mov(); return; }
-    if (!strcmp(op, "movz"))  { ins_mov_variant("movz"); return; }
-    if (!strcmp(op, "movk"))  { ins_mov_variant("movk"); return; }
-    if (!strcmp(op, "movn"))  { ins_mov_variant("movn"); return; }
-    if (!strcmp(op, "add"))   { ins_add_sub_generic(0,0); return; }
-    if (!strcmp(op, "sub"))   { ins_add_sub_generic(1,0); return; }
-    if (!strcmp(op, "adds"))  { ins_add_sub_generic(0,1); return; }
-    if (!strcmp(op, "subs"))  { ins_add_sub_generic(1,1); return; }
-    if (!strcmp(op, "mul"))   { ins_mul(0); return; }
-    if (!strcmp(op, "sdiv"))  { ins_div(1); return; }
-    if (!strcmp(op, "udiv"))  { ins_div(0); return; }
-    if (!strcmp(op, "and"))   { ins_logic("and"); return; }
-    if (!strcmp(op, "orr"))   { ins_logic("orr"); return; }
-    if (!strcmp(op, "eor"))   { ins_logic("eor"); return; }
-    if (!strcmp(op, "lsl") || !strcmp(op,"lslv")) { ins_logic("lslv"); return; }
-    if (!strcmp(op, "lsr") || !strcmp(op,"lsrv")) { ins_logic("lsrv"); return; }
-    if (!strcmp(op, "asr") || !strcmp(op,"asrv")) { ins_logic("asrv"); return; }
-    if (!strcmp(op, "neg"))   { ins_neg(0); return; }
-    if (!strcmp(op, "negs"))  { ins_neg(1); return; }
-    if (!strcmp(op, "mvn"))   { ins_mvn(); return; }
-    if (!strcmp(op, "cmp"))   { ins_cmp(0); return; }
-    if (!strcmp(op, "cmn"))   { ins_cmp(1); return; }
-    if (!strcmp(op, "tst"))   { ins_tst(); return; }
-    if (!strcmp(op, "cset"))  { ins_cset(); return; }
-    if (!strcmp(op, "csel"))  { ins_csel(); return; }
-    if (!strcmp(op, "csinc")) { ins_csinc(); return; }
-    if (!strcmp(op, "sxtw") || !strcmp(op,"uxtw")
-        || !strcmp(op,"sxtb") || !strcmp(op,"sxth")
-        || !strcmp(op,"uxtb") || !strcmp(op,"uxth")) { ins_ext(op); return; }
-    if (!strcmp(op, "b"))     { ins_b(0); return; }
-    if (!strcmp(op, "bl"))    { ins_b(1); return; }
-    if (!strcmp(op, "blr"))   { ins_br_blr(1); return; }
-    if (!strcmp(op, "br"))    { ins_br_blr(0); return; }
-    if (!strcmp(op, "ret"))   { ins_ret(); return; }
-    if (!strcmp(op, "cbz"))   { ins_cbz_cbnz(0); return; }
-    if (!strcmp(op, "cbnz"))  { ins_cbz_cbnz(1); return; }
-    if (!strcmp(op, "tbz"))   { ins_tbz_tbnz(0); return; }
-    if (!strcmp(op, "tbnz"))  { ins_tbz_tbnz(1); return; }
-    if (!strcmp(op, "adrp"))  { ins_adrp(); return; }
-    if (!strcmp(op, "adr"))   { ins_adr(); return; }
-    if (!strcmp(op, "ldr"))   { ins_ldr_str(0, 0, 0); return; }
-    if (!strcmp(op, "str"))   { ins_ldr_str(1, 0, 0); return; }
-    if (!strcmp(op, "ldrb"))  { ins_ldr_str(0, 1, 0); return; }
-    if (!strcmp(op, "strb"))  { ins_ldr_str(1, 1, 0); return; }
-    if (!strcmp(op, "ldrh"))  { ins_ldr_str(0, 2, 0); return; }
-    if (!strcmp(op, "strh"))  { ins_ldr_str(1, 2, 0); return; }
-    if (!strcmp(op, "ldrsb")) { ins_ldr_str(0, 1, 1); return; }
-    if (!strcmp(op, "ldrsh")) { ins_ldr_str(0, 2, 1); return; }
-    if (!strcmp(op, "ldrsw")) { ins_ldr_str(0, 4, 1); return; }
-    if (!strcmp(op, "ldur"))  { ins_ur(0, 0, 0); return; }
-    if (!strcmp(op, "stur"))  { ins_ur(1, 0, 0); return; }
-    if (!strcmp(op, "ldurb")) { ins_ur(0, 1, 0); return; }
-    if (!strcmp(op, "sturb")) { ins_ur(1, 1, 0); return; }
-    if (!strcmp(op, "ldurh")) { ins_ur(0, 2, 0); return; }
-    if (!strcmp(op, "sturh")) { ins_ur(1, 2, 0); return; }
-    if (!strcmp(op, "ldursb")){ ins_ur(0, 1, 1); return; }
-    if (!strcmp(op, "ldursh")){ ins_ur(0, 2, 1); return; }
-    if (!strcmp(op, "ldursw")){ ins_ur(0, 4, 1); return; }
-    if (!strcmp(op, "ldp"))   { ins_ldp_stp(1); return; }
-    if (!strcmp(op, "stp"))   { ins_ldp_stp(0); return; }
-    if (!strcmp(op, "madd"))  { ins_madd_msub(0); return; }
-    if (!strcmp(op, "msub"))  { ins_madd_msub(1); return; }
-    if (!strcmp(op, "nop"))   { emit32(0xD503201F); return; }
+    if (!strcmp(op, "mov"))   {
+        ins_mov();
+        return;
+    }
+    if (!strcmp(op, "movz"))  {
+        ins_mov_variant("movz");
+        return;
+    }
+    if (!strcmp(op, "movk"))  {
+        ins_mov_variant("movk");
+        return;
+    }
+    if (!strcmp(op, "movn"))  {
+        ins_mov_variant("movn");
+        return;
+    }
+    if (!strcmp(op, "add"))   {
+        ins_add_sub_generic(0, 0);
+        return;
+    }
+    if (!strcmp(op, "sub"))   {
+        ins_add_sub_generic(1, 0);
+        return;
+    }
+    if (!strcmp(op, "adds"))  {
+        ins_add_sub_generic(0, 1);
+        return;
+    }
+    if (!strcmp(op, "subs"))  {
+        ins_add_sub_generic(1, 1);
+        return;
+    }
+    if (!strcmp(op, "mul"))   {
+        ins_mul(0);
+        return;
+    }
+    if (!strcmp(op, "sdiv"))  {
+        ins_div(1);
+        return;
+    }
+    if (!strcmp(op, "udiv"))  {
+        ins_div(0);
+        return;
+    }
+    if (!strcmp(op, "and"))   {
+        ins_logic("and");
+        return;
+    }
+    if (!strcmp(op, "orr"))   {
+        ins_logic("orr");
+        return;
+    }
+    if (!strcmp(op, "eor"))   {
+        ins_logic("eor");
+        return;
+    }
+    if (!strcmp(op, "lsl") || !strcmp(op, "lslv")) {
+        ins_logic("lslv");
+        return;
+    }
+    if (!strcmp(op, "lsr") || !strcmp(op, "lsrv")) {
+        ins_logic("lsrv");
+        return;
+    }
+    if (!strcmp(op, "asr") || !strcmp(op, "asrv")) {
+        ins_logic("asrv");
+        return;
+    }
+    if (!strcmp(op, "neg"))   {
+        ins_neg(0);
+        return;
+    }
+    if (!strcmp(op, "negs"))  {
+        ins_neg(1);
+        return;
+    }
+    if (!strcmp(op, "mvn"))   {
+        ins_mvn();
+        return;
+    }
+    if (!strcmp(op, "cmp"))   {
+        ins_cmp(0);
+        return;
+    }
+    if (!strcmp(op, "cmn"))   {
+        ins_cmp(1);
+        return;
+    }
+    if (!strcmp(op, "tst"))   {
+        ins_tst();
+        return;
+    }
+    if (!strcmp(op, "cset"))  {
+        ins_cset();
+        return;
+    }
+    if (!strcmp(op, "csel"))  {
+        ins_csel();
+        return;
+    }
+    if (!strcmp(op, "csinc")) {
+        ins_csinc();
+        return;
+    }
+    if (
+        !strcmp(op, "sxtw") || !strcmp(op, "uxtw")
+        || !strcmp(op, "sxtb") || !strcmp(op, "sxth")
+        || !strcmp(op, "uxtb") || !strcmp(op, "uxth")
+    ) {
+        ins_ext(op);
+        return;
+    }
+    if (!strcmp(op, "b"))     {
+        ins_b(0);
+        return;
+    }
+    if (!strcmp(op, "bl"))    {
+        ins_b(1);
+        return;
+    }
+    if (!strcmp(op, "blr"))   {
+        ins_br_blr(1);
+        return;
+    }
+    if (!strcmp(op, "br"))    {
+        ins_br_blr(0);
+        return;
+    }
+    if (!strcmp(op, "ret"))   {
+        ins_ret();
+        return;
+    }
+    if (!strcmp(op, "cbz"))   {
+        ins_cbz_cbnz(0);
+        return;
+    }
+    if (!strcmp(op, "cbnz"))  {
+        ins_cbz_cbnz(1);
+        return;
+    }
+    if (!strcmp(op, "tbz"))   {
+        ins_tbz_tbnz(0);
+        return;
+    }
+    if (!strcmp(op, "tbnz"))  {
+        ins_tbz_tbnz(1);
+        return;
+    }
+    if (!strcmp(op, "adrp"))  {
+        ins_adrp();
+        return;
+    }
+    if (!strcmp(op, "adr"))   {
+        ins_adr();
+        return;
+    }
+    if (!strcmp(op, "ldr"))   {
+        ins_ldr_str(0, 0, 0);
+        return;
+    }
+    if (!strcmp(op, "str"))   {
+        ins_ldr_str(1, 0, 0);
+        return;
+    }
+    if (!strcmp(op, "ldrb"))  {
+        ins_ldr_str(0, 1, 0);
+        return;
+    }
+    if (!strcmp(op, "strb"))  {
+        ins_ldr_str(1, 1, 0);
+        return;
+    }
+    if (!strcmp(op, "ldrh"))  {
+        ins_ldr_str(0, 2, 0);
+        return;
+    }
+    if (!strcmp(op, "strh"))  {
+        ins_ldr_str(1, 2, 0);
+        return;
+    }
+    if (!strcmp(op, "ldrsb")) {
+        ins_ldr_str(0, 1, 1);
+        return;
+    }
+    if (!strcmp(op, "ldrsh")) {
+        ins_ldr_str(0, 2, 1);
+        return;
+    }
+    if (!strcmp(op, "ldrsw")) {
+        ins_ldr_str(0, 4, 1);
+        return;
+    }
+    if (!strcmp(op, "ldur"))  {
+        ins_ur(0, 0, 0);
+        return;
+    }
+    if (!strcmp(op, "stur"))  {
+        ins_ur(1, 0, 0);
+        return;
+    }
+    if (!strcmp(op, "ldurb")) {
+        ins_ur(0, 1, 0);
+        return;
+    }
+    if (!strcmp(op, "sturb")) {
+        ins_ur(1, 1, 0);
+        return;
+    }
+    if (!strcmp(op, "ldurh")) {
+        ins_ur(0, 2, 0);
+        return;
+    }
+    if (!strcmp(op, "sturh")) {
+        ins_ur(1, 2, 0);
+        return;
+    }
+    if (!strcmp(op, "ldursb")){
+        ins_ur(0, 1, 1);
+        return;
+    }
+    if (!strcmp(op, "ldursh")){
+        ins_ur(0, 2, 1);
+        return;
+    }
+    if (!strcmp(op, "ldursw")){
+        ins_ur(0, 4, 1);
+        return;
+    }
+    if (!strcmp(op, "ldp"))   {
+        ins_ldp_stp(1);
+        return;
+    }
+    if (!strcmp(op, "stp"))   {
+        ins_ldp_stp(0);
+        return;
+    }
+    if (!strcmp(op, "madd"))  {
+        ins_madd_msub(0);
+        return;
+    }
+    if (!strcmp(op, "msub"))  {
+        ins_madd_msub(1);
+        return;
+    }
+    if (!strcmp(op, "nop"))   {
+        emit32(0xD503201F);
+        return;
+    }
     erratum_ad(linea_num, "instructio ignota: '%s'", op);
 }
 
@@ -2015,7 +2523,8 @@ static void processa_instructionem(const char *op)
 static void processa_lineam(void)
 {
     saltus_spatii();
-    if (!adest() || spectus() == '\n') return;
+    if (!adest() || spectus() == '\n')
+        return;
     if (spectus() == ';' || (spectus() == '/' && pos+1 < fons_lon && fons[pos+1] == '/')) {
         saltus_ad_eol();
         return;
@@ -2044,36 +2553,71 @@ static void processa_lineam(void)
             saltus_ad_eol();
             return;
         }
-        if (!strcmp(nom, ".text")) { sectio_currens = SEC_TEXT; saltus_ad_eol(); return; }
-        if (!strcmp(nom, ".data")) { sectio_currens = SEC_DATA; saltus_ad_eol(); return; }
-        if (!strcmp(nom, ".const")) { sectio_currens = SEC_CONST; saltus_ad_eol(); return; }
-        if (!strcmp(nom, ".cstring")) { sectio_currens = SEC_CSTRING; saltus_ad_eol(); return; }
-        if (!strcmp(nom, ".bss")) { sectio_currens = SEC_BSS; saltus_ad_eol(); return; }
+        if (!strcmp(nom, ".text")) {
+            sectio_currens = SEC_TEXT;
+            saltus_ad_eol();
+            return;
+        }
+        if (!strcmp(nom, ".data")) {
+            sectio_currens = SEC_DATA;
+            saltus_ad_eol();
+            return;
+        }
+        if (!strcmp(nom, ".const")) {
+            sectio_currens = SEC_CONST;
+            saltus_ad_eol();
+            return;
+        }
+        if (!strcmp(nom, ".cstring")) {
+            sectio_currens = SEC_CSTRING;
+            saltus_ad_eol();
+            return;
+        }
+        if (!strcmp(nom, ".bss")) {
+            sectio_currens = SEC_BSS;
+            saltus_ad_eol();
+            return;
+        }
         if (!strcmp(nom, ".section")) {
-            char seg[64], sct[64]; seg[0]=sct[0]=0;
+            char seg[64], sct[64];
+            seg[0] = sct[0] = 0;
             lege_nom(seg, 64);
-            if (matcha(',')) lege_nom(sct, 64);
+            if (matcha(','))
+                lege_nom(sct, 64);
             /* attributes ignorantur */
             saltus_ad_eol();
-            if (!strcmp(sct, "__text")) sectio_currens = SEC_TEXT;
-            else if (!strcmp(sct, "__cstring")) sectio_currens = SEC_CSTRING;
-            else if (!strcmp(sct, "__const")) sectio_currens = SEC_CONST;
-            else if (!strcmp(sct, "__data")) sectio_currens = SEC_DATA;
-            else if (!strcmp(sct, "__bss")) sectio_currens = SEC_BSS;
-            else if (!strcmp(sct, "__literal4") || !strcmp(sct, "__literal8")
-                     || !strcmp(sct, "__literal16"))
+            if (!strcmp(sct, "__text"))
+                sectio_currens = SEC_TEXT;
+            else if (!strcmp(sct, "__cstring"))
+                sectio_currens = SEC_CSTRING;
+            else if (!strcmp(sct, "__const"))
                 sectio_currens = SEC_CONST;
-            else erratum_ad(linea_num, "sectio ignota: %s,%s", seg, sct);
+            else if (!strcmp(sct, "__data"))
+                sectio_currens = SEC_DATA;
+            else if (!strcmp(sct, "__bss"))
+                sectio_currens = SEC_BSS;
+            else if (
+                !strcmp(sct, "__literal4") || !strcmp(sct, "__literal8")
+                || !strcmp(sct, "__literal16")
+            )
+                sectio_currens = SEC_CONST;
+            else
+                erratum_ad(linea_num, "sectio ignota: %s,%s", seg, sct);
             return;
         }
         if (!strcmp(nom, ".globl") || !strcmp(nom, ".global")) {
-            char sn[256]; lege_nom(sn, 256);
+            char sn[256];
+            lege_nom(sn, 256);
             int si = sym_quaere_vel_crea(sn);
             symbola[si].est_globalis = 1;
             saltus_ad_eol();
             return;
         }
-        if (!strcmp(nom, ".p2align")) { dir_p2align(); saltus_ad_eol(); return; }
+        if (!strcmp(nom, ".p2align")) {
+            dir_p2align();
+            saltus_ad_eol();
+            return;
+        }
         if (!strcmp(nom, ".align")) {
             long a = lege_num();
             /* in darwin, .align est potentia 2 directe */
@@ -2084,29 +2628,65 @@ static void processa_lineam(void)
             saltus_ad_eol();
             return;
         }
-        if (!strcmp(nom, ".long")) { dir_long(); saltus_ad_eol(); return; }
-        if (!strcmp(nom, ".word")) { dir_long(); saltus_ad_eol(); return; }
-        if (!strcmp(nom, ".short") || !strcmp(nom, ".half")
-            || !strcmp(nom, ".2byte")) { dir_short(); saltus_ad_eol(); return; }
-        if (!strcmp(nom, ".quad") || !strcmp(nom, ".8byte")) { dir_quad(); saltus_ad_eol(); return; }
-        if (!strcmp(nom, ".byte")) { dir_byte(); saltus_ad_eol(); return; }
-        if (!strcmp(nom, ".asciz") || !strcmp(nom, ".string")) {
-            dir_asciz(1); saltus_ad_eol(); return;
+        if (!strcmp(nom, ".long")) {
+            dir_long();
+            saltus_ad_eol();
+            return;
         }
-        if (!strcmp(nom, ".ascii")) { dir_asciz(0); saltus_ad_eol(); return; }
-        if (!strcmp(nom, ".zero") || !strcmp(nom, ".space")
-            || !strcmp(nom, ".skip")) { dir_zero_or_space(); saltus_ad_eol(); return; }
+        if (!strcmp(nom, ".word")) {
+            dir_long();
+            saltus_ad_eol();
+            return;
+        }
+        if (
+            !strcmp(nom, ".short") || !strcmp(nom, ".half")
+            || !strcmp(nom, ".2byte")
+        ) {
+            dir_short();
+            saltus_ad_eol();
+            return;
+        }
+        if (!strcmp(nom, ".quad") || !strcmp(nom, ".8byte")) {
+            dir_quad();
+            saltus_ad_eol();
+            return;
+        }
+        if (!strcmp(nom, ".byte")) {
+            dir_byte();
+            saltus_ad_eol();
+            return;
+        }
+        if (!strcmp(nom, ".asciz") || !strcmp(nom, ".string")) {
+            dir_asciz(1);
+            saltus_ad_eol();
+            return;
+        }
+        if (!strcmp(nom, ".ascii")) {
+            dir_asciz(0);
+            saltus_ad_eol();
+            return;
+        }
+        if (
+            !strcmp(nom, ".zero") || !strcmp(nom, ".space")
+            || !strcmp(nom, ".skip")
+        ) {
+            dir_zero_or_space();
+            saltus_ad_eol();
+            return;
+        }
         if (!strcmp(nom, ".comm") || !strcmp(nom, ".lcomm")) {
             /* iam in pass1 tractatum */
             saltus_ad_eol();
             return;
         }
         if (0) {
-            char sn[256]; lege_nom(sn, 256);
+            char sn[256];
+            lege_nom(sn, 256);
             exige(',');
             long sz = lege_num();
             long col = 1;
-            if (matcha(',')) col = lege_num();
+            if (matcha(','))
+                col = lege_num();
             int si = sym_quaere_vel_crea(sn);
             if (symbola[si].genus == SYM_IGNOTUS) {
                 if (num_globalium >= MAX_GLOBALES)
@@ -2137,13 +2717,19 @@ static void processa_lineam(void)
         if (0) {
             /* .zerofill SEG,SECT,_sym,size,align */
             char seg[32], sct[32], sn[256];
-            lege_nom(seg, 32); exige(','); lege_nom(sct, 32); exige(',');
-            lege_nom(sn, 256); exige(',');
+            lege_nom(seg, 32);
+            exige(',');
+            lege_nom(sct, 32);
+            exige(',');
+            lege_nom(sn, 256);
+            exige(',');
             long sz = lege_num();
             long col = 0;
-            if (matcha(',')) col = lege_num();
+            if (matcha(','))
+                col = lege_num();
             int si = sym_quaere_vel_crea(sn);
-            if (num_globalium >= MAX_GLOBALES) erratum("nimis globales");
+            if (num_globalium >= MAX_GLOBALES)
+                erratum("nimis globales");
             int gi = num_globalium++;
             const char *nn = (sn[0] == '_') ? sn + 1 : sn;
             strncpy(globales[gi].nomen, nn, 255);
@@ -2155,7 +2741,8 @@ static void processa_lineam(void)
             symbola[si].genus = SYM_GLOB;
             symbola[si].id = gi;
             symbola[si].definitum = 1;
-            (void)seg; (void)sct;
+            (void)seg;
+            (void)sct;
             saltus_ad_eol();
             return;
         }
@@ -2188,18 +2775,21 @@ int main(int argc, char *argv[])
     const char *plica_out = NULL;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-o")) {
-            if (++i >= argc) usus();
+            if (++i >= argc)
+                usus();
             plica_out = argv[i];
         } else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
             usus();
         } else if (argv[i][0] == '-') {
             erratum("vexillum ignotum: %s", argv[i]);
         } else {
-            if (plica_in) erratum("nimis multae plicae fontis");
+            if (plica_in)
+                erratum("nimis multae plicae fontis");
             plica_in = argv[i];
         }
     }
-    if (!plica_in) usus();
+    if (!plica_in)
+        usus();
     int lin = (int)strlen(plica_in);
     if (lin < 3 || plica_in[lin-2] != '.' || plica_in[lin-1] != 's')
         erratum("plica fontis debet finire in .s");
@@ -2218,7 +2808,8 @@ int main(int argc, char *argv[])
 
     int flon;
     char *buf = lege_plicam(plica_in, &flon);
-    if (!buf) erratum("non possum legere '%s'", plica_in);
+    if (!buf)
+        erratum("non possum legere '%s'", plica_in);
     fons = buf;
     fons_lon = flon;
     pos = 0;
@@ -2232,12 +2823,17 @@ int main(int argc, char *argv[])
     linea_num = 1;
     while (adest()) {
         processa_lineam();
-        if (adest() && fons[pos] == '\n') { pos++; linea_num++; }
+        if (adest() && fons[pos] == '\n') {
+            pos++;
+            linea_num++;
+        }
     }
 
     /* finalize ultimum globalis magnitudinem */
-    if (ultimum_data_sym >= 0
-        && symbola[ultimum_data_sym].genus == SYM_GLOB) {
+    if (
+        ultimum_data_sym >= 0
+        && symbola[ultimum_data_sym].genus == SYM_GLOB
+    ) {
         int gi = symbola[ultimum_data_sym].id;
         if (gi >= 0 && globales[gi].magnitudo == 0)
             globales[gi].magnitudo = init_data_lon - globales[gi].data_offset;

@@ -1049,7 +1049,7 @@ static nodus_t *parse_expr_postfixa(void)
                         mem_linea,
                         "structura '%s' campum '%s' non habet",
                         n->typus->nomen_tag[0] ?
-                            n->typus->nomen_tag : "(anonyma)",
+                        n->typus->nomen_tag : "(anonyma)",
                         mem->nomen
                     );
                 }
