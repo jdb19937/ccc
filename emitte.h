@@ -36,6 +36,9 @@ enum {
     FIX_BRANCH,            /* B ad label */
     FIX_BCOND,             /* B.cond ad label */
     FIX_BL,                /* BL ad label */
+    FIX_BL_EXT,            /* BL ad symbolum externum (target = GOT index) */
+    FIX_TBZ,               /* TBZ Xt,#bit,label (target=label, mag=bit) */
+    FIX_TBNZ,              /* TBNZ Xt,#bit,label */
     FIX_CBZ,               /* CBZ ad label */
     FIX_CBNZ,              /* CBNZ ad label */
     FIX_ADRP_DATA,         /* ADRP ad datum globale */
@@ -248,6 +251,8 @@ void emit_uxth(int rd, int rn);
 void emit_uxtw(int rd, int rn);
 void emit_load(int rd, int rn, int offset, int mag);
 void emit_load_unsigned(int rd, int rn, int offset, int mag);
+
+void emit_imple_zeris(int off_basis, int magnitudo);
 
 /* fixups et data */
 void emit_adrp_fixup(int rd, int genus, int target);

@@ -89,49 +89,7 @@ static int reg_arm(int slot)
  * ================================================================ */
 
 static void genera_expr(nodus_t *n, int dest);
-static void genera_lval(nodus_t *n, int dest);
 static void genera_sententia(nodus_t *n);
-
-/* §6.7.2.1: quaerit informātiōnem campī bitōrum prō membrō */
-static membrum_t *quaere_membrum(typus_t *st, const char *nomen)
-{
-    if (!st || !nomen || st->genus != TY_STRUCT)
-        return NULL;
-    for (int i = 0; i < st->num_membrorum; i++)
-        if (strcmp(st->membra[i].nomen, nomen) == 0)
-            return &st->membra[i];
-    return NULL;
-}
-
-/* §6.7.8: numera elementa plana quae in initializatore structurae
- * expectantur pro hoc typo. Recursivus pro sub-structuris.
- * char[N] cum chorda = 1, alii arietes = N scalaria, struct = summa. */
-static int numera_elementa_init(typus_t *t)
-{
-    if (!t)
-        return 1;
-    if (
-        t->genus == TY_ARRAY && t->basis
-        && (t->basis->genus == TY_CHAR || t->basis->genus == TY_UCHAR)
-    )
-        return 1; /* char[N] = "..." — unum elementum */
-    if (t->genus == TY_ARRAY && t->basis) {
-        typus_t *f = t->basis;
-        while (f->genus == TY_ARRAY && f->basis)
-            f = f->basis;
-        int f_mag = typus_magnitudo(f);
-        if (f_mag < 1)
-            erratum("numera_elementa_init: magnitudo folii invalida");
-        return typus_magnitudo(t) / f_mag;
-    }
-    if (t->genus == TY_STRUCT && t->membra && t->num_membrorum > 0) {
-        int summa = 0;
-        for (int i = 0; i < t->num_membrorum; i++)
-            summa += numera_elementa_init(t->membra[i].typus);
-        return summa;
-    }
-    return 1; /* scalar */
-}
 
 /* §6.7.2.1: ēmitte UBFX/SBFX prō lectiōne campī bitōrum */
 static void genera_lectio_campi_bitorum(int r, membrum_t *mb)
@@ -143,40 +101,6 @@ static void genera_lectio_campi_bitorum(int r, membrum_t *mb)
         emit32(0x13000000 | (lsb << 16) | (imms << 10) | (r << 5) | r);
     else
         emit32(0x53000000 | (lsb << 16) | (imms << 10) | (r << 5) | r);
-}
-
-static int mag_typi(typus_t *t)
-{
-    if (!t)
-        return 8;
-    if (t->genus == TY_PTR || t->genus == TY_ARRAY || t->genus == TY_FUNC)
-        return 8;
-    if (t->genus == TY_STRUCT)
-        return t->magnitudo;
-    return t->magnitudo ? t->magnitudo : 4;
-}
-
-/* magnitudo vera pro accessu tabulae — non reducit TY_ARRAY ad 8 */
-static int mag_typi_verus(typus_t *t)
-{
-    if (!t)
-        return 8;
-    if (t->genus == TY_ARRAY)
-        return t->magnitudo > 0 ? t->magnitudo : 8;
-    return mag_typi(t);
-}
-
-/* §6.7.5.2: genera codicem quī magnitudinem totam typī (tabulae cum
- * VLA dimēnsiōnibus aut scālāris) in x_dest pōnit.  Redit 1 sī VLA
- * implicātur (dynamica), 0 sī tota magnitudo constans. */
-static int typus_habet_vla(typus_t *t)
-{
-    while (t && t->genus == TY_ARRAY) {
-        if (t->num_elementorum <= 0 && t->vla_dim)
-            return 1;
-        t = t->basis;
-    }
-    return 0;
 }
 
 static void genera_magnitudo_typi(typus_t *t, int dest_reg)
@@ -220,115 +144,6 @@ static void genera_magnitudo_typi(typus_t *t, int dest_reg)
         emit_movi(17, constant_mag);
         emit_mul(rarm, rarm, 17);
     }
-}
-
-static int est_unsigned(typus_t *t)
-{
-    if (!t)
-        return 0;
-    return t->est_sine_signo ||
-        t->genus == TY_UCHAR || t->genus == TY_USHORT ||
-        t->genus == TY_UINT || t->genus == TY_ULONG ||
-        t->genus == TY_ULLONG ||
-        t->genus == TY_PTR || t->genus == TY_ARRAY;
-}
-
-/* §6.7.8: imple regionem memoriae cum zerīs.
- * Cūrat nē extrā fīnēs scrībātur (ultima scrīptūra 4 vel 1 octetī). */
-static void emit_imple_zeris(int off_basis, int magnitudo)
-{
-    if (magnitudo <= 0)
-        return;
-    emit_movi(0, 0);
-    for (int z = 0; z < magnitudo; ) {
-        int rem = magnitudo - z;
-        emit_movi(17, -(off_basis + z));
-        emit_sub(17, FP, 17);
-        if (rem >= 8) {
-            emit_str64(0, 17, 0);
-            z += 8;
-        } else if (rem >= 4) {
-            emit_str32(0, 17, 0);
-            z += 4;
-        } else {
-            emit_strb(0, 17, 0);
-            z += 1;
-        }
-    }
-}
-
-/* ================================================================
- * auxiliaria pro typis fluitantibus
- *
- * Strategia: idem reg_arm(slot) ūtitur, sed valor vivit in
- * d-registrō (non x-registrō) cum typus fluitans est.
- * ================================================================ */
-
-/* carrica constantem fluitantem in d-registrum —
- * §6.4.4.2: per bit-pattern in registrum integrum, deinde FMOV */
-static void emit_fconst(int dreg, double val)
-{
-    long bits;
-    memcpy(&bits, &val, 8);
-    emit_movi(dreg, bits);       /* MOV Xn, #bits */
-    emit_fmov_dx(dreg, dreg);   /* FMOV Dn, Xn */
-}
-
-/* carrica valorem fluitantem ex adresse in memoria ad d-registrum */
-static void emit_fload_from_addr(int dreg, int addr_reg, typus_t *t)
-{
-    if (t && t->genus == TY_FLOAT) {
-        emit_fldr32(dreg, addr_reg, 0); /* LDR Sn, [Xaddr] */
-        emit_fcvt_ds(dreg, dreg);       /* §6.3.1.5: promove ad double */
-    } else {
-        emit_fldr64(dreg, addr_reg, 0); /* LDR Dn, [Xaddr] */
-    }
-}
-
-/* salva valorem fluitantem ex d-registrō in memoriam */
-static void emit_fstore_to_addr(int dreg, int addr_reg, typus_t *t)
-{
-    if (t && t->genus == TY_FLOAT) {
-        emit_fcvt_sd(dreg, dreg);       /* §6.3.1.5: demove ad float */
-        emit_fstr32(dreg, addr_reg, 0); /* STR Sn, [Xaddr] */
-    } else {
-        emit_fstr64(dreg, addr_reg, 0); /* STR Dn, [Xaddr] */
-    }
-}
-
-/* converte integrum in registrō Xn ad double in registrō Dn */
-static void emit_int_to_double(int reg, typus_t *src_type)
-{
-    /* §6.3.1.4¶2: integer → double */
-    if (est_unsigned(src_type))
-        emit_ucvtf_dx(reg, reg);    /* UCVTF Dn, Xn */
-    else
-        emit_scvtf_dx(reg, reg);    /* SCVTF Dn, Xn */
-}
-
-/* converte double in registrō Dn ad integrum in registrō Xn */
-static void emit_double_to_int(int reg)
-{
-    /* §6.3.1.4¶1: truncatio ad zero */
-    emit_fcvtzs_xd(reg, reg);      /* FCVTZS Xn, Dn */
-}
-
-/* carrica valorem ex l-valor adresse in dest */
-static void emit_load_from_addr(int dest, typus_t *t)
-{
-    int mag = mag_typi(t);
-    if (t && (t->genus == TY_STRUCT || t->genus == TY_ARRAY))
-        return; /* iam adresse */
-    if (typus_est_fluat(t)) {
-        /* §6.2.5¶10: floāt/double — carrica in d-reg cum conversiōne
-         * ad doublem ut conventiō intra CCC servētur */
-        emit_fload_from_addr(dest, dest, t);
-        return;
-    }
-    if (est_unsigned(t))
-        emit_load_unsigned(dest, dest, 0, mag);
-    else
-        emit_load(dest, dest, 0, mag);
 }
 
 /* genera l-valor (adresse in dest) */
@@ -867,7 +682,7 @@ static void genera_expr(nodus_t *n, int dest)
             } else {
                 int mag = mag_typi(n->sinister->typus);
                 if (n->sinister->typus && n->sinister->typus->genus == TY_STRUCT) {
-                /* copia structurae */
+                    /* copia structurae */
                     for (int i = 0; i < mag; i += 8) {
                         int rem = mag - i;
                         if (rem >= 8) {
@@ -882,7 +697,7 @@ static void genera_expr(nodus_t *n, int dest)
                         }
                     }
                 } else if (typus_est_fluat(n->sinister->typus)) {
-                /* §6.5.16.1: assignatio fluitans — converte si necesse, salva per FP STR */
+                    /* §6.5.16.1: assignatio fluitans — converte si necesse, salva per FP STR */
                     if (!typus_est_fluat(n->dexter->typus))
                         emit_int_to_double(r, n->dexter->typus);
                     emit_fstore_to_addr(r, reg_arm(r2), n->sinister->typus);
@@ -894,8 +709,8 @@ static void genera_expr(nodus_t *n, int dest)
             break;
         }
 
-    /* §6.5.16.2: assignatio composita — E1 op= E2 ≡ E1 = E1 op E2 */
     case N_OPASSIGN:
+        /* §6.5.16.2: assignatio composita — E1 op= E2 ≡ E1 = E1 op E2 */
         {
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);

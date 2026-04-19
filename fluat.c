@@ -21,6 +21,7 @@
  */
 
 #include <stddef.h>
+#include <string.h>
 #include "fluat.h"
 #include "emitte.h"
 
@@ -59,21 +60,6 @@ void fluat_initia(void)
     ty_double = typus_novus(TY_DOUBLE);
     ty_double->magnitudo = 8;   /* 64-bit */
     ty_double->colineatio = 8;
-}
-
-/* ================================================================
- * praedicata typorum
- * ================================================================ */
-
-/*
- * §6.2.5¶10: float et double sunt typi "real floating".
- * §6.2.5¶14: integer et real floating = typi arithmetici.
- */
-int typus_est_fluat(typus_t *t)
-{
-    if (!t)
-        return 0;
-    return t->genus == TY_FLOAT || t->genus == TY_DOUBLE;
 }
 
 /*
@@ -332,4 +318,78 @@ void emit_scvtf_sw(int sd, int wn)
 void emit_ucvtf_dx(int dd, int xn)
 {
     emit32(0x9E630000 | ((xn & 0x1F) << 5) | (dd & 0x1F));
+}
+
+/* ================================================================
+ * auxiliaria pro typis fluitantibus
+ *
+ * Strategia: idem reg_arm(slot) ūtitur, sed valor vivit in
+ * d-registrō (non x-registrō) cum typus fluitans est.
+ * ================================================================ */
+
+/* carrica constantem fluitantem in d-registrum —
+ * §6.4.4.2: per bit-pattern in registrum integrum, deinde FMOV */
+void emit_fconst(int dreg, double val)
+{
+    long bits;
+    memcpy(&bits, &val, 8);
+    emit_movi(dreg, bits);      /* MOV Xn, #bits */
+    emit_fmov_dx(dreg, dreg);   /* FMOV Dn, Xn */
+}
+
+/* carrica valorem fluitantem ex adresse in memoria ad d-registrum */
+void emit_fload_from_addr(int dreg, int addr_reg, typus_t *t)
+{
+    if (t && t->genus == TY_FLOAT) {
+        emit_fldr32(dreg, addr_reg, 0); /* LDR Sn, [Xaddr] */
+        emit_fcvt_ds(dreg, dreg);       /* §6.3.1.5: promove ad double */
+    } else {
+        emit_fldr64(dreg, addr_reg, 0); /* LDR Dn, [Xaddr] */
+    }
+}
+
+/* salva valorem fluitantem ex d-registrō in memoriam */
+void emit_fstore_to_addr(int dreg, int addr_reg, typus_t *t)
+{
+    if (t && t->genus == TY_FLOAT) {
+        emit_fcvt_sd(dreg, dreg);       /* §6.3.1.5: demove ad float */
+        emit_fstr32(dreg, addr_reg, 0); /* STR Sn, [Xaddr] */
+    } else {
+        emit_fstr64(dreg, addr_reg, 0); /* STR Dn, [Xaddr] */
+    }
+}
+
+/* converte integrum in registrō Xn ad double in registrō Dn */
+void emit_int_to_double(int reg, typus_t *src_type)
+{
+    /* §6.3.1.4¶2: integer → double */
+    if (est_unsigned(src_type))
+        emit_ucvtf_dx(reg, reg);    /* UCVTF Dn, Xn */
+    else
+        emit_scvtf_dx(reg, reg);    /* SCVTF Dn, Xn */
+}
+
+/* converte double in registrō Dn ad integrum in registrō Xn */
+void emit_double_to_int(int reg)
+{
+    /* §6.3.1.4¶1: truncatio ad zero */
+    emit_fcvtzs_xd(reg, reg);      /* FCVTZS Xn, Dn */
+}
+
+/* carrica valorem ex l-valor adresse in dest */
+void emit_load_from_addr(int dest, typus_t *t)
+{
+    int mag = mag_typi(t);
+    if (t && (t->genus == TY_STRUCT || t->genus == TY_ARRAY))
+        return; /* iam adresse */
+    if (typus_est_fluat(t)) {
+        /* §6.2.5¶10: floāt/double — carrica in d-reg cum conversiōne
+         * ad doublem ut conventiō intra CCC servētur */
+        emit_fload_from_addr(dest, dest, t);
+        return;
+    }
+    if (est_unsigned(t))
+        emit_load_unsigned(dest, dest, 0, mag);
+    else
+        emit_load(dest, dest, 0, mag);
 }

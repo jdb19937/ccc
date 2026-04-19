@@ -12,9 +12,10 @@ CAPITA  = utilia.h emitte.h scribo.h genera.h parser.h lexator.h liga.h biblio.h
 ICCC_OBJECTA  = iccc.o
 CCC_OBJECTA = ccc.o utilia.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
 LDI_OBJECTA = ldi.o utilia.o liga.o emitte.o scribo.o biblio.o typus.o func.o fluat.o
-OBJECTA     = iccc.o ccc.o ldi.o utilia.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o fluat.o typus.o func.o
+IMM_OBJECTA = imm.o utilia.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
+OBJECTA     = iccc.o ccc.o ldi.o imm.o utilia.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o fluat.o typus.o func.o
 
-omnia: ccc ldi iccc
+omnia: ccc ldi iccc imm
 
 %.o: %.c $(CAPITA)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -31,6 +32,10 @@ ldi: $(LDI_OBJECTA)
 	$(CC) $(CFLAGS) -o $@ $(LDI_OBJECTA)
 	@echo "==> ldi aedificatum"
 
+imm: $(IMM_OBJECTA)
+	$(CC) $(CFLAGS) -o $@ $(IMM_OBJECTA)
+	@echo "==> imm aedificatum"
+
 PREFIX = /opt/apotheca
 
 colloca: omnia
@@ -38,6 +43,7 @@ colloca: omnia
 	install -m 755 iccc $(PREFIX)/bin/
 	install -m 755 ccc $(PREFIX)/bin/
 	install -m 755 ldi $(PREFIX)/bin/
+	install -m 755 imm $(PREFIX)/bin/
 	install -d $(PREFIX)/var/ccc/capita/sys
 	install -d $(PREFIX)/var/ccc/capita/objc
 	install -m 644 capita/capitum.h $(PREFIX)/var/ccc/capita/
@@ -46,7 +52,7 @@ colloca: omnia
 	for f in capita/objc/*.h; do install -m 644 $$f $(PREFIX)/var/ccc/capita/objc/; done
 
 purga:
-	rm -f $(OBJECTA) ccc ldi iccc
+	rm -f $(OBJECTA) ccc ldi iccc imm
 	rm -f initia.fac reinitia.fac
 	rm -rf initia reinitia
 
@@ -59,7 +65,7 @@ proba:
 	# $(FACE) reinitia
 
 linte:
-	insinulint -c $(CAPITA)
+	insinulint -c *.c *.h
 
 initia.fac: ccc ldi
 	rm -rf initia

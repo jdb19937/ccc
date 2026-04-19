@@ -1102,14 +1102,48 @@ void scribo_obiectum(const char *plica_exitus)
                 int target_off = labels[f->target];
                 int delta = (target_off - f->offset) / 4;
                 int rt = inst & 0x1F;
-                inst = 0xB4000000 | ((delta & 0x7FFFF) << 5) | rt;
+                uint32_t sf = inst & 0x80000000;
+                inst = sf | 0x34000000 | ((delta & 0x7FFFF) << 5) | rt;
                 break;
             }
         case FIX_CBNZ: {
                 int target_off = labels[f->target];
                 int delta = (target_off - f->offset) / 4;
                 int rt = inst & 0x1F;
-                inst = 0xB5000000 | ((delta & 0x7FFFF) << 5) | rt;
+                uint32_t sf = inst & 0x80000000;
+                inst = sf | 0x35000000 | ((delta & 0x7FFFF) << 5) | rt;
+                break;
+            }
+        case FIX_TBZ: {
+                int target_off = labels[f->target];
+                int delta = (target_off - f->offset) / 4;
+                int bit = f->magnitudo_accessus;
+                int rt  = inst & 0x1F;
+                uint32_t b5 = (bit >> 5) & 1;
+                uint32_t b40 = bit & 0x1F;
+                inst = 0x36000000 | (b5 << 31) | (b40 << 19)
+                     | ((delta & 0x3FFF) << 5) | rt;
+                break;
+            }
+        case FIX_TBNZ: {
+                int target_off = labels[f->target];
+                int delta = (target_off - f->offset) / 4;
+                int bit = f->magnitudo_accessus;
+                int rt  = inst & 0x1F;
+                uint32_t b5 = (bit >> 5) & 1;
+                uint32_t b40 = bit & 0x1F;
+                inst = 0x37000000 | (b5 << 31) | (b40 << 19)
+                     | ((delta & 0x3FFF) << 5) | rt;
+                break;
+            }
+        case FIX_BL_EXT: {
+                int sym_idx = got_ad_sym[f->target];
+                relocs[nrelocs].r_address = f->offset;
+                relocs[nrelocs].r_info = (sym_idx & 0xFFFFFF) |
+                    (1 << 24) | (2 << 25) | (1 << 27) |
+                    ((uint32_t)ARM64_RELOC_BRANCH26 << 28);
+                nrelocs++;
+                inst = 0x94000000;
                 break;
             }
         case FIX_ADRP: {

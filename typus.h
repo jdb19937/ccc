@@ -63,15 +63,23 @@ struct typus {
 
 #define MAX_TYPI 16384
 
-typus_t *typus_novus(int genus);
-typus_t *typus_indicem(typus_t *basis);
-typus_t *typus_tabulam(typus_t *basis, int num);
-int      typus_magnitudo(typus_t *t);
-int      typus_colineatio(typus_t *t);
-int      typus_est_integer(typus_t *t);
-int      typus_est_index(typus_t *t);
-int      typus_est_arithmeticus(typus_t *t);
-typus_t *typus_basis_indicis(typus_t *t);
+typus_t   *typus_novus(int genus);
+typus_t   *typus_indicem(typus_t *basis);
+typus_t   *typus_tabulam(typus_t *basis, int num);
+int        typus_magnitudo(const typus_t *t);
+int        typus_colineatio(const typus_t *t);
+int        typus_est_integer(const typus_t *t);
+int        typus_est_fluat(const typus_t *t);
+int        typus_est_index(const typus_t *t);
+int        typus_est_arithmeticus(const typus_t *t);
+typus_t   *typus_basis_indicis(typus_t *t);
+int        est_unsigned(const typus_t *t);
+int        mag_typi(const typus_t *t);
+int        mag_typi_verus(const typus_t *t);
+int        typus_habet_vla(const typus_t *t);
+int        numera_elementa_init(const typus_t *t);
+membrum_t *quaere_membrum(typus_t *st, const char *nomen);
+
 
 void typus_initia(void);
 

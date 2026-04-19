@@ -33,7 +33,7 @@ extern typus_t *ty_double;
  * ================================================================ */
 
 /* §6.2.5¶10: estne typus fluitans? (float vel double) */
-int typus_est_fluat(typus_t *t);
+int typus_est_fluat(const typus_t *t);
 
 /* §6.3.1.8: conversiones arithmeticae usitae —
  * si uterque operandus fluitans, communis typus est maior;
@@ -162,5 +162,12 @@ void emit_ucvtf_dx(int dd, int xn);
  * ================================================================ */
 
 void fluat_initia(void);
+
+void emit_load_from_addr(int dest, typus_t *t);
+void emit_fconst(int dreg, double val);
+void emit_fload_from_addr(int dreg, int addr_reg, typus_t *t);
+void emit_fstore_to_addr(int dreg, int addr_reg, typus_t *t);
+void emit_int_to_double(int reg, typus_t *src_type);
+void emit_double_to_int(int reg);
 
 #endif /* FLUAT_H */

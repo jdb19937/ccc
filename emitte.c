@@ -449,7 +449,7 @@ void emit_ret(void)
 void emit_cbz_label(int rt, int label)
 {
     fixup_adde(FIX_CBZ, codex_lon, label, 0);
-    emit32(0xB4000000 | rt);
+    emit32(0xB4000000 | rt);  /* sf=1 (64-bit); scribo servat sf */
 }
 
 /* CBNZ Xt, label */
@@ -597,5 +597,29 @@ void emit_store(int rt, int rn, int offset, int mag)
     case 4: emit_str32(rt, rn, offset); break;
     case 8: emit_str64(rt, rn, offset); break;
     default: erratum("emit_store: magnitudo invalida: %d", mag);
+    }
+}
+
+/* §6.7.8: imple regionem memoriae cum zerīs.
+ * Cūrat nē extrā fīnēs scrībātur (ultima scrīptūra 4 vel 1 octetī). */
+void emit_imple_zeris(int off_basis, int magnitudo)
+{
+    if (magnitudo <= 0)
+        return;
+    emit_movi(0, 0);
+    for (int z = 0; z < magnitudo; ) {
+        int rem = magnitudo - z;
+        emit_movi(17, -(off_basis + z));
+        emit_sub(17, FP, 17);
+        if (rem >= 8) {
+            emit_str64(0, 17, 0);
+            z += 8;
+        } else if (rem >= 4) {
+            emit_str32(0, 17, 0);
+            z += 4;
+        } else {
+            emit_strb(0, 17, 0);
+            z += 1;
+        }
     }
 }
