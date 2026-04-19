@@ -11,11 +11,12 @@ CAPITA  = utilia.h emitte.h emittesym.h scribo.h genera.h generasym.h parser.h l
 
 ICCC_OBJECTA  = iccc.o
 CCC_OBJECTA = ccc.o utilia.o lexator.o parser.o generasym.o emittesym.o emitte.o biblio.o fluat.o typus.o func.o
+CCC0_OBJECTA = ccc0.o utilia.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
 LDI_OBJECTA = ldi.o utilia.o liga.o emitte.o scribo.o biblio.o typus.o func.o fluat.o
 IMM_OBJECTA = imm.o utilia.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
-OBJECTA     = iccc.o ccc.o ldi.o imm.o utilia.o lexator.o parser.o genera.o generasym.o emitte.o emittesym.o scribo.o liga.o biblio.o fluat.o typus.o func.o
+OBJECTA     = iccc.o ccc.o ccc0.o ldi.o imm.o utilia.o lexator.o parser.o genera.o generasym.o emitte.o emittesym.o scribo.o liga.o biblio.o fluat.o typus.o func.o
 
-omnia: ccc ldi iccc imm
+omnia: ccc ccc0 ldi iccc imm
 
 %.o: %.c $(CAPITA)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -27,6 +28,10 @@ iccc: $(ICCC_OBJECTA)
 ccc: $(CCC_OBJECTA)
 	$(CC) $(CFLAGS) -o $@ $(CCC_OBJECTA)
 	@echo "==> ccc aedificatum"
+
+ccc0: $(CCC0_OBJECTA)
+	$(CC) $(CFLAGS) -o $@ $(CCC0_OBJECTA)
+	@echo "==> ccc0 aedificatum"
 
 ldi: $(LDI_OBJECTA)
 	$(CC) $(CFLAGS) -o $@ $(LDI_OBJECTA)
@@ -52,7 +57,7 @@ colloca: omnia
 	for f in capita/objc/*.h; do install -m 644 $$f $(PREFIX)/var/ccc/capita/objc/; done
 
 purga:
-	rm -f $(OBJECTA) ccc ldi iccc imm
+	rm -f $(OBJECTA) ccc ccc0 ldi iccc imm
 	rm -f initia.fac reinitia.fac
 	rm -rf initia reinitia
 
