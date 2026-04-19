@@ -1,6 +1,6 @@
 ccc
 ldi
-ic
+iccc
 *.o
 initia/*
 reinitia/*

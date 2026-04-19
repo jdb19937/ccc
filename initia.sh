@@ -9,7 +9,7 @@
 #
 # Exemplum — initiatio duplex:
 #   face
-#   ./initia.sh initia ./ccc ./ldi
+#   ./initia.sh initia ./ccc ./ldi ./iccc
 
 if [ $# -ne 3 ]; then
     echo "usus: $0 <directorium> <via_ccc> <via_ldi>" >&2
@@ -19,6 +19,7 @@ fi
 DIR_INITIA="$1"
 VIA_CCC="$2"
 VIA_LDI="$3"
+VIA_ICCC="$4"
 
 # crea directorium
 mkdir -p "$DIR_INITIA"
@@ -35,18 +36,19 @@ cat > "$DIR_INITIA/Faceplica" << FINIS
 
 CCC     = $VIA_CCC
 LDI     = $VIA_LDI
+ICCC    = $VIA_ICCC
 
 CCC_OBJECTA = ccc.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o fluat.o typus.o func.o utilia.o
 LDI_OBJECTA = ldi.o liga.o emitte.o scribo.o biblio.o typus.o func.o fluat.o utilia.o
 
-omnia: ccc ldi ic
+omnia: ccc ldi iccc
 
 %.o: %.c
 	\$(CCC) -S../capita \$<
 
-ic: ic.o
+iccc: iccc.o
 	\$(LDI) -o \$@ \$^
-	@echo "==> ic initiatum"
+	@echo "==> iccc initiatum"
 
 ccc: \$(CCC_OBJECTA)
 	\$(LDI) -o \$@ \$^
@@ -57,7 +59,7 @@ ldi: \$(LDI_OBJECTA)
 	@echo "==> ldi initiatum"
 
 purga:
-	rm -f *.o ccc ldi ic
+	rm -f *.o ccc ldi iccc
 
 .PHONY: omnia purga
 FINIS
@@ -65,4 +67,5 @@ FINIS
 echo "=== initiatio parata: $DIR_INITIA/ ==="
 echo "  compilator: $VIA_CCC"
 echo "  ligator:    $VIA_LDI"
+echo "  precompilator:    $VIA_ICCC"
 echo "  ad aedificandum: face -C $DIR_INITIA"

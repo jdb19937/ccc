@@ -37,10 +37,10 @@ static void usus(void)
         "optiones:\n"
         "  -c           (ignoratur)\n"
         "  -o <plica>   plica exitus (defalta: nomen.o)\n"
-        "  -I <via>     adde viam inclusionis (transmissa ad ic)\n"
-        "  -S <via>     via capitum systematis (transmissa ad ic)\n"
-        "  -D<nomen>    defini macram (transmissa ad ic)\n"
-        "  -U<nomen>    exde macram (transmissa ad ic)\n"
+        "  -I <via>     adde viam inclusionis (transmissa ad iccc)\n"
+        "  -S <via>     via capitum systematis (transmissa ad iccc)\n"
+        "  -D<nomen>    defini macram (transmissa ad iccc)\n"
+        "  -U<nomen>    exde macram (transmissa ad iccc)\n"
         "  -Wall        activa monitiones omnes\n"
         "  -Wextra      activa monitiones extra\n"
         "  -pedantic    activa modum pedanticum\n"
@@ -63,51 +63,51 @@ static int finit_in(const char *via, const char *suf)
 }
 
 /* via ad executabile 'ic':
- *   si argv[0] continet '/', adhibetur dirname(argv0) + "/ic";
+ *   si argv[0] continet '/', adhibetur dirname(argv0) + "/iccc";
  *   alias redditur "ic" pro quaestione PATH per execvp.
  */
-static char *quaere_ic(const char *argv0)
+static char *quaere_iccc(const char *argv0)
 {
     const char *slash = strrchr(argv0, '/');
     if (!slash)
-        return strdup("ic");
+        return strdup("iccc");
     int dirlon = (int)(slash - argv0);
-    char *via  = malloc(dirlon + 4);
+    char *via  = malloc(dirlon + 6);
     if (!via)
         erratum("memoria exhausta");
     memcpy(via, argv0, dirlon);
-    memcpy(via + dirlon, "/ic", 4);
+    memcpy(via + dirlon, "/iccc", 6);
     return via;
 }
 
 /* executa ic ad .c praeprocessandum; plicam .i in eodem directorio scribit */
-static void exsecute_ic(
-    const char *ic_via,
+static void exsecute_iccc(
+    const char *iccc_via,
     const char *plica_c,
     const char *plica_i,
-    char **ic_args, int num_ic_args
+    char **iccc_args, int num_iccc_args
 ) {
     pid_t pid = fork();
     if (pid < 0)
         erratum("fork: %s", strerror(errno));
     if (pid == 0) {
-        /* filius — construe argumenta: ic_via, [ic_args...], -o plica_i, plica_c, NULL */
-        char **arg = malloc((num_ic_args + 5) * sizeof(char *));
+        /* filius — construe argumenta: iccc_via, [iccc_args...], -o plica_i, plica_c, NULL */
+        char **arg = malloc((num_iccc_args + 5) * sizeof(char *));
         if (!arg)
             _exit(127);
         int n = 0;
-        arg[n++] = (char *)ic_via;
-        for (int i = 0; i < num_ic_args; i++)
-            arg[n++] = ic_args[i];
+        arg[n++] = (char *)iccc_via;
+        for (int i = 0; i < num_iccc_args; i++)
+            arg[n++] = iccc_args[i];
         arg[n++] = "-o";
         arg[n++] = (char *)plica_i;
         arg[n++] = (char *)plica_c;
         arg[n]   = NULL;
-        /* execvp: si ic_via continet '/', directe exsecutatur; alias PATH quaeritur */
-        execvp(ic_via, arg);
+        /* execvp: si iccc_via continet '/', directe exsecutatur; alias PATH quaeritur */
+        execvp(iccc_via, arg);
         fprintf(
             stderr, "ccc: non possum exsecure '%s': %s\n",
-            ic_via, strerror(errno)
+            iccc_via, strerror(errno)
         );
         _exit(127);
     }
@@ -124,9 +124,9 @@ int main(int argc, char *argv[])
     const char *plica_exitus = NULL;
 
     /* argumenta transmittenda ad ic (pro .c input) */
-    char **ic_args     = malloc(argc * sizeof(char *));
-    int    num_ic_args = 0;
-    if (!ic_args)
+    char **iccc_args     = malloc(argc * sizeof(char *));
+    int    num_iccc_args = 0;
+    if (!iccc_args)
         erratum("memoria exhausta");
 
     for (int i = 1; i < argc; i++) {
@@ -142,11 +142,11 @@ int main(int argc, char *argv[])
             strncmp(argv[i], "-D", 2) == 0 ||
             strncmp(argv[i], "-U", 2) == 0
         ) {
-            ic_args[num_ic_args++] = argv[i];
+            iccc_args[num_iccc_args++] = argv[i];
             if (argv[i][2] == '\0') {
                 if (++i >= argc)
                     usus();
-                ic_args[num_ic_args++] = argv[i];
+                iccc_args[num_iccc_args++] = argv[i];
             }
         } else if (strcmp(argv[i], "-Wall") == 0) {
             optio_Wall = 1;
@@ -200,14 +200,14 @@ int main(int argc, char *argv[])
             "/tmp/ccc.%d.i", (int)getpid()
         );
         plica_i_tmp_gl = plica_i_tmp;
-        char *ic_via = quaere_ic(argv[0]);
-        exsecute_ic(ic_via, plica_fontis, plica_i_tmp, ic_args, num_ic_args);
-        free(ic_via);
+        char *iccc_via = quaere_iccc(argv[0]);
+        exsecute_iccc(iccc_via, plica_fontis, plica_i_tmp, iccc_args, num_iccc_args);
+        free(iccc_via);
         plica_lex = plica_i_tmp;
     } else {
         plica_lex = plica_fontis;
     }
-    free(ic_args);
+    free(iccc_args);
 
     int longitudo;
     char *fons = lege_plicam(plica_lex, &longitudo);
