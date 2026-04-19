@@ -9,7 +9,7 @@
 
 #include "utilia.h"
 #include "parser.h"
-#include "genera.h"
+#include "generasym.h"
 
 #include <errno.h>
 #include <sys/wait.h>
@@ -23,6 +23,7 @@ int optio_Wall     = 0;
 int optio_Wextra   = 0;
 int optio_pedantic = 0;
 int optio_O        = 0;   /* gradus optimizationis (0, 1, 2, 3) */
+int optio_s        = 0;   /* -s: scribe .s assembly loco .o */
 
 /* ================================================================
  * usus
@@ -36,7 +37,8 @@ static void usus(void)
         "\n"
         "optiones:\n"
         "  -c           (ignoratur)\n"
-        "  -o <plica>   plica exitus (defalta: nomen.o)\n"
+        "  -s           scribe .s assembly (non invoca imm)\n"
+        "  -o <plica>   plica exitus (defalta: nomen.o aut nomen.s cum -s)\n"
         "  -I <via>     adde viam inclusionis (transmissa ad iccc)\n"
         "  -S <via>     via capitum systematis (transmissa ad iccc)\n"
         "  -D<nomen>    defini macram (transmissa ad iccc)\n"
@@ -136,6 +138,8 @@ int main(int argc, char *argv[])
             plica_exitus = argv[i];
         } else if (strcmp(argv[i], "-c") == 0) {
             /* ignoratur — ccc semper obiectum generat */
+        } else if (strcmp(argv[i], "-s") == 0) {
+            optio_s = 1;
         } else if (
             strncmp(argv[i], "-I", 2) == 0 ||
             strncmp(argv[i], "-S", 2) == 0 ||
@@ -187,7 +191,7 @@ int main(int argc, char *argv[])
         strncpy(auto_exitus, plica_fontis, 507);
         auto_exitus[507] = '\0';
         int lon = (int)strlen(auto_exitus);
-        auto_exitus[lon-1] = 'o';
+        auto_exitus[lon-1] = optio_s ? 's' : 'o';
         plica_exitus = auto_exitus;
     }
 
@@ -214,14 +218,66 @@ int main(int argc, char *argv[])
     lex_initia(plica_lex, fons, longitudo);
     parse_initia();
     nodus_t *radix = parse_translatio();
-    genera_initia();
-    genera_translatio(radix, plica_exitus, 1);
+    generasym_initia();
+
+    /* nomen .s intermediarium (cum -s, idem ac exitus finalis) */
+    char plica_s_nomen[520];
+    if (optio_s) {
+        strncpy(plica_s_nomen, plica_exitus, 519);
+        plica_s_nomen[519] = '\0';
+    } else {
+        snprintf(plica_s_nomen, sizeof(plica_s_nomen), "/tmp/ccc.%d.s", (int)getpid());
+    }
+    FILE *plica_s_out = fopen(plica_s_nomen, "w");
+    if (!plica_s_out)
+        erratum("non possum aperire '%s': %s", plica_s_nomen, strerror(errno));
+    generasym_translatio(radix, plica_s_out);
+    if (fclose(plica_s_out) != 0)
+        erratum("scriptio .s defecit: %s", strerror(errno));
     free(fons);
 
     /* remove .i temporariam si fuit creata */
     if (est_c) {
         remove(plica_i_tmp);
         plica_i_tmp_gl = NULL;
+    }
+
+    /* si -s, stamus hic; alias invoca imm ad .o producendum */
+    if (!optio_s) {
+        const char *slash = strrchr(argv[0], '/');
+        char *imm_via;
+        if (slash) {
+            int dirlon = (int)(slash - argv[0]);
+            imm_via = malloc(dirlon + 5);
+            if (!imm_via)
+                erratum("memoria exhausta");
+            memcpy(imm_via, argv[0], dirlon);
+            memcpy(imm_via + dirlon, "/imm", 5);
+        } else {
+            imm_via = strdup("imm");
+        }
+        pid_t pid = fork();
+        if (pid < 0)
+            erratum("fork: %s", strerror(errno));
+        if (pid == 0) {
+            char *args[6];
+            int a = 0;
+            args[a++] = imm_via;
+            args[a++] = (char *)plica_s_nomen;
+            args[a++] = "-o";
+            args[a++] = (char *)plica_exitus;
+            args[a]   = NULL;
+            execvp(imm_via, args);
+            fprintf(stderr, "ccc: non possum exsecure imm: %s\n", strerror(errno));
+            _exit(127);
+        }
+        int status;
+        if (waitpid(pid, &status, 0) < 0)
+            erratum("waitpid imm: %s", strerror(errno));
+        if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+            erratum("imm defecit (status %d)", WEXITSTATUS(status));
+        remove(plica_s_nomen);
+        free(imm_via);
     }
     return 0;
 }

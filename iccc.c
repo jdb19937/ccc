@@ -896,6 +896,9 @@ static signum_t *collige_lineam(void)
  * ================================================================ */
 
 static signum_t *expande_lista(signum_t *ts);
+/* flag: si >0, expande_lista non legit signa ex flumine pro lookahead.
+ * usatur cum expande_lista vocatur pro argumentum expandendum. */
+static int expande_clausus = 0;
 
 /* signum_ad_chordam — stringificatio ad formam "..." */
 static signum_t *signum_ad_chordam(signum_t *lista, int linea, const char *plica)
@@ -1175,7 +1178,9 @@ static signum_t *substitue(
                 }
             } else {
                 signum_t *copia = copia_lista(arg);
+                expande_clausus++;
                 inst = expande_lista(copia);
+                expande_clausus--;
                 if (!inst) {
                     inst = signum_crea(T_LOC, "", 0, linea, plica);
                     inst->spatium_ante = ip->spatium_ante;
@@ -1350,11 +1355,20 @@ static signum_t *expande_lista(signum_t *ts)
         }
 
         /* functionalis: specta '(' */
-        /* prima perquire in ts; si non, in pendentia/flumine */
+        /* prima perquire in ts; si non, in pendentia/flumine.
+         * sed si clausus, non legere ex flumine — emitte nomen invariatum. */
         signum_t *peek = ts;
-        if (!peek)
+        if (!peek && !expande_clausus)
             peek = signum_proximum_raw();
-        else {
+        if (!peek) {
+            /* nihil sequitur — emitte s invariatum */
+            if (!exitus_caput)
+                exitus_caput = s;
+            if (exitus_ult)
+                exitus_ult->seq = s;
+            exitus_ult = s;
+            continue;
+        } else {
             /* usa peek ex ts */
         }
         int found_paren = 0;

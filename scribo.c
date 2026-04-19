@@ -1218,6 +1218,46 @@ void scribo_obiectum(const char *plica_exitus)
                 }
                 break;
             }
+        case FIX_ADRP_TEXT:
+        case FIX_ADD_LO12_TEXT: {
+                /* ADRP/ADD ad functionem in __text — f->target est label id.
+                 * Quaere symbolum functionis per label et emitte reloc
+                 * PAGE21/PAGEOFF12. */
+                int label_id = f->target;
+                int sym_idx = -1;
+                /* quaere functionem cum hoc label */
+                for (int fi = 0; fi < num_func_loc; fi++) {
+                    if (func_loci[fi].label == label_id) {
+                        char nn[260];
+                        snprintf(nn, 260, "_%s", func_loci[fi].nomen);
+                        for (int j = 0; j < nsyms; j++) {
+                            if (strcmp(syms[j].nomen, nn) == 0) {
+                                sym_idx = j;
+                                break;
+                            }
+                        }
+                        break;
+                    }
+                }
+                if (sym_idx < 0)
+                    erratum("FIX_ADRP_TEXT: symbolum functionis non inventum pro label %d", label_id);
+                relocs[nrelocs].r_address = f->offset;
+                int pcrel = (f->genus == FIX_ADRP_TEXT) ? 1 : 0;
+                int type = (f->genus == FIX_ADRP_TEXT)
+                    ? ARM64_RELOC_PAGE21 : ARM64_RELOC_PAGEOFF12;
+                relocs[nrelocs].r_info = (sym_idx & 0xFFFFFF) |
+                    (pcrel << 24) | (2 << 25) | (1 << 27) |
+                    ((uint32_t)type << 28);
+                nrelocs++;
+                if (f->genus == FIX_ADRP_TEXT)
+                    inst = 0x90000000 | (inst & 0x1F);
+                else {
+                    int rd = inst & 0x1F;
+                    int rn = (inst >> 5) & 0x1F;
+                    inst = 0x91000000 | (rn << 5) | rd;
+                }
+                break;
+            }
         default:
             break;
         }

@@ -7,13 +7,13 @@
 CC      ?= cc
 CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2
 
-CAPITA  = utilia.h emitte.h scribo.h genera.h parser.h lexator.h liga.h biblio.h fluat.h typus.h func.h
+CAPITA  = utilia.h emitte.h emittesym.h scribo.h genera.h generasym.h parser.h lexator.h liga.h biblio.h fluat.h typus.h func.h
 
 ICCC_OBJECTA  = iccc.o
-CCC_OBJECTA = ccc.o utilia.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
+CCC_OBJECTA = ccc.o utilia.o lexator.o parser.o generasym.o emittesym.o emitte.o biblio.o fluat.o typus.o func.o
 LDI_OBJECTA = ldi.o utilia.o liga.o emitte.o scribo.o biblio.o typus.o func.o fluat.o
 IMM_OBJECTA = imm.o utilia.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
-OBJECTA     = iccc.o ccc.o ldi.o imm.o utilia.o lexator.o parser.o genera.o emitte.o scribo.o liga.o biblio.o fluat.o typus.o func.o
+OBJECTA     = iccc.o ccc.o ldi.o imm.o utilia.o lexator.o parser.o genera.o generasym.o emitte.o emittesym.o scribo.o liga.o biblio.o fluat.o typus.o func.o
 
 omnia: ccc ldi iccc imm
 

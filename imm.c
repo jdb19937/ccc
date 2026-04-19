@@ -1102,7 +1102,12 @@ static void enc_addi64(int rd, int rn, int imm)
         emit32(0x91000000 | (imm << 10) | (rn << 5) | rd);
     else if ((imm & 0xFFF) == 0 && imm <= 0xFFFFFF)
         emit32(0x91400000 | ((imm >> 12) << 10) | (rn << 5) | rd);
-    else
+    else if (imm <= 0xFFFFFF) {
+        int hi = imm & 0xFFF000;
+        int lo = imm & 0xFFF;
+        emit32(0x91400000 | ((hi >> 12) << 10) | (rn << 5) | rd);
+        emit32(0x91000000 | (lo << 10) | (rd << 5) | rd);
+    } else
         erratum_ad(linea_num, "add immediatum extra rangum: %d", imm);
 }
 static void enc_subi64(int rd, int rn, int imm)
@@ -1115,7 +1120,12 @@ static void enc_subi64(int rd, int rn, int imm)
         emit32(0xD1000000 | (imm << 10) | (rn << 5) | rd);
     else if ((imm & 0xFFF) == 0 && imm <= 0xFFFFFF)
         emit32(0xD1400000 | ((imm >> 12) << 10) | (rn << 5) | rd);
-    else
+    else if (imm <= 0xFFFFFF) {
+        int hi = imm & 0xFFF000;
+        int lo = imm & 0xFFF;
+        emit32(0xD1400000 | ((hi >> 12) << 10) | (rn << 5) | rd);
+        emit32(0xD1000000 | (lo << 10) | (rd << 5) | rd);
+    } else
         erratum_ad(linea_num, "sub immediatum extra rangum: %d", imm);
 }
 
@@ -1338,11 +1348,27 @@ static void dir_quad(void)
         if (s->genus == SYM_CHORDA) {
             int coff = chordae[s->id].offset;
             data_reloc_adde(data_off, DR_CSTRING, coff);
-        } else if (s->genus == SYM_GLOB || s->genus == SYM_IGNOTUS) {
+        } else if (s->genus == SYM_IGNOTUS) {
+            /* symbolum externum (functio vel globalis in alia .o):
+             * emitte relocationem externam per GOT */
+            int gid = got_adde(s->nomen);
+            s->genus = SYM_EXT;
+            s->id = gid;
+            data_reloc_adde(data_off, DR_EXT_FUNC, gid);
+        } else if (s->genus == SYM_EXT) {
+            data_reloc_adde(data_off, DR_EXT_FUNC, s->id);
+        } else if (s->genus == SYM_GLOB) {
             int gid = glob_sym_ensure(si);
             data_reloc_adde(data_off, DR_IDATA, globales[gid].data_offset);
         } else if (s->genus == SYM_FUNC) {
-            data_reloc_adde(data_off, DR_TEXT, func_loci[s->id].label);
+            /* genera.c conventio: target = text offset, non label id */
+            if (s->id < 0) {
+                const char *nn2 = (sn[0] == '_') ? sn + 1 : sn;
+                (void)func_loc_adde(nn2, !s->est_globalis);
+                s->id = num_func_loc - 1;
+            }
+            int lab = func_loci[s->id].label;
+            data_reloc_adde(data_off, DR_TEXT, labels[lab]);
         } else {
             erratum_ad(linea_num, ".quad symbolum '%s' genus non supp", sn);
         }
@@ -1579,12 +1605,24 @@ static void ins_add_sub_generic(int est_sub, int est_s)
         if (s->genus == SYM_CHORDA) {
             fixup_adde(FIX_ADD_LO12, codex_lon, s->id, 0);
             emit32(0x91000000 | (rn << 5) | rd);
-        } else if (s->genus == SYM_GLOB || s->genus == SYM_IGNOTUS) {
+        } else if (s->genus == SYM_GLOB) {
+            int gid = glob_sym_ensure(si);
+            fixup_adde(FIX_ADD_LO12_DATA, codex_lon, gid, 0);
+            emit32(0x91000000 | (rn << 5) | rd);
+        } else if (s->genus == SYM_FUNC) {
+            if (s->id < 0) {
+                const char *nn2 = (sn[0] == '_') ? sn + 1 : sn;
+                (void)func_loc_adde(nn2, !s->est_globalis);
+                s->id = num_func_loc - 1;
+            }
+            fixup_adde(FIX_ADD_LO12_TEXT, codex_lon, func_loci[s->id].label, 0);
+            emit32(0x91000000 | (rn << 5) | rd);
+        } else if (s->genus == SYM_IGNOTUS) {
             int gid = glob_sym_ensure(si);
             fixup_adde(FIX_ADD_LO12_DATA, codex_lon, gid, 0);
             emit32(0x91000000 | (rn << 5) | rd);
         } else {
-            erratum_ad(linea_num, "add @PAGEOFF: symbolum '%s' non est data", sn);
+            erratum_ad(linea_num, "add @PAGEOFF: symbolum '%s' non supportatus", sn);
         }
         (void)w1;
         (void)w2;
@@ -2024,6 +2062,12 @@ static void ins_b(int est_bl)
         else
             emit_b_label(s->id);
     } else if (s->genus == SYM_FUNC) {
+        /* forward ref: functio nondum definita — praealloca func_loc entry */
+        if (s->id < 0) {
+            const char *nn = (nom[0] == '_') ? nom + 1 : nom;
+            (void)func_loc_adde(nn, !s->est_globalis);
+            s->id = num_func_loc - 1;
+        }
         int lab = func_loci[s->id].label;
         if (est_bl)
             emit_bl_label(lab);
@@ -2144,11 +2188,25 @@ static void ins_adrp(void)
     if (!strcmp(rel, "PAGE")) {
         if (s->genus == SYM_CHORDA) {
             emit_adrp_fixup(rd, FIX_ADRP, s->id);
-        } else if (s->genus == SYM_GLOB || s->genus == SYM_IGNOTUS) {
+        } else if (s->genus == SYM_GLOB) {
+            int gid = glob_sym_ensure(si);
+            emit_adrp_fixup(rd, FIX_ADRP_DATA, gid);
+        } else if (s->genus == SYM_FUNC) {
+            /* adresse functionis localis per @PAGE/@PAGEOFF.
+             * Si forward-ref, praealloca func_loc. */
+            if (s->id < 0) {
+                const char *nn2 = (sn[0] == '_') ? sn + 1 : sn;
+                (void)func_loc_adde(nn2, !s->est_globalis);
+                s->id = num_func_loc - 1;
+            }
+            emit_adrp_fixup(rd, FIX_ADRP_TEXT, func_loci[s->id].label);
+        } else if (s->genus == SYM_IGNOTUS) {
+            /* symbolum non definitum adhuc — suspicamur globalem
+             * (functiones vel definita erunt in pass2 vel extern) */
             int gid = glob_sym_ensure(si);
             emit_adrp_fixup(rd, FIX_ADRP_DATA, gid);
         } else
-            erratum_ad(linea_num, "adrp @PAGE: symbolum tex/extern");
+            erratum_ad(linea_num, "adrp @PAGE: symbolum ext — adhibe @GOTPAGE");
     } else if (!strcmp(rel, "GOTPAGE")) {
         int gid = sym_got_id(si);
         emit_adrp_fixup(rd, FIX_ADRP_GOT, gid);
@@ -2569,6 +2627,219 @@ static void ins_movi(void)
 }
 
 /* ================================================================
+ * campus bitōrum — BFI, UBFX, SBFX
+ * forma: op Wd, Wn, #lsb, #width
+ * encoding (W-reg, sf=0):
+ *   BFI  Wd,Wn,#lsb,#w = BFM   Wd,Wn,#immr=(32-lsb)&31,#imms=w-1 (0x33000000)
+ *   UBFX Wd,Wn,#lsb,#w = UBFM  Wd,Wn,#immr=lsb,#imms=lsb+w-1     (0x53000000)
+ *   SBFX Wd,Wn,#lsb,#w = SBFM  Wd,Wn,#immr=lsb,#imms=lsb+w-1     (0x13000000)
+ * ================================================================ */
+static void ins_bfm_variant(uint32_t base, int est_bfi)
+{
+    int w1, w2;
+    int rd = parse_reg(&w1);
+    exige(',');
+    int rn = parse_reg(&w2);
+    exige(',');
+    long lsb = lege_imm();
+    exige(',');
+    long width = lege_imm();
+    if (w1 != w2)
+        erratum_ad(linea_num, "bfm: mixta magnitudo");
+    if (width < 1 || lsb < 0)
+        erratum_ad(linea_num, "bfm: campus invalidus");
+    int immr, imms;
+    int regmax = w1 ? 32 : 64;
+    if (est_bfi) {
+        if (lsb >= regmax || width > regmax - lsb)
+            erratum_ad(linea_num, "bfi: campus extra rangum");
+        immr = (regmax - (int)lsb) & (regmax - 1);
+        imms = (int)width - 1;
+    } else {
+        if (lsb + width > regmax)
+            erratum_ad(linea_num, "bfx: campus extra rangum");
+        immr = (int)lsb;
+        imms = (int)lsb + (int)width - 1;
+    }
+    /* sf in bit 31; pro X-reg N=1 in bit 22, pro W-reg N=0 */
+    uint32_t sf = w1 ? 0u : 1u;
+    uint32_t op = base | (sf << 31) | (sf << 22)
+        | ((immr & 0x3F) << 16) | ((imms & 0x3F) << 10) | (rn << 5) | rd;
+    emit32(op);
+}
+
+/* ================================================================
+ * instructiones floating-point (Annex F IEC 60559)
+ * ================================================================ */
+
+/* FMOV: variantes
+ *   fmov dd, xn    — bit-pattern ex x ad d   (0x9E670000)
+ *   fmov xd, dn    — bit-pattern ex d ad x   (0x9E660000)
+ *   fmov dd, dn    — copia d-reg             (0x1E604000)
+ *   fmov dd, xzr   — zerō (bit-pattern)      eadem ac variante dd,xn rn=31
+ */
+static void ins_fmov(void)
+{
+    saltus_spatii();
+    int m1 = 0, m2 = 0, w;
+    char c0 = spectus();
+    if (c0 == 'd' || c0 == 'D' || c0 == 's' || c0 == 'S') {
+        int rd = parse_fpreg(&m1);
+        exige(',');
+        saltus_spatii();
+        char c1 = spectus();
+        if (c1 == 'd' || c1 == 'D' || c1 == 's' || c1 == 'S') {
+            int rn = parse_fpreg(&m2);
+            if (m1 != m2)
+                erratum_ad(linea_num, "fmov: mixta magnitudo fp");
+            if (m1 == 8)
+                emit32(0x1E604000 | (rn << 5) | rd);
+            else if (m1 == 4)
+                emit32(0x1E204000 | (rn << 5) | rd);
+            else
+                erratum_ad(linea_num, "fmov d/s solum supportatur");
+            return;
+        }
+        /* fmov dd, xn (vel xzr) */
+        int rn = parse_reg(&w);
+        if (w)
+            erratum_ad(linea_num, "fmov dd, Xn: x-reg requiritur");
+        if (m1 == 8)
+            emit32(0x9E670000 | (rn << 5) | rd);
+        else if (m1 == 4)
+            emit32(0x1E270000 | (rn << 5) | rd);
+        else
+            erratum_ad(linea_num, "fmov d/s solum supportatur");
+        return;
+    }
+    /* fmov xd, dn */
+    int rd = parse_reg(&w);
+    exige(',');
+    int rn = parse_fpreg(&m2);
+    if (w)
+        erratum_ad(linea_num, "fmov Xd, Dn: x-reg requiritur");
+    if (m2 == 8)
+        emit32(0x9E660000 | (rn << 5) | rd);
+    else if (m2 == 4)
+        emit32(0x1E260000 | (rn << 5) | rd);
+    else
+        erratum_ad(linea_num, "fmov d/s solum supportatur");
+}
+
+/* fadd/fsub/fmul/fdiv dd, dn, dm */
+static void ins_fp_arith(uint32_t op_d, uint32_t op_s)
+{
+    int m1, m2, m3;
+    int rd = parse_fpreg(&m1);
+    exige(',');
+    int rn = parse_fpreg(&m2);
+    exige(',');
+    int rm = parse_fpreg(&m3);
+    if (m1 != m2 || m1 != m3)
+        erratum_ad(linea_num, "fp arith: mixta magnitudo");
+    if (m1 == 8)
+        emit32(op_d | (rm << 16) | (rn << 5) | rd);
+    else if (m1 == 4)
+        emit32(op_s | (rm << 16) | (rn << 5) | rd);
+    else
+        erratum_ad(linea_num, "fp arith: d/s solum supportatur");
+}
+
+/* fneg dd, dn */
+static void ins_fneg(void)
+{
+    int m1, m2;
+    int rd = parse_fpreg(&m1);
+    exige(',');
+    int rn = parse_fpreg(&m2);
+    if (m1 != m2)
+        erratum_ad(linea_num, "fneg: mixta magnitudo");
+    if (m1 == 8)
+        emit32(0x1E614000 | (rn << 5) | rd);
+    else if (m1 == 4)
+        emit32(0x1E214000 | (rn << 5) | rd);
+    else
+        erratum_ad(linea_num, "fneg d/s solum supportatur");
+}
+
+/* fcmp dn, dm */
+static void ins_fcmp(void)
+{
+    int m1, m2;
+    int rn = parse_fpreg(&m1);
+    exige(',');
+    int rm = parse_fpreg(&m2);
+    if (m1 != m2)
+        erratum_ad(linea_num, "fcmp: mixta magnitudo");
+    if (m1 == 8)
+        emit32(0x1E602000 | (rm << 16) | (rn << 5));
+    else if (m1 == 4)
+        emit32(0x1E202000 | (rm << 16) | (rn << 5));
+    else
+        erratum_ad(linea_num, "fcmp d/s solum supportatur");
+}
+
+/* fcvt: conversiones inter magnitudines fp */
+static void ins_fcvt(void)
+{
+    int m1, m2;
+    int rd = parse_fpreg(&m1);
+    exige(',');
+    int rn = parse_fpreg(&m2);
+    if (m1 == 8 && m2 == 4) /* single → double */
+        emit32(0x1E22C000 | (rn << 5) | rd);
+    else if (m1 == 4 && m2 == 8) /* double → single */
+        emit32(0x1E624000 | (rn << 5) | rd);
+    else
+        erratum_ad(linea_num, "fcvt: solum d↔s supportatur");
+}
+
+/* scvtf/ucvtf dd, xn/wn — conversiō integer → fp */
+static void ins_cvt_to_fp(int est_unsigned)
+{
+    int m1, w;
+    int rd = parse_fpreg(&m1);
+    exige(',');
+    int rn = parse_reg(&w);
+    uint32_t base;
+    if (m1 == 8) {
+        /* sf=w?0:1 in bit 31 */
+        base = est_unsigned ? 0x1E630000 : 0x1E620000;
+        if (!w)
+            base |= 0x80000000;
+    } else if (m1 == 4) {
+        base = est_unsigned ? 0x1E230000 : 0x1E220000;
+        if (!w)
+            base |= 0x80000000;
+    } else {
+        erratum_ad(linea_num, "scvtf/ucvtf: solum d/s supportatur");
+        return;
+    }
+    emit32(base | (rn << 5) | rd);
+}
+
+/* fcvtzs xd, dn / wd, dn — conversio fp → integer (truncatio) */
+static void ins_fcvtzs(void)
+{
+    int m1, w;
+    int rd = parse_reg(&w);
+    exige(',');
+    int rn = parse_fpreg(&m1);
+    uint32_t base;
+    if (m1 == 8)
+        base = 0x1E780000;
+    else if (m1 == 4)
+        base = 0x1E380000;
+    else {
+        erratum_ad(linea_num, "fcvtzs: d/s solum supportatur");
+        return;
+    }
+    if (!w)
+        base |= 0x80000000;
+    emit32(base | (rn << 5) | rd);
+}
+
+/* ================================================================
  * dispatch
  * ================================================================ */
 
@@ -2848,6 +3119,64 @@ static void processa_instructionem(const char *op)
     }
     if (!strcmp(op, "nop"))   {
         emit32(0xD503201F);
+        return;
+    }
+    /* floating-point */
+    if (!strcmp(op, "fmov"))  {
+        ins_fmov();
+        return;
+    }
+    if (!strcmp(op, "fadd"))  {
+        ins_fp_arith(0x1E602800, 0x1E202800);
+        return;
+    }
+    if (!strcmp(op, "fsub"))  {
+        ins_fp_arith(0x1E603800, 0x1E203800);
+        return;
+    }
+    if (!strcmp(op, "fmul"))  {
+        ins_fp_arith(0x1E600800, 0x1E200800);
+        return;
+    }
+    if (!strcmp(op, "fdiv"))  {
+        ins_fp_arith(0x1E601800, 0x1E201800);
+        return;
+    }
+    if (!strcmp(op, "fneg"))  {
+        ins_fneg();
+        return;
+    }
+    if (!strcmp(op, "fcmp"))  {
+        ins_fcmp();
+        return;
+    }
+    if (!strcmp(op, "fcvt"))  {
+        ins_fcvt();
+        return;
+    }
+    if (!strcmp(op, "scvtf")) {
+        ins_cvt_to_fp(0);
+        return;
+    }
+    if (!strcmp(op, "ucvtf")) {
+        ins_cvt_to_fp(1);
+        return;
+    }
+    if (!strcmp(op, "fcvtzs")){
+        ins_fcvtzs();
+        return;
+    }
+    /* campus bitōrum */
+    if (!strcmp(op, "bfi"))   {
+        ins_bfm_variant(0x33000000, 1);
+        return;
+    }
+    if (!strcmp(op, "ubfx"))  {
+        ins_bfm_variant(0x53000000, 0);
+        return;
+    }
+    if (!strcmp(op, "sbfx"))  {
+        ins_bfm_variant(0x13000000, 0);
         return;
     }
     erratum_ad(linea_num, "instructio ignota: '%s'", op);
