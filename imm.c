@@ -369,7 +369,6 @@ static int parse_chorda_lit(char *out, int max)
             case 'n': c = '\n'; break;
             case 't': c = '\t'; break;
             case 'r': c = '\r'; break;
-            case '0': c = '\0'; break;
             case '\\': c = '\\'; break;
             case '"': c = '"'; break;
             case '\'': c = '\''; break;
