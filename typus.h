@@ -80,6 +80,12 @@ int        typus_habet_vla(const typus_t *t);
 int        numera_elementa_init(const typus_t *t);
 membrum_t *quaere_membrum(typus_t *st, const char *nomen);
 
+/* AAPCS64 §5.9.5: Homogeneous Floating-point Aggregate — structura cuius
+ * omnia membra sunt idem typus fluat (float aut double), 1..4 membra.
+ * Reddit 1 si HFA, ponit *n_elem et *elem_genus (TY_FLOAT vel TY_DOUBLE).
+ * Membra nesta struct/array nōn tractantur. */
+int        typus_hfa(const typus_t *t, int *n_elem, int *elem_genus);
+
 
 void typus_initia(void);
 

@@ -143,6 +143,8 @@ void esym_uxtw(int rd, int rn);
  * (s vs d) — functiones d-reg adhibent. */
 void esym_fldr64(int dt, int rn, int imm);
 void esym_fstr64(int dt, int rn, int imm);
+void esym_fldr32(int dt, int rn, int imm);
+void esym_fstr32(int dt, int rn, int imm);
 void esym_fadd(int rd, int rn, int rm);
 void esym_fsub(int rd, int rn, int rm);
 void esym_fmul(int rd, int rn, int rm);

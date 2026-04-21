@@ -176,6 +176,10 @@ static int est_specifier_typi(void)
 
 static typus_t *parse_struct_vel_union(void);
 static typus_t *parse_declarator(typus_t *basis, char *nomen, int max_nomen);
+static typus_t *parse_parametros(
+    typus_t *reditus,
+    symbolum_t ***param_sym, int *num_param
+);
 static typus_t *parse_enum(void);
 static nodus_t *parse_expr(void);
 static nodus_t *parse_expr_assign(void);
@@ -634,26 +638,34 @@ static typus_t *parse_declarator(typus_t *basis, char *nomen, int max_nomen)
     /* nomen (optionale) */
     nomen[0] = '\0';
     if (sig.genus == T_LPAREN && lex_specta() == T_STAR) {
-        /* indicis ad functionem: non supportatum plene */
+        /* indicis ad functionem: float (*f)(args) — vel cum plūribus * */
         lex_proximum(); /* ( */
-        lex_proximum(); /* * */
+        int fp_stellae = 0;
+        while (sig.genus == T_STAR) {
+            fp_stellae++;
+            lex_proximum();
+            while (
+                sig.genus == T_CONST || sig.genus == T_VOLATILE
+                || sig.genus == T_RESTRICT
+            )
+                lex_proximum();
+        }
         if (sig.genus == T_IDENT) {
             strncpy(nomen, sig.chorda, max_nomen - 1);
             lex_proximum();
         }
         expecta(T_RPAREN);
-        /* parametri functionis */
-        if (sig.genus == T_LPAREN) {
-            lex_proximum();
-            while (sig.genus != T_RPAREN && sig.genus != T_EOF)
-                lex_proximum();
-            expecta(T_RPAREN);
-        }
-        /* typus est index ad functionem — simpliciter pone ut index ad void */
+        /* reditus = basis cum indicibus exteriōribus applicātīs */
+        typus_t *reditus = t;
         for (int i = 0; i < num_stellarum; i++)
-            t = typus_indicem(t);
-        t = typus_indicem(t);
-        return t;
+            reditus = typus_indicem(reditus);
+        /* parse params → TY_FUNC cum parametris propriīs */
+        typus_t *tfunc = parse_parametros(reditus, NULL, NULL);
+        /* applica indices internōs (stellae intra parenthesēs) */
+        typus_t *tp = tfunc;
+        for (int i = 0; i < fp_stellae; i++)
+            tp = typus_indicem(tp);
+        return tp;
     }
 
     if (sig.genus == T_IDENT) {
@@ -774,7 +786,9 @@ static typus_t *parse_parametros(
         tf ->parametri[tf->num_parametrorum]    = tp;
         tf ->nomina_param[tf->num_parametrorum] = nomen[0] ? strdup(nomen) : NULL;
 
-        if (nomen[0]) {
+        /* Addere ad scopum sōlum sī vocātor expectat symbola (i.e. est
+         * dēfīnītiō/dēclārātiō functiōnis, nōn declārātor fn-pointārii). */
+        if (nomen[0] && param_sym) {
             symbolum_t *ps = ambitus_adde(nomen, SYM_VAR);
             ps->typus = tp;
             ps->est_parametrus = 1;
@@ -1889,11 +1903,37 @@ static nodus_t *parse_declaratio(int est_globalis)
                 {
                     int slot_cur = -16 - 8;
                     int gp_reg   = 0;
+                    int fp_reg   = 0;
                     int stk_off  = 16;
                     for (int i = 0; i < nparams; i++) {
-                        typus_t  *pt = psyms[i]->typus;
-                        psyms[i] ->est_globalis = 0;
-                        if (gp_reg >= 8) {
+                        typus_t     *pt = psyms[i]->typus;
+                        psyms[i]    ->est_globalis = 0;
+                        int hfa_n   = 0, hfa_typ = 0;
+                        int est_hfa = typus_hfa(pt, &hfa_n, &hfa_typ);
+                        if (est_hfa && fp_reg + hfa_n <= 8) {
+                            int nregs = (pt->magnitudo + 7) / 8;
+                            int base  = slot_cur - (nregs - 1) * 8;
+                            psyms[i]  ->offset = base;
+                            slot_cur -= nregs * 8;
+                            fp_reg   += hfa_n;
+                        } else if (est_hfa) {
+                            /* NSRN := 8; argumentum in acervum */
+                            fp_reg   = 8;
+                            psyms[i] ->offset = stk_off;
+                            stk_off += (pt->magnitudo + 7) & ~7;
+                        } else if (pt && typus_est_fluat(pt) && fp_reg >= 8) {
+                            /* NSRN exhaustum — float/double in acervum,
+                             * magnitūdine natūrālī (Apple AAPCS64). */
+                            int sz   = (pt->genus == TY_FLOAT) ? 4 : 8;
+                            stk_off  = (stk_off + sz - 1) & ~(sz - 1);
+                            psyms[i] ->offset = stk_off;
+                            stk_off += sz;
+                        } else if (pt && typus_est_fluat(pt)) {
+                            /* fluat in fp registro */
+                            psyms[i]->offset = slot_cur;
+                            slot_cur -= 8;
+                            fp_reg++;
+                        } else if (gp_reg >= 8) {
                             /* §6.9.1 AAPCS64: argumentum in acervo vocantis */
                             psyms[i]->offset = stk_off;
                             if (

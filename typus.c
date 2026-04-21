@@ -253,3 +253,29 @@ membrum_t *quaere_membrum(typus_t *st, const char *nomen)
             return &st->membra[i];
     return NULL;
 }
+
+int typus_hfa(const typus_t *t, int *n_elem, int *elem_genus)
+{
+    if (
+        !t || t->genus != TY_STRUCT || t->num_membrorum < 1
+        || t->num_membrorum > 4
+    )
+        return 0;
+    int base = -1;
+    for (int i = 0; i < t->num_membrorum; i++) {
+        if (t->membra[i].campus_bitorum > 0)
+            return 0;
+        typus_t *mt = t->membra[i].typus;
+        if (!mt)
+            return 0;
+        if (mt->genus != TY_FLOAT && mt->genus != TY_DOUBLE)
+            return 0;
+        if (base < 0)
+            base = mt->genus;
+        else if (base != mt->genus)
+            return 0;
+    }
+    *n_elem     = t->num_membrorum;
+    *elem_genus = base;
+    return 1;
+}

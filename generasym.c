@@ -326,13 +326,19 @@ static void genera_lval(nodus_t *n, int dest)
                 } else {
                     esym_addi(r, FP, off);
                 }
-                /* §6.9.1¶10: parametrus strūctūrae > 16 octētōrum */
-                if (
-                    s->est_parametrus && s->typus
-                    && s->typus->genus == TY_STRUCT
-                    && s->typus->magnitudo > 16
-                )
-                    esym_ldr64(r, r, 0);
+                /* §6.9.1¶10: parametrus strūctūrae > 16 octētōrum transīt
+                 * per pointārium — excipe HFA (quae redita est in v-registris
+                 * et conservāta in sēde locālī ut valor). */
+                {
+                    int _hn = 0, _ht = 0;
+                    if (
+                        s->est_parametrus && s->typus
+                        && s->typus->genus == TY_STRUCT
+                        && s->typus->magnitudo > 16
+                        && !typus_hfa(s->typus, &_hn, &_ht)
+                    )
+                        esym_ldr64(r, r, 0);
+                }
             }
             break;
         }
@@ -958,12 +964,21 @@ static void genera_expr(nodus_t *n, int dest)
                 && n->sinister->typus->basis->genus == TY_FUNC
             )
                 call_ret_typ = n->sinister->typus->basis->reditus;
+            int ret_hfa_n   = 0, ret_hfa_typ = 0;
+            int ret_est_hfa = typus_hfa(call_ret_typ, &ret_hfa_n, &ret_hfa_typ);
             int ret_per_mem = (
                 call_ret_typ && call_ret_typ->genus == TY_STRUCT
                 && call_ret_typ->magnitudo > 16
+                && !ret_est_hfa
+            );
+            int ret_in_regs_struct = (
+                call_ret_typ && call_ret_typ->genus == TY_STRUCT
+                && call_ret_typ->magnitudo > 0
+                && call_ret_typ->magnitudo <= 16
+                && !ret_est_hfa
             );
             int ret_mag_aligned = 0;
-            if (ret_per_mem)
+            if (ret_per_mem || ret_in_regs_struct || ret_est_hfa)
                 ret_mag_aligned = (call_ret_typ->magnitudo + 15) & ~15;
 
             int est_indirecta = 0;
@@ -983,11 +998,15 @@ static void genera_expr(nodus_t *n, int dest)
             int struct_copy_tot = 0;
             for (int i = 0; i < nargs; i++) {
                 typus_t *pt = n->membra[i]->typus;
-                if (pt && pt->genus == TY_STRUCT && pt->magnitudo > 16)
+                int xhfa_n, xhfa_t;
+                if (
+                    pt && pt->genus == TY_STRUCT && pt->magnitudo > 16
+                    && !typus_hfa(pt, &xhfa_n, &xhfa_t)
+                )
                     struct_copy_tot += (pt->magnitudo + 15) & ~15;
             }
             int struct_copy_alloc = (struct_copy_tot + 15) & ~15;
-            if (ret_per_mem) {
+            if (ret_per_mem || ret_in_regs_struct || ret_est_hfa) {
                 esym_subi(SP, SP, ret_mag_aligned);
                 esym_addi(17, SP, 0);
                 esym_str64(17, FP, -ret_ptr_spill);
@@ -1003,15 +1022,19 @@ static void genera_expr(nodus_t *n, int dest)
             for (int i = 0; i < nargs; i++) {
                 reg_vertex = 0;
                 genera_expr(n->membra[i], 0);
-                if (typus_est_fluat(n->membra[i]->typus)) {
+                typus_t       *mt = n->membra[i]->typus;
+                int m_hfa_n   = 0, m_hfa_t = 0;
+                int m_est_hfa = typus_hfa(mt, &m_hfa_n, &m_hfa_t);
+                if (typus_est_fluat(mt)) {
                     int off = arg_spill_base + i * 8;
                     esym_movi(17, off);
                     esym_sub(17, FP, 17);
                     esym_fstr64(0, 17, 0);
                 } else if (
-                    n->membra[i]->typus
-                    && n->membra[i]->typus->genus == TY_STRUCT
-                    && n->membra[i]->typus->magnitudo > 16
+                    mt
+                    && mt->genus == TY_STRUCT
+                    && mt->magnitudo > 16
+                    && !m_est_hfa
                 ) {
                     int mag    = n->membra[i]->typus->magnitudo;
                     int mag_al = (mag + 15) & ~15;
@@ -1061,8 +1084,12 @@ static void genera_expr(nodus_t *n, int dest)
             int num_gp_regs = 0;
             int *arg_reg     = malloc(nargs * sizeof(int));
             int *arg_stk_off = malloc(nargs * sizeof(int));
-            if (nargs > 0 && (!arg_reg || !arg_stk_off))
+            int *arg_hfa_n   = malloc(nargs * sizeof(int));
+            int *arg_hfa_typ = malloc(nargs * sizeof(int));
+            if (nargs > 0 && (!arg_reg || !arg_stk_off || !arg_hfa_n || !arg_hfa_typ))
                 erratum("memoria exhausta in vocatione");
+            for (int i = 0; i < nargs; i++)
+                arg_hfa_n[i] = 0;
             int stk_bytes = 0;
 
             for (int i = 0; i < nargs; i++) {
@@ -1072,18 +1099,37 @@ static void genera_expr(nodus_t *n, int dest)
                 if (!pt)
                     pt = n->membra[i]->typus;
                 int est_var_arg = (est_variadica && i >= num_nominati);
+                int hfa_n       = 0, hfa_typ = 0;
+                int est_hfa     = !est_var_arg && typus_hfa(pt, &hfa_n, &hfa_typ);
                 if (est_var_arg) {
                     arg_reg[i]     = -1;
                     arg_stk_off[i] = stk_bytes;
                     stk_bytes += 8;
+                } else if (est_hfa) {
+                    if (num_fp_regs + hfa_n <= 8) {
+                        arg_reg[i]     = num_fp_regs;
+                        arg_hfa_n[i]   = hfa_n;
+                        arg_hfa_typ[i] = hfa_typ;
+                        num_fp_regs   += hfa_n;
+                    } else {
+                        /* NSRN := 8, in acervum */
+                        num_fp_regs    = 8;
+                        arg_reg[i]     = -1;
+                        arg_stk_off[i] = stk_bytes;
+                        stk_bytes += (pt->magnitudo + 7) & ~7;
+                    }
                 } else if (typus_est_fluat(pt)) {
                     if (num_fp_regs < 8) {
                         arg_reg[i] = num_fp_regs;
                         num_fp_regs++;
                     } else {
+                        /* Apple AAPCS64: arg fluat in acervum suā magnitūdine
+                         * naturālī (float=4, double=8). */
+                        int esz        = (pt->genus == TY_FLOAT) ? 4 : 8;
+                        stk_bytes      = (stk_bytes + esz - 1) & ~(esz - 1);
                         arg_reg[i]     = -1;
                         arg_stk_off[i] = stk_bytes;
-                        stk_bytes += 8;
+                        stk_bytes += esz;
                     }
                 } else if (
                     pt && pt->genus == TY_STRUCT
@@ -1148,6 +1194,16 @@ static void genera_expr(nodus_t *n, int dest)
                         esym_strb(16, SP, off + k);
                         k++;
                     }
+                } else if (pt && typus_est_fluat(pt)) {
+                    /* spill continet d-reg (8 bytarum); si TY_FLOAT,
+                     * converte ad s-reg et scribe 4 bytes. */
+                    esym_fldr64(17, FP, -(arg_spill_base + i * 8));
+                    if (pt->genus == TY_FLOAT) {
+                        esym_fcvt_ds(17, 17);
+                        esym_fstr32(17, SP, off);
+                    } else {
+                        esym_fstr64(17, SP, off);
+                    }
                 } else {
                     esym_ldr64(17, FP, -(arg_spill_base + i * 8));
                     esym_str64(17, SP, off);
@@ -1163,7 +1219,17 @@ static void genera_expr(nodus_t *n, int dest)
                     pt = func_typ->parametri[i];
                 if (!pt)
                     pt = n->membra[i]->typus;
-                if (typus_est_fluat(pt)) {
+                if (arg_hfa_n[i] > 0) {
+                    /* HFA: carrica elementa ex structo in v-registra consecutiva */
+                    esym_ldr64(17, FP, -(arg_spill_base + i * 8));
+                    int esz = (arg_hfa_typ[i] == TY_FLOAT) ? 4 : 8;
+                    for (int k = 0; k < arg_hfa_n[i]; k++) {
+                        if (arg_hfa_typ[i] == TY_FLOAT)
+                            esym_fldr32(arg_reg[i] + k, 17, k * esz);
+                        else
+                            esym_fldr64(arg_reg[i] + k, 17, k * esz);
+                    }
+                } else if (typus_est_fluat(pt)) {
                     int off = arg_spill_base + i * 8;
                     esym_movi(17, off);
                     esym_sub(17, FP, 17);
@@ -1185,6 +1251,8 @@ static void genera_expr(nodus_t *n, int dest)
 
             free(arg_reg);
             free(arg_stk_off);
+            free(arg_hfa_n);
+            free(arg_hfa_typ);
 
             /* voca functionem */
             reg_vertex = 0;
@@ -1223,6 +1291,28 @@ static void genera_expr(nodus_t *n, int dest)
                 if (func_typ)
                     ret_typ = func_typ->reditus;
                 if (ret_per_mem) {
+                    esym_ldr64(r, FP, -ret_ptr_spill);
+                } else if (ret_est_hfa) {
+                    /* AAPCS64 §5.9.5: HFA redditur in d0..dN-1 (float HFA
+                     * in s0..sN-1). Effundimus in scrinium locale et
+                     * reponimus adressum in r. */
+                    esym_ldr64(17, FP, -ret_ptr_spill);
+                    int esz = (ret_hfa_typ == TY_FLOAT) ? 4 : 8;
+                    for (int k = 0; k < ret_hfa_n; k++) {
+                        if (ret_hfa_typ == TY_FLOAT)
+                            esym_fstr32(k, 17, k * esz);
+                        else
+                            esym_fstr64(k, 17, k * esz);
+                    }
+                    esym_ldr64(r, FP, -ret_ptr_spill);
+                } else if (ret_in_regs_struct) {
+                    /* AAPCS64: structura ≤ 16 bytarum redditur in x0 (et x1
+                     * si magnitudo > 8). Effundimus in scrinium locale
+                     * praeparatum et reponimus adressum in r. */
+                    esym_ldr64(17, FP, -ret_ptr_spill);
+                    esym_str64(0, 17, 0);
+                    if (call_ret_typ->magnitudo > 8)
+                        esym_str64(1, 17, 8);
                     esym_ldr64(r, FP, -ret_ptr_spill);
                 } else if (typus_est_fluat(ret_typ)) {
                     if (ret_typ && ret_typ->genus == TY_FLOAT)
@@ -1658,6 +1748,28 @@ static void genera_sententia(nodus_t *n)
                                 reg_libera(rtmp);
                             } else if (mem_t && typus_est_fluat(mem_t)) {
                                 esym_fstore_to_addr(0, 17, mem_t);
+                            } else if (
+                                mem_t && mem_t->genus == TY_STRUCT
+                                && mem_t->magnitudo > 0
+                            ) {
+                                /* init struct-membrī ex struct-valōre:
+                                 * x0 = adresse fontis, x17 = adresse dēst. */
+                                int mag = mem_t->magnitudo;
+                                int k;
+                                for (k = 0; k + 8 <= mag; k += 8) {
+                                    esym_ldr64(16, 0, k);
+                                    esym_str64(16, 17, k);
+                                }
+                                while (k + 4 <= mag) {
+                                    esym_ldr32(16, 0, k);
+                                    esym_str32(16, 17, k);
+                                    k += 4;
+                                }
+                                while (k < mag) {
+                                    esym_ldrb(16, 0, k);
+                                    esym_strb(16, 17, k);
+                                    k++;
+                                }
                             } else {
                                 esym_store(0, 17, 0, mmag > 8 ? 8 : mmag);
                             }
@@ -1980,26 +2092,51 @@ static void genera_sententia(nodus_t *n)
             else if (
                 cur_func_typus && cur_func_typus->reditus
                 && cur_func_typus->reditus->genus == TY_STRUCT
-                && cur_func_typus->reditus->magnitudo > 16
             ) {
-                /* x0 continet adresse fontis; x8 scrinium destinationis. */
-                int mag = cur_func_typus->reditus->magnitudo;
-                esym_ldr64(8, FP, -8);
-                for (int off = 0; off < mag; off += 8) {
-                    int rem = mag - off;
-                    if (rem >= 8) {
-                        esym_ldr64(16, 0, off);
-                        esym_str64(16, 8, off);
-                    } else if (rem >= 4) {
-                        esym_ldr32(16, 0, off);
-                        esym_str32(16, 8, off);
-                    } else {
-                        esym_ldrb(16, 0, off);
-                        esym_strb(16, 8, off);
+                int rhfa_n = 0, rhfa_typ = 0;
+                if (typus_hfa(cur_func_typus->reditus, &rhfa_n, &rhfa_typ)) {
+                    /* AAPCS64 §5.9.5: HFA redit in d/s 0..N-1. x0 habet
+                     * adresse structī; extrahimus elementa. */
+                    int esz = (rhfa_typ == TY_FLOAT) ? 4 : 8;
+                    for (int k = 0; k < rhfa_n; k++) {
+                        if (rhfa_typ == TY_FLOAT)
+                            esym_fldr32(k, 0, k * esz);
+                        else
+                            esym_fldr64(k, 0, k * esz);
                     }
+                } else if (
+                    cur_func_typus->reditus->magnitudo <= 16
+                    && cur_func_typus->reditus->magnitudo > 0
+                ) {
+                    /* AAPCS64: struct ≤16 non-HFA redit in x0 (et x1 si >8).
+                     * x0 nunc habet adressum; legimus bytes. */
+                    int mag = cur_func_typus->reditus->magnitudo;
+                    if (mag > 8) {
+                        esym_ldr64(1, 0, 8);
+                        esym_ldr64(0, 0, 0);
+                    } else {
+                        esym_ldr64(0, 0, 0);
+                    }
+                } else {
+                    /* x0 continet adresse fontis; x8 scrinium destinationis. */
+                    int mag = cur_func_typus->reditus->magnitudo;
+                    esym_ldr64(8, FP, -8);
+                    for (int off = 0; off < mag; off += 8) {
+                        int rem = mag - off;
+                        if (rem >= 8) {
+                            esym_ldr64(16, 0, off);
+                            esym_str64(16, 8, off);
+                        } else if (rem >= 4) {
+                            esym_ldr32(16, 0, off);
+                            esym_str32(16, 8, off);
+                        } else {
+                            esym_ldrb(16, 0, off);
+                            esym_strb(16, 8, off);
+                        }
+                    }
+                    /* AAPCS64: x0 == x8 post reditum. */
+                    esym_mov(0, 8);
                 }
-                /* AAPCS64: x0 == x8 post reditum. */
-                esym_mov(0, 8);
             }
         }
         esym_addi(SP, FP, 0);
@@ -2096,7 +2233,27 @@ static void genera_functio(nodus_t *n)
             typus_t *pt  = NULL;
             if (cur_func_typus && i < cur_func_typus->num_parametrorum)
                 pt = cur_func_typus->parametri[i];
-            if (pt && typus_est_fluat(pt)) {
+            int hfa_n   = 0, hfa_typ = 0;
+            int est_hfa = typus_hfa(pt, &hfa_n, &hfa_typ);
+            if (est_hfa && fp_reg + hfa_n <= 8) {
+                int num_regs = (pt->magnitudo + 7) / 8;
+                int base_off = slot_cur - (num_regs - 1) * 8;
+                int esz      = (hfa_typ == TY_FLOAT) ? 4 : 8;
+                for (int k = 0; k < hfa_n; k++) {
+                    if (hfa_typ == TY_FLOAT)
+                        esym_fstr32(fp_reg + k, FP, base_off + k * esz);
+                    else
+                        esym_fstr64(fp_reg + k, FP, base_off + k * esz);
+                }
+                fp_reg   += hfa_n;
+                slot_cur -= num_regs * 8;
+            } else if (est_hfa) {
+                /* NSRN exhaustum — arg in acervō vocantis (FP+), nihil
+                 * faciendum in prologō. */
+                fp_reg = 8;
+            } else if (pt && typus_est_fluat(pt) && fp_reg >= 8) {
+                /* NSRN exhaustum — arg in acervō vocantis */
+            } else if (pt && typus_est_fluat(pt)) {
                 esym_movi(17, -slot_cur);
                 esym_sub(17, FP, 17);
                 esym_fstr64(fp_reg, 17, 0);

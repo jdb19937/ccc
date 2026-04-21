@@ -584,6 +584,36 @@ void esym_fstr64(int dt, int rn, int imm)
         L("str\t%s, [x16]", dn(dt));
     }
 }
+void esym_fldr32(int dt, int rn, int imm)
+{
+    if (est_imm_ldr(imm, 4)) {
+        if (imm)
+            L("ldr\t%s, [%s, #%d]", sn(dt), xn(rn), imm);
+        else
+            L("ldr\t%s, [%s]", sn(dt), xn(rn));
+    } else if (imm >= -256 && imm <= 255)
+        L("ldur\t%s, [%s, #%d]", sn(dt), xn(rn), imm);
+    else {
+        L("mov\tx16, #%d", imm);
+        L("add\tx16, %s, x16", xn(rn));
+        L("ldr\t%s, [x16]", sn(dt));
+    }
+}
+void esym_fstr32(int dt, int rn, int imm)
+{
+    if (est_imm_ldr(imm, 4)) {
+        if (imm)
+            L("str\t%s, [%s, #%d]", sn(dt), xn(rn), imm);
+        else
+            L("str\t%s, [%s]", sn(dt), xn(rn));
+    } else if (imm >= -256 && imm <= 255)
+        L("stur\t%s, [%s, #%d]", sn(dt), xn(rn), imm);
+    else {
+        L("mov\tx16, #%d", imm);
+        L("add\tx16, %s, x16", xn(rn));
+        L("str\t%s, [x16]", sn(dt));
+    }
+}
 void esym_fadd(int rd, int rn, int rm) { L("fadd\t%s, %s, %s", dn(rd), dn(rn), dn(rm)); }
 void esym_fsub(int rd, int rn, int rm) { L("fsub\t%s, %s, %s", dn(rd), dn(rn), dn(rm)); }
 void esym_fmul(int rd, int rn, int rm) { L("fmul\t%s, %s, %s", dn(rd), dn(rn), dn(rm)); }
