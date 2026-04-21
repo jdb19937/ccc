@@ -7,14 +7,13 @@
 CC      ?= cc
 CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2
 
-CAPITA  = utilia.h emitte.h emittesym.h scribo.h generasym.h parser.h lexator.h liga.h biblio.h fluat.h typus.h func.h
+CAPITA  = utilia.h emitte.h emittesym.h scribo.h generasym.h gsymconst.h generasym_intern.h parser.h parser_intern.h lexator.h liga.h biblio.h fluat.h typus.h func.h
 
 ICCC_OBJECTA  = iccc.o
-CCC_OBJECTA = ccc.o utilia.o lexator.o parser.o generasym.o emittesym.o emitte.o biblio.o fluat.o typus.o func.o
-CCC0_OBJECTA = ccc0.o utilia.o lexator.o parser.o genera.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
+CCC_OBJECTA = ccc.o utilia.o lexator.o parser.o parser_typi.o parser_expr.o parser_sent.o generasym.o gsymexpr.o gsymsent.o gsymconst.o gsymdata.o emittesym.o emitte.o biblio.o fluat.o typus.o func.o
 LDI_OBJECTA = ldi.o utilia.o liga.o emitte.o scribo.o biblio.o typus.o func.o fluat.o
 IMM_OBJECTA = imm.o utilia.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
-OBJECTA     = iccc.o ccc.o ccc0.o ldi.o imm.o utilia.o lexator.o parser.o genera.o generasym.o emitte.o emittesym.o scribo.o liga.o biblio.o fluat.o typus.o func.o
+OBJECTA     = iccc.o ccc.o ldi.o imm.o utilia.o lexator.o parser.o parser_typi.o parser_expr.o parser_sent.o generasym.o gsymexpr.o gsymsent.o gsymconst.o gsymdata.o emitte.o emittesym.o scribo.o liga.o biblio.o fluat.o typus.o func.o
 
 omnia: ccc ldi iccc imm
 
@@ -28,10 +27,6 @@ iccc: $(ICCC_OBJECTA)
 ccc: $(CCC_OBJECTA)
 	$(CC) $(CFLAGS) -o $@ $(CCC_OBJECTA)
 	@echo "==> ccc aedificatum"
-
-ccc0: $(CCC0_OBJECTA)
-	$(CC) $(CFLAGS) -o $@ $(CCC0_OBJECTA)
-	@echo "==> ccc0 aedificatum"
 
 ldi: $(LDI_OBJECTA)
 	$(CC) $(CFLAGS) -o $@ $(LDI_OBJECTA)
@@ -74,7 +69,7 @@ linte:
 
 initia.fac: ccc ldi
 	rm -rf initia
-	./initia.sh initia ../ccc ../ldi
+	./initia.py initia ../ccc ../ldi
 	$(FACE) -C initia
 	touch $@
 initia:
@@ -84,7 +79,7 @@ initia:
 
 reinitia.fac: initia.fac
 	rm -rf reinitia
-	./initia.sh reinitia ../initia/ccc ../initia/ldi
+	./initia.py reinitia ../initia/ccc ../initia/ldi
 	$(FACE) -C reinitia
 	touch $@
 reinitia:

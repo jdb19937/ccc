@@ -74,34 +74,11 @@ typus_t *typus_communis_fluat(typus_t *a, typus_t *b);
  * Annex F §F.3: +, -, *, / praebent operationes IEC 60559.
  * ================================================================ */
 
-/* FMOV Dd, Xn — transfer registrum integrum ad registrum FP
- * (ARM64: 0x9E670000 | (rn << 5) | rd) */
-void emit_fmov_dx(int fd, int xn);
-
-/* FMOV Xn, Dd — transfer registrum FP ad registrum integrum
- * (ARM64: 0x9E660000 | (rn << 5) | rd) */
-void emit_fmov_xd(int xd, int fn);
-
 /* FMOV Sd, Wn — transfer 32-bit integrum ad FP singulare */
 void emit_fmov_sw(int sd, int wn);
 
 /* FMOV Wn, Sd — transfer FP singulare ad 32-bit integrum */
 void emit_fmov_ws(int wd, int sn);
-
-/* §6.5.6: FADD Dd, Dn, Dm — additio duplex */
-void emit_fadd(int fd, int fn, int fm);
-
-/* §6.5.6: FSUB Dd, Dn, Dm — subtractio duplex */
-void emit_fsub(int fd, int fn, int fm);
-
-/* §6.5.5: FMUL Dd, Dn, Dm — multiplicatio duplex */
-void emit_fmul(int fd, int fn, int fm);
-
-/* §6.5.5: FDIV Dd, Dn, Dm — divisio duplex */
-void emit_fdiv(int fd, int fn, int fm);
-
-/* §6.5.3.3: FNEG Dd, Dn — negatio duplex */
-void emit_fneg(int fd, int fn);
 
 /* FADD Sd, Sn, Sm — additio singularis */
 void emit_fadds(int fd, int fn, int fm);
@@ -117,9 +94,6 @@ void emit_fdivs(int fd, int fn, int fm);
 
 /* FNEG Sd, Sn — negatio singularis */
 void emit_fnegs(int fd, int fn);
-
-/* §6.5.8, §6.5.9: FCMP Dn, Dm — comparatio, ponit NZCV */
-void emit_fcmp(int fn, int fm);
 
 /* FCMP Sn, Sm — comparatio singularis */
 void emit_fcmps(int fn, int fm);
@@ -142,32 +116,16 @@ void emit_fcvt_ds(int dd, int sn);
 /* §6.3.1.5¶2: FCVT Sd, Dn — demove double ad float */
 void emit_fcvt_sd(int sd, int dn);
 
-/* §6.3.1.4¶1: FCVTZS Xd, Dn — converte duplum ad integrum signatum (truncatio) */
-void emit_fcvtzs_xd(int xd, int dn);
-
 /* §6.3.1.4¶1: FCVTZS Wd, Sn — converte singulare ad 32-bit integrum signatum */
 void emit_fcvtzs_wd(int wd, int sn);
 
-/* §6.3.1.4¶2: SCVTF Dd, Xn — converte integrum signatum ad duplum */
-void emit_scvtf_dx(int dd, int xn);
-
 /* §6.3.1.4¶2: SCVTF Sd, Wn — converte 32-bit integrum signatum ad singulare */
 void emit_scvtf_sw(int sd, int wn);
-
-/* §6.3.1.4: UCVTF Dd, Xn — converte integrum sine signo ad duplum */
-void emit_ucvtf_dx(int dd, int xn);
 
 /* ================================================================
  * initiatio
  * ================================================================ */
 
 void fluat_initia(void);
-
-void emit_load_from_addr(int dest, typus_t *t);
-void emit_fconst(int dreg, double val);
-void emit_fload_from_addr(int dreg, int addr_reg, typus_t *t);
-void emit_fstore_to_addr(int dreg, int addr_reg, typus_t *t);
-void emit_int_to_double(int reg, typus_t *src_type);
-void emit_double_to_int(int reg);
 
 #endif /* FLUAT_H */

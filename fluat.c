@@ -117,17 +117,6 @@ typus_t *typus_communis_fluat(typus_t *a, typus_t *b)
  * ---------------------------------------------------------------- */
 
 /* FMOV Dd, Xn — codificatio: 0x9E670000 | (Xn << 5) | Dd */
-void emit_fmov_dx(int fd, int xn)
-{
-    emit32(0x9E670000 | ((xn & 0x1F) << 5) | (fd & 0x1F));
-}
-
-/* FMOV Xn, Dd — codificatio: 0x9E660000 | (Dn << 5) | Xd */
-void emit_fmov_xd(int xd, int fn)
-{
-    emit32(0x9E660000 | ((fn & 0x1F) << 5) | (xd & 0x1F));
-}
-
 /* FMOV Sd, Wn — codificatio: 0x1E270000 | (Wn << 5) | Sd */
 void emit_fmov_sw(int sd, int wn)
 {
@@ -146,21 +135,6 @@ void emit_fmov_ws(int wd, int sn)
  * §6.5.6: "+, − operatores" / §6.5.5: "*, / operatores"
  * Annex F §F.3: operationes conformant IEC 60559.
  * ---------------------------------------------------------------- */
-
-/* FADD Dd, Dn, Dm */
-EMIT_FP3(emit_fadd, 0x1E602800)
-/* FSUB Dd, Dn, Dm */
-EMIT_FP3(emit_fsub, 0x1E603800)
-/* FMUL Dd, Dn, Dm */
-EMIT_FP3(emit_fmul, 0x1E600800)
-/* FDIV Dd, Dn, Dm */
-EMIT_FP3(emit_fdiv, 0x1E601800)
-
-/* FNEG Dd, Dn — codificatio: 0x1E614000 | (Dn << 5) | Dd */
-void emit_fneg(int fd, int fn)
-{
-    emit32(0x1E614000 | ((fn & 0x1F) << 5) | (fd & 0x1F));
-}
 
 /* ----------------------------------------------------------------
  * arithmetica singularis (32-bit)
@@ -196,12 +170,6 @@ void emit_fnegs(int fd, int fn)
  * Annex F §F.3: "The relational and equality operators provide
  *  IEC 60559 comparisons."
  * ---------------------------------------------------------------- */
-
-/* FCMP Dn, Dm — codificatio: 0x1E602000 | (Dm << 16) | (Dn << 5) */
-void emit_fcmp(int fn, int fm)
-{
-    emit32(0x1E602000 | ((fm & 0x1F) << 16) | ((fn & 0x1F) << 5));
-}
 
 /* FCMP Sn, Sm — codificatio: 0x1E202000 */
 void emit_fcmps(int fn, int fm)
@@ -285,13 +253,6 @@ void emit_fcvt_sd(int sd, int dn)
  *  exactly ..., it is unchanged."
  * ---------------------------------------------------------------- */
 
-/* FCVTZS Xd, Dn — double → signed long (truncatio ad zero)
- * codificatio: 0x9E780000 | (Dn << 5) | Xd */
-void emit_fcvtzs_xd(int xd, int dn)
-{
-    emit32(0x9E780000 | ((dn & 0x1F) << 5) | (xd & 0x1F));
-}
-
 /* FCVTZS Wd, Sn — float → signed int (truncatio ad zero)
  * codificatio: 0x1E380000 | (Sn << 5) | Wd */
 void emit_fcvtzs_wd(int wd, int sn)
@@ -299,97 +260,9 @@ void emit_fcvtzs_wd(int wd, int sn)
     emit32(0x1E380000 | ((sn & 0x1F) << 5) | (wd & 0x1F));
 }
 
-/* SCVTF Dd, Xn — signed long → double
- * codificatio: 0x9E620000 | (Xn << 5) | Dd */
-void emit_scvtf_dx(int dd, int xn)
-{
-    emit32(0x9E620000 | ((xn & 0x1F) << 5) | (dd & 0x1F));
-}
-
 /* SCVTF Sd, Wn — signed int → float
  * codificatio: 0x1E220000 | (Wn << 5) | Sd */
 void emit_scvtf_sw(int sd, int wn)
 {
     emit32(0x1E220000 | ((wn & 0x1F) << 5) | (sd & 0x1F));
-}
-
-/* UCVTF Dd, Xn — unsigned long → double
- * codificatio: 0x9E630000 | (Xn << 5) | Dd */
-void emit_ucvtf_dx(int dd, int xn)
-{
-    emit32(0x9E630000 | ((xn & 0x1F) << 5) | (dd & 0x1F));
-}
-
-/* ================================================================
- * auxiliaria pro typis fluitantibus
- *
- * Strategia: idem reg_arm(slot) ūtitur, sed valor vivit in
- * d-registrō (non x-registrō) cum typus fluitans est.
- * ================================================================ */
-
-/* carrica constantem fluitantem in d-registrum —
- * §6.4.4.2: per bit-pattern in registrum integrum, deinde FMOV */
-void emit_fconst(int dreg, double val)
-{
-    long bits;
-    memcpy(&bits, &val, 8);
-    emit_movi(dreg, bits);      /* MOV Xn, #bits */
-    emit_fmov_dx(dreg, dreg);   /* FMOV Dn, Xn */
-}
-
-/* carrica valorem fluitantem ex adresse in memoria ad d-registrum */
-void emit_fload_from_addr(int dreg, int addr_reg, typus_t *t)
-{
-    if (t && t->genus == TY_FLOAT) {
-        emit_fldr32(dreg, addr_reg, 0); /* LDR Sn, [Xaddr] */
-        emit_fcvt_ds(dreg, dreg);       /* §6.3.1.5: promove ad double */
-    } else {
-        emit_fldr64(dreg, addr_reg, 0); /* LDR Dn, [Xaddr] */
-    }
-}
-
-/* salva valorem fluitantem ex d-registrō in memoriam */
-void emit_fstore_to_addr(int dreg, int addr_reg, typus_t *t)
-{
-    if (t && t->genus == TY_FLOAT) {
-        emit_fcvt_sd(dreg, dreg);       /* §6.3.1.5: demove ad float */
-        emit_fstr32(dreg, addr_reg, 0); /* STR Sn, [Xaddr] */
-    } else {
-        emit_fstr64(dreg, addr_reg, 0); /* STR Dn, [Xaddr] */
-    }
-}
-
-/* converte integrum in registrō Xn ad double in registrō Dn */
-void emit_int_to_double(int reg, typus_t *src_type)
-{
-    /* §6.3.1.4¶2: integer → double */
-    if (est_unsigned(src_type))
-        emit_ucvtf_dx(reg, reg);    /* UCVTF Dn, Xn */
-    else
-        emit_scvtf_dx(reg, reg);    /* SCVTF Dn, Xn */
-}
-
-/* converte double in registrō Dn ad integrum in registrō Xn */
-void emit_double_to_int(int reg)
-{
-    /* §6.3.1.4¶1: truncatio ad zero */
-    emit_fcvtzs_xd(reg, reg);      /* FCVTZS Xn, Dn */
-}
-
-/* carrica valorem ex l-valor adresse in dest */
-void emit_load_from_addr(int dest, typus_t *t)
-{
-    int mag = mag_typi(t);
-    if (t && (t->genus == TY_STRUCT || t->genus == TY_ARRAY))
-        return; /* iam adresse */
-    if (typus_est_fluat(t)) {
-        /* §6.2.5¶10: floāt/double — carrica in d-reg cum conversiōne
-         * ad doublem ut conventiō intra CCC servētur */
-        emit_fload_from_addr(dest, dest, t);
-        return;
-    }
-    if (est_unsigned(t))
-        emit_load_unsigned(dest, dest, 0, mag);
-    else
-        emit_load(dest, dest, 0, mag);
 }

@@ -66,15 +66,3 @@ char *lege_plicam(const char *via, int *longitudo)
     return data;
 }
 
-char *via_directoria(const char *via)
-{
-    char *copia = strdup(via);
-    char *ult   = strrchr(copia, '/');
-    if (ult) {
-        *(ult + 1) = '\0';
-    } else {
-        free(copia);
-        copia = strdup("./");
-    }
-    return copia;
-}

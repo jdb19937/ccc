@@ -13,7 +13,7 @@ typedef struct {
     int est_staticus;
 } func_loc_t;
 
-extern func_loc_t func_loci[];
+extern func_loc_t *func_loci;
 extern int num_func_loc;
 
 int  func_loc_quaere(const char *nomen);

@@ -18,7 +18,6 @@ extern const char *plica_i_tmp_gl;   /* plica .i temporaria delenda si erratum *
 void erratum(const char *fmt, ...);
 void erratum_ad(int linea, const char *fmt, ...);
 char *lege_plicam(const char *via, int *longitudo);
-char *via_directoria(const char *via);
 
 /* macro prō crescentiā seriērum dynāmicārum (realloc cum duplicātiōne) */
 #define CRESC_SERIEM(arr, numerus, capac, typus)            \

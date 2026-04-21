@@ -141,33 +141,6 @@ int got_adde(const char *nomen)
 }
 
 /* ================================================================
- * globales
- * ================================================================ */
-
-int globalis_adde(
-    const char *nomen, typus_t *typus,
-    int est_staticus, long valor
-) {
-    if (!est_staticus) {
-        for (int i = 0; i < num_globalium; i++)
-            if (strcmp(globales[i].nomen, nomen) == 0)
-                return i;
-    }
-    if (num_globalium >= MAX_GLOBALES)
-        erratum("nimis multae globales");
-    int id = num_globalium++;
-    strncpy(globales[id].nomen, nomen, 255);
-    globales[id] .typus = typus;
-    globales[id] .magnitudo = typus_magnitudo(typus);
-    globales[id] .colineatio = typus_colineatio(typus);
-    globales[id] .est_bss = 1;
-    globales[id] .est_staticus = est_staticus;
-    globales[id] .valor_initialis = valor;
-    globales[id] .habet_valorem = (valor != 0);
-    return id;
-}
-
-/* ================================================================
  * fixups
  * ================================================================ */
 
@@ -421,12 +394,6 @@ EMIT_REG3(emit_lsr,  0x9AC02400)
 /* ASR Xd, Xn, Xm */
 EMIT_REG3(emit_asr,  0x9AC02800)
 
-/* NEG Xd, Xm (= SUB Xd, XZR, Xm) */
-void emit_neg(int rd, int rm)
-{
-    emit_sub(rd, XZR, rm);
-}
-
 /* MVN Xd, Xm (= ORN Xd, XZR, Xm) */
 void emit_mvn(int rd, int rm)
 {
@@ -488,13 +455,6 @@ void emit_blr(int rn)
 void emit_ret(void)
 {
     emit32(0xD65F03C0);
-}
-
-/* CBZ Xt, label */
-void emit_cbz_label(int rt, int label)
-{
-    fixup_adde(FIX_CBZ, codex_lon, label, 0);
-    emit32(0xB4000000 | rt);  /* sf=1 (64-bit); scribo servat sf */
 }
 
 /* CBNZ Xt, label */
@@ -608,63 +568,3 @@ void emit_adrp_fixup(int rd, int fix_genus, int target)
     emit32(0x90000000 | rd); /* placeholder */
 }
 
-/* ================================================================
- * carrica/salva per magnitudinem
- * ================================================================ */
-
-void emit_load(int rd, int rn, int offset, int mag)
-{
-    switch (mag) {
-    case 1: emit_ldrsb(rd, rn, offset); break;
-    case 2: emit_ldrsh(rd, rn, offset); break;
-    case 4: emit_ldrsw(rd, rn, offset); break;
-    case 8: emit_ldr64(rd, rn, offset); break;
-    default: erratum("emit_load: magnitudo invalida: %d", mag);
-    }
-}
-
-void emit_load_unsigned(int rd, int rn, int offset, int mag)
-{
-    switch (mag) {
-    case 1: emit_ldrb(rd, rn, offset); break;
-    case 2: emit_ldrh(rd, rn, offset); break;
-    case 4: emit_ldr32(rd, rn, offset); break;
-    case 8: emit_ldr64(rd, rn, offset); break;
-    default: erratum("emit_load_unsigned: magnitudo invalida: %d", mag);
-    }
-}
-
-void emit_store(int rt, int rn, int offset, int mag)
-{
-    switch (mag) {
-    case 1: emit_strb(rt, rn, offset); break;
-    case 2: emit_strh(rt, rn, offset); break;
-    case 4: emit_str32(rt, rn, offset); break;
-    case 8: emit_str64(rt, rn, offset); break;
-    default: erratum("emit_store: magnitudo invalida: %d", mag);
-    }
-}
-
-/* §6.7.8: imple regionem memoriae cum zerīs.
- * Cūrat nē extrā fīnēs scrībātur (ultima scrīptūra 4 vel 1 octetī). */
-void emit_imple_zeris(int off_basis, int magnitudo)
-{
-    if (magnitudo <= 0)
-        return;
-    emit_movi(0, 0);
-    for (int z = 0; z < magnitudo; ) {
-        int rem = magnitudo - z;
-        emit_movi(17, -(off_basis + z));
-        emit_sub(17, FP, 17);
-        if (rem >= 8) {
-            emit_str64(0, 17, 0);
-            z += 8;
-        } else if (rem >= 4) {
-            emit_str32(0, 17, 0);
-            z += 4;
-        } else {
-            emit_strb(0, 17, 0);
-            z += 1;
-        }
-    }
-}

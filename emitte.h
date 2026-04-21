@@ -239,7 +239,6 @@ void emit_eor(int rd, int rn, int rm);
 void emit_lsl(int rd, int rn, int rm);
 void emit_lsr(int rd, int rn, int rm);
 void emit_asr(int rd, int rn, int rm);
-void emit_neg(int rd, int rm);
 void emit_mvn(int rd, int rm);
 
 /* comparatio */
@@ -253,7 +252,6 @@ void emit_bl_label(int label);
 void emit_bcond_label(int cond, int label);
 void emit_blr(int rn);
 void emit_ret(void);
-void emit_cbz_label(int rt, int label);
 void emit_cbnz_label(int rt, int label);
 
 /* carrica et salva */
@@ -270,23 +268,17 @@ void emit_str64(int rt, int rn, int imm);
 void emit_str32(int rt, int rn, int imm);
 void emit_strh(int rt, int rn, int imm);
 void emit_strb(int rt, int rn, int imm);
-void emit_store(int rt, int rn, int offset, int mag);
 void emit_sxtw(int rd, int rn);
 void emit_sxtb(int rd, int rn);
 void emit_sxth(int rd, int rn);
 void emit_uxtb(int rd, int rn);
 void emit_uxth(int rd, int rn);
 void emit_uxtw(int rd, int rn);
-void emit_load(int rd, int rn, int offset, int mag);
-void emit_load_unsigned(int rd, int rn, int offset, int mag);
-
-void emit_imple_zeris(int off_basis, int magnitudo);
 
 /* fixups et data */
 void emit_adrp_fixup(int rd, int genus, int target);
 void fixup_adde(int genus, int offset, int target, int mag);
 int  chorda_adde(const char *data, int lon);
 int  got_adde(const char *nomen);
-int  globalis_adde(const char *nomen, typus_t *typus, int est_staticus, long valor);
 
 #endif /* EMITTE_H */
