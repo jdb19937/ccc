@@ -7,6 +7,7 @@
 
 #include "utilia.h"
 #include "emitte.h"
+#include "scribo.h"
 
 /* ================================================================
  * alvei et status
@@ -40,8 +41,48 @@ int num_globalium = 0;
 data_reloc_t *data_relocs;
 int num_data_relocs = 0;
 
-data_bind_t *data_binds = NULL;
+data_bind_t        *data_binds = NULL;
 int num_data_binds = 0;
+
+/* ================================================================
+ * emmerae init_data — ordo sequitur dispositionem in __DATA
+ * ================================================================ */
+
+idata_emm_t idata_emm[N_IDATA_EMM] = {
+    { "__data",            S_REGULAR, 3, 0, 0, 0 },                              /* 0 */
+    { "__const",           S_REGULAR, 3, 0, 0, 0 },                              /* 1 */
+    { "__cfstring",        S_REGULAR, 3, 0, 0, 0 },                              /* 2 */
+    { "__objc_classlist",  S_REGULAR | S_ATTR_NO_DEAD_STRIP, 3, 0, 0, 0 },       /* 3 */
+    { "__objc_nlclslist",  S_REGULAR | S_ATTR_NO_DEAD_STRIP, 3, 0, 0, 0 },       /* 4 */
+    { "__objc_catlist",    S_REGULAR | S_ATTR_NO_DEAD_STRIP, 3, 0, 0, 0 },       /* 5 */
+    { "__objc_nlcatlist",  S_REGULAR | S_ATTR_NO_DEAD_STRIP, 3, 0, 0, 0 },       /* 6 */
+    { "__objc_protolist",  S_REGULAR | S_ATTR_NO_DEAD_STRIP, 3, 0, 0, 0 },       /* 7 */
+    { "__objc_classrefs",  S_REGULAR | S_ATTR_NO_DEAD_STRIP, 3, 0, 0, 0 },       /* 8 */
+    { "__objc_superrefs",  S_REGULAR | S_ATTR_NO_DEAD_STRIP, 3, 0, 0, 0 },       /* 9 */
+    { "__objc_selrefs",    S_LITERAL_POINTERS | S_ATTR_NO_DEAD_STRIP, 3, 0, 0, 0 }, /* 10 */
+    { "__objc_imageinfo",  S_REGULAR | S_ATTR_NO_DEAD_STRIP, 2, 1, 0, 0 },       /* 11 dedup */
+    { "__objc_const",      S_REGULAR, 3, 0, 0, 0 },                              /* 12 */
+    { "__objc_data",       S_REGULAR, 3, 0, 0, 0 },                              /* 13 */
+    { "__objc_ivar",       S_REGULAR, 3, 0, 0, 0 },                              /* 14 */
+    { "__objc_methname",   S_CSTRING_LITERALS, 0, 0, 0, 0 },                     /* 15 */
+    { "__objc_classname",  S_CSTRING_LITERALS, 0, 0, 0, 0 },                     /* 16 */
+    { "__objc_methtype",   S_CSTRING_LITERALS, 0, 0, 0, 0 },                     /* 17 */
+};
+
+int idata_emm_pro_nomine(const char *sectname)
+{
+    for (int i = 0; i < N_IDATA_EMM; i++)
+        if (strcmp(sectname, idata_emm[i].sectname) == 0)
+            return i;
+    /* __literal4/8/16 et __compact_unwind in __const emmeram */
+    if (
+        strncmp(sectname, "__literal", 9) == 0
+        || strcmp(sectname, "__compact_unwind") == 0
+    )
+        return 1; /* __const */
+    /* ignota → __data */
+    return 0;
+}
 
 /* ================================================================
  * labels
@@ -72,8 +113,8 @@ int chorda_adde(const char *data, int lon)
         erratum("nimis multae chordae litterales");
     if (chordae_lon + lon + 1 > MAX_DATA)
         erratum("data chordarum nimis magna");
-    int id = num_chordarum;
-    chordae[id].data = (char *)&chordae_data[chordae_lon];
+    int id      = num_chordarum;
+    chordae[id] .data = (char *)&chordae_data[chordae_lon];
     memcpy(&chordae_data[chordae_lon], data, lon);
     chordae_data[chordae_lon + lon] = '\0';
     chordae[id].longitudo = lon + 1;
@@ -116,13 +157,13 @@ int globalis_adde(
         erratum("nimis multae globales");
     int id = num_globalium++;
     strncpy(globales[id].nomen, nomen, 255);
-    globales[id].typus = typus;
-    globales[id].magnitudo = typus_magnitudo(typus);
-    globales[id].colineatio = typus_colineatio(typus);
-    globales[id].est_bss = 1;
-    globales[id].est_staticus = est_staticus;
-    globales[id].valor_initialis = valor;
-    globales[id].habet_valorem = (valor != 0);
+    globales[id] .typus = typus;
+    globales[id] .magnitudo = typus_magnitudo(typus);
+    globales[id] .colineatio = typus_colineatio(typus);
+    globales[id] .est_bss = 1;
+    globales[id] .est_staticus = est_staticus;
+    globales[id] .valor_initialis = valor;
+    globales[id] .habet_valorem = (valor != 0);
     return id;
 }
 
@@ -134,10 +175,10 @@ void fixup_adde(int genus, int offset, int target, int mag)
 {
     if (num_fixups >= MAX_FIXUPS)
         erratum("nimis multi fixups");
-    fixups[num_fixups].genus = genus;
-    fixups[num_fixups].offset = offset;
-    fixups[num_fixups].target = target;
-    fixups[num_fixups].magnitudo_accessus = mag;
+    fixups[num_fixups] .genus = genus;
+    fixups[num_fixups] .offset = offset;
+    fixups[num_fixups] .target = target;
+    fixups[num_fixups] .magnitudo_accessus = mag;
     num_fixups++;
 }
 
@@ -145,9 +186,9 @@ void data_reloc_adde(int idata_offset, int genus, int target)
 {
     if (num_data_relocs >= MAX_DATA_RELOCS)
         erratum("nimis multae relocationes datorum");
-    data_relocs[num_data_relocs].idata_offset = idata_offset;
-    data_relocs[num_data_relocs].genus        = genus;
-    data_relocs[num_data_relocs].target       = target;
+    data_relocs[num_data_relocs] .idata_offset = idata_offset;
+    data_relocs[num_data_relocs] .genus        = genus;
+    data_relocs[num_data_relocs] .target       = target;
     num_data_relocs++;
 }
 
@@ -226,6 +267,10 @@ void emitte_initia(void)
     num_globalium   = 0;
     num_data_relocs = 0;
     num_data_binds  = 0;
+    for (int i = 0; i < N_IDATA_EMM; i++) {
+        idata_emm[i] .start = 0;
+        idata_emm[i] .size  = 0;
+    }
 }
 
 void emit32(uint32_t inst)

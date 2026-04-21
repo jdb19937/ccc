@@ -7,7 +7,7 @@
 CC      ?= cc
 CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2
 
-CAPITA  = utilia.h emitte.h emittesym.h scribo.h genera.h generasym.h parser.h lexator.h liga.h biblio.h fluat.h typus.h func.h
+CAPITA  = utilia.h emitte.h emittesym.h scribo.h generasym.h parser.h lexator.h liga.h biblio.h fluat.h typus.h func.h
 
 ICCC_OBJECTA  = iccc.o
 CCC_OBJECTA = ccc.o utilia.o lexator.o parser.o generasym.o emittesym.o emitte.o biblio.o fluat.o typus.o func.o
@@ -16,7 +16,7 @@ LDI_OBJECTA = ldi.o utilia.o liga.o emitte.o scribo.o biblio.o typus.o func.o fl
 IMM_OBJECTA = imm.o utilia.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
 OBJECTA     = iccc.o ccc.o ccc0.o ldi.o imm.o utilia.o lexator.o parser.o genera.o generasym.o emitte.o emittesym.o scribo.o liga.o biblio.o fluat.o typus.o func.o
 
-omnia: ccc ccc0 ldi iccc imm
+omnia: ccc ldi iccc imm
 
 %.o: %.c $(CAPITA)
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -57,7 +57,7 @@ colloca: omnia
 	for f in capita/objc/*.h; do install -m 644 $$f $(PREFIX)/var/ccc/capita/objc/; done
 
 purga:
-	rm -f $(OBJECTA) ccc ccc0 ldi iccc imm
+	rm -f $(OBJECTA) ccc ldi iccc imm
 	rm -f initia.fac reinitia.fac
 	rm -rf initia reinitia
 

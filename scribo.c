@@ -89,18 +89,25 @@ void scribo_macho(const char *plica_exitus, int main_offset)
                 "globalis '%s' magnitudo invalida: %d",
                 globales[i].nomen, mag
             );
-        bss_lon = (int)allinea(bss_lon, col);
-        globales[i].bss_offset = bss_lon;
+        bss_lon     = (int)allinea(bss_lon, col);
+        globales[i] .bss_offset = bss_lon;
         bss_lon += mag;
     }
     bss_lon = (int)allinea(bss_lon, 8);
 
     int got_lon = num_got * 8;
 
+    /* emmerae __DATA nōn vacuae */
+    int num_data_emms = 0;
+    for (int i = 0; i < N_IDATA_EMM; i++)
+        if (idata_emm[i].size > 0)
+            num_data_emms++;
+    int data_nsects = 2 + num_data_emms; /* __got, __bss + N emmerae */
+
     /* load commands sizes */
     int lc_pagezero  = 72;
-    int lc_text      = 72 + 2 * 80;     /* __text, __cstring */
-    int lc_data      = 72 + 3 * 80;     /* __got, __bss, __data */
+    int lc_text      = 72 + 2 * 80;              /* __text, __cstring */
+    int lc_data      = 72 + data_nsects * 80;
     int lc_linkedit  = 72;
     int lc_dyld_info = 48;
     int lc_symtab    = 24;
@@ -118,7 +125,7 @@ void scribo_macho(const char *plica_exitus, int main_offset)
         if (!lc_dylib_add)
             erratum("memoria exhausta");
         for (int i = 0; i < num_dylib_add; i++) {
-            const char *via = biblio_dylib_via(i);
+            const char      *via = biblio_dylib_via(i);
             lc_dylib_add[i] = (int)allinea(24 + strlen(via) + 1, 8);
         }
     }
@@ -141,10 +148,13 @@ void scribo_macho(const char *plica_exitus, int main_offset)
 
     int data_seg_fileoff = text_seg_filesize;
     int got_sect_off     = 0;
-    int idata_sect_off   = (int)allinea(got_lon, 8);
-    int idata_sect_size  = init_data_lon;
-    int bss_sect_off     = (int)allinea(idata_sect_off + idata_sect_size, 8);
-    int data_file_size   = (int)allinea(idata_sect_off + idata_sect_size, PAGINA);
+    /* §6.2.9: init_data potest continēre SIMD literālēs (__literal16)
+     * quae postulant 16-allineātiōnem. Allineā idata basis ad 16 ut
+     * LDR q0 cum PAGEOFF12 offsetum rectē encodāre possit. */
+    int idata_sect_off  = (int)allinea(got_lon, 16);
+    int idata_sect_size = init_data_lon;
+    int bss_sect_off    = (int)allinea(idata_sect_off + idata_sect_size, 8);
+    int data_file_size  = (int)allinea(idata_sect_off + idata_sect_size, PAGINA);
     if (data_file_size < PAGINA)
         data_file_size = PAGINA;
     int data_seg_vmsize = (int)allinea(bss_sect_off + bss_lon, PAGINA);
@@ -272,11 +282,27 @@ void scribo_macho(const char *plica_exitus, int main_offset)
         case FIX_LDR_LO12_IDATA: {
                 uint64_t target_addr = idata_vmaddr + f->target;
                 int lo12 = (int)(target_addr & 0xFFF);
-                /* determina scaling ex instructione */
-                int scale = 1;
-                /* LDR/STR unsigned offset: bits 29:24 = 111001, size = bits 31:30 */
-                if (((inst >> 24) & 0x3F) == 0x39)
-                    scale = 1 << (inst >> 30);
+                /* determina scaling ex instructione.
+                 * LDR/STR unsigned-offset habet duās formās:
+                 *   integer: bits 29:24 = 0x39, scale = 1 << size (bits 30:31)
+                 *   SIMD/FP: bits 29:24 = 0x3D, scale = 1 << (size | (opc[1]<<2));
+                 *     Q load/store (128-bit) habet size=00 cum opc bit[23]=1. */
+                int scale    = 1;
+                uint32_t cls = (inst >> 24) & 0x3F;
+                int size     = (inst >> 30) & 3;
+                if (cls == 0x39) {
+                    scale = 1 << size;
+                } else if (cls == 0x3D) {
+                    int opc_hi = (inst >> 23) & 1;
+                    scale      = 1 << (size + (opc_hi ? 4 : 0));
+                }
+                if (lo12 % scale != 0)
+                    erratum(
+                        "FIX_LO12_IDATA: offsetum 0x%x nōn allineātum ad"
+                        " scale %d (inst 0x%x, offset 0x%x, target 0x%llx)",
+                        lo12, scale, inst, f->offset,
+                        (unsigned long long)target_addr
+                    );
                 int rd      = inst & 0x1F;
                 int rn      = (inst >> 5) & 0x1F;
                 uint32_t op = inst & 0xFFC00000;
@@ -370,15 +396,15 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     int export_lon = 0;
 
     /* radix nodus */
-    export_info[export_lon++] = 0; /* terminal size = 0 */
-    export_info[export_lon++] = 1; /* 1 child */
+    export_info[export_lon ++] = 0; /* terminal size = 0 */
+    export_info[export_lon ++] = 1; /* 1 child */
     /* edge: "_main" */
     const char *main_sym = "_main";
     memcpy(&export_info[export_lon], main_sym, strlen(main_sym) + 1);
     export_lon += strlen(main_sym) + 1;
     /* child node offset */
-    int child_offset = export_lon + 1;
-    export_info[export_lon++] = (uint8_t)child_offset;
+    int child_offset       = export_lon + 1;
+    export_info[export_lon ++] = (uint8_t)child_offset;
 
     /* child nodus (terminalis) */
     /* terminal info: flags (ULEB) + address (ULEB) */
@@ -402,9 +428,9 @@ void scribo_macho(const char *plica_exitus, int main_offset)
 
     /* strtab */
     uint8_t strtab[65536];
-    int strtab_lon       = 0;
-    strtab[strtab_lon++] = ' ';  /* index 0: empty/space */
-    strtab[strtab_lon++] = '\0';
+    int strtab_lon    = 0;
+    strtab[strtab_lon ++] = ' ';  /* index 0: empty/space */
+    strtab[strtab_lon ++] = '\0';
 
     /* nlist entries */
     typedef struct {
@@ -424,13 +450,13 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     int iextdefsym = nsyms;
     {
         nlist64_t *nl = &symtab_entries[nsyms++];
-        nl->n_strx    = strtab_lon;
+        nl        ->n_strx    = strtab_lon;
         memcpy(&strtab[strtab_lon], "_main", 6);
         strtab_lon += 6;
-        nl->n_type  = N_SECT | N_EXT;
-        nl->n_sect  = 1; /* __text est sectio 1 */
-        nl->n_desc  = 0;
-        nl->n_value = text_sect_vmaddr + main_offset;
+        nl ->n_type  = N_SECT | N_EXT;
+        nl ->n_sect  = 1; /* __text est sectio 1 */
+        nl ->n_desc  = 0;
+        nl ->n_value = text_sect_vmaddr + main_offset;
     }
     int nextdefsym = nsyms - iextdefsym;
 
@@ -438,16 +464,16 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     int iundefsym = nsyms;
     for (int i = 0; i < num_got; i++) {
         nlist64_t *nl = &symtab_entries[nsyms++];
-        nl->n_strx    = strtab_lon;
-        int glen      = strlen(got[i].nomen);
+        nl        ->n_strx    = strtab_lon;
+        int glen  = strlen(got[i].nomen);
         if (strtab_lon + glen + 1 > (int)sizeof(strtab))
             erratum("strtab nimis magna (> %d octeti)", (int)sizeof(strtab));
         memcpy(&strtab[strtab_lon], got[i].nomen, glen + 1);
         strtab_lon += glen + 1;
-        nl->n_type  = N_EXT; /* external, undefined */
-        nl->n_sect  = 0;
-        nl->n_desc  = biblio_num_dylib() > 0 ? 0xFE00 : 0x0100;
-        nl->n_value = 0;
+        nl ->n_type  = N_EXT; /* external, undefined */
+        nl ->n_sect  = 0;
+        nl ->n_desc  = biblio_num_dylib() > 0 ? 0xFE00 : 0x0100;
+        nl ->n_value = 0;
     }
     int nundefsym = nsyms - iundefsym;
 
@@ -607,7 +633,7 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     scribe64(fp, data_file_size);
     scribe32(fp, VM_PROT_READ | VM_PROT_WRITE);
     scribe32(fp, VM_PROT_READ | VM_PROT_WRITE);
-    scribe32(fp, 3);                 /* nsects */
+    scribe32(fp, data_nsects);       /* nsects */
     scribe32(fp, 0);
 
     /* section __got */
@@ -625,20 +651,24 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     scribe32(fp, 0);
     /* reserved2,3 */
 
-    /* section __data */
-    scribe_nomen_seg(fp, "__data");
-    scribe_nomen_seg(fp, "__DATA");
-    scribe64(fp, idata_vmaddr);
-    scribe64(fp, idata_sect_size);
-    scribe32(fp, idata_sect_size > 0 ? data_seg_fileoff + idata_sect_off : 0);
-    scribe32(fp, 3);
-    scribe32(fp, 0);
-    scribe32(fp, 0);
-    scribe32(fp, S_REGULAR);
-    scribe32(fp, 0);
-    scribe32(fp, 0);
-    scribe32(fp, 0);
-    /* reserved1,2,3 */
+    /* sectiōnēs init_data per emmerās. Omnēs pointent in eundem
+     * alveum (init_data); solum nōmina et magnitūdinēs variant. */
+    for (int i = 0; i < N_IDATA_EMM; i++) {
+        if (idata_emm[i].size <= 0)
+            continue;
+        scribe_nomen_seg(fp, idata_emm[i].sectname);
+        scribe_nomen_seg(fp, "__DATA");
+        scribe64(fp, idata_vmaddr + idata_emm[i].start);
+        scribe64(fp, idata_emm[i].size);
+        scribe32(fp, data_seg_fileoff + idata_sect_off + idata_emm[i].start);
+        scribe32(fp, idata_emm[i].align_log2);
+        scribe32(fp, 0);
+        scribe32(fp, 0);
+        scribe32(fp, idata_emm[i].flags);
+        scribe32(fp, 0);
+        scribe32(fp, 0);
+        scribe32(fp, 0);
+    }
 
     /* section __bss */
     scribe_nomen_seg(fp, "__bss");
@@ -753,8 +783,8 @@ void scribo_macho(const char *plica_exitus, int main_offset)
 
     /* --- LC_LOAD_DYLIB additionles (-l) --- */
     for (int i = 0; i < num_dylib_add; i++) {
-        const char *via = biblio_dylib_via(i);
-        int via_lon     = (int)strlen(via) + 1;
+        const char  *via = biblio_dylib_via(i);
+        int via_lon = (int)strlen(via) + 1;
         scribe32(fp, LC_LOAD_DYLIB);
         scribe32(fp, lc_dylib_add[i]);
         scribe32(fp, 24);               /* name offset */
@@ -903,8 +933,8 @@ void scribo_obiectum(const char *plica_exitus)
         for (int i = 0; i < num_chordarum; i++) {
             chorda_ad_sym[i] = nsyms;
             snprintf(syms[nsyms].nomen, 260, "l_.str.%d", i);
-            syms[nsyms].sectio = 2;
-            syms[nsyms].valor  = codex_lon + chordae[i].offset;
+            syms[nsyms] .sectio = 2;
+            syms[nsyms] .valor  = codex_lon + chordae[i].offset;
             nsyms++;
             n_loc++;
         }
@@ -924,8 +954,8 @@ void scribo_obiectum(const char *plica_exitus)
         }
         if (!iam) {
             strncpy(syms[nsyms].nomen, nn, 259);
-            syms[nsyms].sectio = 1;
-            syms[nsyms].valor  = labels[func_loci[i].label];
+            syms[nsyms] .sectio = 1;
+            syms[nsyms] .valor  = labels[func_loci[i].label];
             nsyms++;
             n_loc++;
         }
@@ -942,8 +972,8 @@ void scribo_obiectum(const char *plica_exitus)
             char nn[260];
             snprintf(nn, 260, "_L_%s.%d", globales[i].nomen, i);
             strncpy(syms[nsyms].nomen, nn, 259);
-            syms[nsyms].sectio = data_sectnum_loc;
-            syms[nsyms].valor  = idata_vmaddr_loc + globales[i].data_offset;
+            syms[nsyms] .sectio = data_sectnum_loc;
+            syms[nsyms] .valor  = idata_vmaddr_loc + globales[i].data_offset;
             nsyms++;
             n_loc++;
         }
@@ -952,7 +982,7 @@ void scribo_obiectum(const char *plica_exitus)
     /* functiones non-staticae definitae → extdef symbola */
     for (int i = 0; i < num_got; i++) {
         const char *gn = got[i].nomen;
-        int fl         = func_loc_quaere(gn[0] == '_' ? gn + 1 : gn);
+        int fl     = func_loc_quaere(gn[0] == '_' ? gn + 1 : gn);
         if (fl >= 0) {
             int iam = 0;
             for (int j = 0; j < nsyms; j++)
@@ -962,8 +992,8 @@ void scribo_obiectum(const char *plica_exitus)
             }
             if (!iam) {
                 strncpy(syms[nsyms].nomen, gn, 259);
-                syms[nsyms].sectio = 1;
-                syms[nsyms].valor  = labels[fl];
+                syms[nsyms] .sectio = 1;
+                syms[nsyms] .valor  = labels[fl];
                 nsyms++;
                 n_extdef++;
             }
@@ -983,8 +1013,8 @@ void scribo_obiectum(const char *plica_exitus)
         }
         if (!iam) {
             strncpy(syms[nsyms].nomen, nn, 259);
-            syms[nsyms].sectio = 1;
-            syms[nsyms].valor  = labels[func_loci[i].label];
+            syms[nsyms] .sectio = 1;
+            syms[nsyms] .valor  = labels[func_loci[i].label];
             nsyms++;
             n_extdef++;
         }
@@ -1018,8 +1048,8 @@ void scribo_obiectum(const char *plica_exitus)
                     ? globales[i].magnitudo : 8;
             } else {
                 /* globalis in __data — sectiō definita (§6.7.8) */
-                syms[nsyms].sectio = data_sectnum;
-                syms[nsyms].valor  = idata_vmaddr_obj + globales[i].data_offset;
+                syms[nsyms] .sectio = data_sectnum;
+                syms[nsyms] .valor  = idata_vmaddr_obj + globales[i].data_offset;
                 n_extdef++;
             }
             nsyms++;
@@ -1032,7 +1062,7 @@ void scribo_obiectum(const char *plica_exitus)
     int got_ad_sym[MAX_GOT];
     for (int i = 0; i < num_got; i++) {
         const char *gn = got[i].nomen;
-        int fl         = func_loc_quaere(gn[0] == '_' ? gn + 1 : gn);
+        int fl     = func_loc_quaere(gn[0] == '_' ? gn + 1 : gn);
         if (fl >= 0) {
             /* iam definitum — quaere indicem */
             for (int j = 0; j < i_undef; j++)
@@ -1043,8 +1073,8 @@ void scribo_obiectum(const char *plica_exitus)
         } else {
             got_ad_sym[i] = nsyms;
             strncpy(syms[nsyms].nomen, gn, 259);
-            syms[nsyms].sectio = 0;
-            syms[nsyms].valor  = 0;
+            syms[nsyms] .sectio = 0;
+            syms[nsyms] .valor  = 0;
             nsyms++;
         }
     }
@@ -1116,29 +1146,29 @@ void scribo_obiectum(const char *plica_exitus)
             }
         case FIX_TBZ: {
                 int target_off = labels[f->target];
-                int delta = (target_off - f->offset) / 4;
-                int bit = f->magnitudo_accessus;
-                int rt  = inst & 0x1F;
-                uint32_t b5 = (bit >> 5) & 1;
-                uint32_t b40 = bit & 0x1F;
+                int delta      = (target_off - f->offset) / 4;
+                int bit        = f->magnitudo_accessus;
+                int rt         = inst & 0x1F;
+                uint32_t b5    = (bit >> 5) & 1;
+                uint32_t b40   = bit & 0x1F;
                 inst = 0x36000000 | (b5 << 31) | (b40 << 19)
                     | ((delta & 0x3FFF) << 5) | rt;
                 break;
             }
         case FIX_TBNZ: {
                 int target_off = labels[f->target];
-                int delta = (target_off - f->offset) / 4;
-                int bit = f->magnitudo_accessus;
-                int rt  = inst & 0x1F;
-                uint32_t b5 = (bit >> 5) & 1;
-                uint32_t b40 = bit & 0x1F;
+                int delta      = (target_off - f->offset) / 4;
+                int bit        = f->magnitudo_accessus;
+                int rt         = inst & 0x1F;
+                uint32_t b5    = (bit >> 5) & 1;
+                uint32_t b40   = bit & 0x1F;
                 inst = 0x37000000 | (b5 << 31) | (b40 << 19)
                     | ((delta & 0x3FFF) << 5) | rt;
                 break;
             }
         case FIX_BL_EXT: {
-                int sym_idx = got_ad_sym[f->target];
-                relocs[nrelocs].r_address = f->offset;
+                int sym_idx     = got_ad_sym[f->target];
+                relocs[nrelocs] .r_address = f->offset;
                 relocs[nrelocs].r_info = (sym_idx & 0xFFFFFF) |
                     (1 << 24) | (2 << 25) | (1 << 27) |
                     ((uint32_t)ARM64_RELOC_BRANCH26 << 28);
@@ -1148,8 +1178,8 @@ void scribo_obiectum(const char *plica_exitus)
             }
         case FIX_ADRP: {
             /* ADRP ad chorda in __cstring — relocatio externa */
-                int sym_idx = chorda_ad_sym[f->target];
-                relocs[nrelocs].r_address = f->offset;
+                int sym_idx     = chorda_ad_sym[f->target];
+                relocs[nrelocs] .r_address = f->offset;
                 relocs[nrelocs].r_info = (sym_idx & 0xFFFFFF) |
                     (1 << 24) | (2 << 25) | (1 << 27) |   /* pcrel=1, len=2, extern=1 */
                     ((uint32_t)ARM64_RELOC_PAGE21 << 28);
@@ -1172,8 +1202,8 @@ void scribo_obiectum(const char *plica_exitus)
             }
         case FIX_ADRP_GOT: {
             /* functio externa — relocatio GOT */
-                int sym_idx = got_ad_sym[f->target];
-                relocs[nrelocs].r_address = f->offset;
+                int sym_idx     = got_ad_sym[f->target];
+                relocs[nrelocs] .r_address = f->offset;
             /* r_info: sym(24) | pcrel(1) | len(2) | ext(1) | type(4) */
                 relocs[nrelocs].r_info = (sym_idx & 0xFFFFFF) |
                     (1 << 24) | (2 << 25) | (1 << 27) |
@@ -1183,8 +1213,8 @@ void scribo_obiectum(const char *plica_exitus)
                 break;
             }
         case FIX_LDR_GOT_LO12: {
-                int sym_idx = got_ad_sym[f->target];
-                relocs[nrelocs].r_address = f->offset;
+                int sym_idx     = got_ad_sym[f->target];
+                relocs[nrelocs] .r_address = f->offset;
                 relocs[nrelocs].r_info = (sym_idx & 0xFFFFFF) |
                     (0 << 24) | (2 << 25) | (1 << 27) |
                     ((uint32_t)ARM64_RELOC_GOT_LOAD_PAGEOFF12 << 28);
@@ -1224,7 +1254,7 @@ void scribo_obiectum(const char *plica_exitus)
                  * Quaere symbolum functionis per label et emitte reloc
                  * PAGE21/PAGEOFF12. */
                 int label_id = f->target;
-                int sym_idx = -1;
+                int sym_idx  = -1;
                 /* quaere functionem cum hoc label */
                 for (int fi = 0; fi < num_func_loc; fi++) {
                     if (func_loci[fi].label == label_id) {
@@ -1241,8 +1271,8 @@ void scribo_obiectum(const char *plica_exitus)
                 }
                 if (sym_idx < 0)
                     erratum("FIX_ADRP_TEXT: symbolum functionis non inventum pro label %d", label_id);
-                relocs[nrelocs].r_address = f->offset;
-                int pcrel = (f->genus == FIX_ADRP_TEXT) ? 1 : 0;
+                relocs[nrelocs] .r_address = f->offset;
+                int pcrel       = (f->genus == FIX_ADRP_TEXT) ? 1 : 0;
                 int type = (f->genus == FIX_ADRP_TEXT)
                     ? ARM64_RELOC_PAGE21 : ARM64_RELOC_PAGEOFF12;
                 relocs[nrelocs].r_info = (sym_idx & 0xFFFFFF) |
@@ -1254,7 +1284,7 @@ void scribo_obiectum(const char *plica_exitus)
                 else {
                     int rd = inst & 0x1F;
                     int rn = (inst >> 5) & 0x1F;
-                    inst = 0x91000000 | (rn << 5) | rd;
+                    inst   = 0x91000000 | (rn << 5) | rd;
                 }
                 break;
             }

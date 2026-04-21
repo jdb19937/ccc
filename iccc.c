@@ -99,7 +99,7 @@ static void *xrealloc(void *p, size_t n)
 static char *xstrdup(const char *s)
 {
     size_t n = strlen(s);
-    char *r  = xmalloc(n + 1);
+    char     *r  = xmalloc(n + 1);
     memcpy(r, s, n + 1);
     return r;
 }
@@ -150,30 +150,30 @@ static signum_t *signum_crea(
     int linea, const char *plica
 ) {
     signum_t *s     = xmalloc(sizeof(*s));
-    s->genus        = g;
-    s->textus       = xstrndup(text, lon);
-    s->lon          = lon;
-    s->linea        = linea;
-    s->plica        = plica;
-    s->spatium_ante = 0;
-    s->principium   = 0;
-    s->hs           = NULL;
-    s->seq          = NULL;
+    s        ->genus        = g;
+    s        ->textus       = xstrndup(text, lon);
+    s        ->lon          = lon;
+    s        ->linea        = linea;
+    s        ->plica        = plica;
+    s        ->spatium_ante = 0;
+    s        ->principium   = 0;
+    s        ->hs           = NULL;
+    s        ->seq          = NULL;
     return s;
 }
 
 static signum_t *signum_copia(const signum_t *s)
 {
     signum_t *c     = xmalloc(sizeof(*c));
-    c->genus        = s->genus;
-    c->textus       = xstrndup(s->textus, s->lon);
-    c->lon          = s->lon;
-    c->linea        = s->linea;
-    c->plica        = s->plica;
-    c->spatium_ante = s->spatium_ante;
-    c->principium   = s->principium;
-    c->hs           = s->hs;  /* shared */
-    c->seq          = NULL;
+    c        ->genus        = s->genus;
+    c        ->textus       = xstrndup(s->textus, s->lon);
+    c        ->lon          = s->lon;
+    c        ->linea        = s->linea;
+    c        ->plica        = s->plica;
+    c        ->spatium_ante = s->spatium_ante;
+    c        ->principium   = s->principium;
+    c        ->hs           = s->hs;  /* shared */
+    c        ->seq          = NULL;
     return c;
 }
 
@@ -200,8 +200,8 @@ static hs_t *hs_adde(hs_t *h, const char *nomen)
     if (hs_continet(h, nomen))
         return h;
     hs_t *n = xmalloc(sizeof(*n));
-    n->nomen = xstrdup(nomen);
-    n->seq   = h;
+    n    ->nomen = xstrdup(nomen);
+    n    ->seq   = h;
     return n;
 }
 
@@ -262,8 +262,8 @@ static unsigned disper(const char *s, int n)
 
 static macra_t *macra_quaere(const char *nomen, int lon)
 {
-    unsigned h  = disper(nomen, lon) % MACRA_HASH;
-    macra_t *m = macra_tabula[h];
+    unsigned h = disper(nomen, lon) % MACRA_HASH;
+    macra_t    *m = macra_tabula[h];
     for (; m; m = m->seq)
         if ((int)strlen(m->nomen) == lon && memcmp(m->nomen, nomen, lon) == 0)
             return m;
@@ -279,15 +279,15 @@ static void macra_pone(macra_t *m)
 
 static void macra_tolle(const char *nomen, int lon)
 {
-    unsigned h     = disper(nomen, lon) % MACRA_HASH;
-    macra_t **pp  = &macra_tabula[h];
+    unsigned h = disper(nomen, lon) % MACRA_HASH;
+    macra_t    **pp  = &macra_tabula[h];
     while (*pp) {
         if (
             (int)strlen((*pp)->nomen) == lon &&
             memcmp((*pp)->nomen, nomen, lon) == 0
         ) {
             macra_t *d = *pp;
-            *pp        = d->seq;
+            pp[0]   = d->seq;
             /* macra ipsa non liberatur; memoria servatur ad finem processus */
             return;
         }
@@ -321,8 +321,8 @@ static char *via_directoria(const char *via)
     const char *ult = strrchr(via, '/');
     if (!ult)
         return xstrdup("./");
-    int n    = (int)(ult - via) + 1;
-    char *r = xmalloc(n + 1);
+    int n = (int)(ult - via) + 1;
+    char  *r = xmalloc(n + 1);
     memcpy(r, via, n);
     r[n]     = 0;
     return r;
@@ -340,8 +340,8 @@ static char *lege_plicam(const char *via, int *lon)
     fseek(fp, 0, SEEK_END);
     long mag = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    char *data = xmalloc(mag + 2);
-    size_t r   = fread(data, 1, mag, fp);
+    char     *data = xmalloc(mag + 2);
+    size_t r = fread(data, 1, mag, fp);
     (void)r;
     /* assecura novam lineam terminalem */
     if (mag > 0 && data[mag-1] != '\n')
@@ -412,8 +412,8 @@ static int sume_char(flumen_t *f)
     int c = specta_char(f, &np, &nl);
     if (c < 0)
         return -1;
-    f->pos   = np + 1;
-    f->linea = nl + (c == '\n' ? 1 : 0);
+    f ->pos   = np + 1;
+    f ->linea = nl + (c == '\n' ? 1 : 0);
     return c;
 }
 
@@ -502,8 +502,8 @@ static signum_t *lex_proximum(flumen_t *f)
 
     if (c < 0) {
         signum_t *s = signum_crea(T_FIN, "", 0, f->linea, f->plica);
-        s->principium = f->bol;
-        f->bol = 1;
+        s        ->principium = f->bol;
+        f        ->bol = 1;
         return s;
     }
 
@@ -511,9 +511,9 @@ static signum_t *lex_proximum(flumen_t *f)
         int linea = f->linea;
         sume_char(f);
         signum_t *s   = signum_crea(T_LIN, "\n", 1, linea, f->plica);
-        s->spatium_ante = space;
-        s->principium = f->bol;
-        f->bol        = 1;
+        s        ->spatium_ante = space;
+        s        ->principium = f->bol;
+        f        ->bol        = 1;
         return s;
     }
 
@@ -531,16 +531,16 @@ static signum_t *lex_proximum(flumen_t *f)
             buf[n++] = sume_char(f);
         }
         signum_t *s = signum_crea(T_NOM, buf, n, linea_ini, f->plica);
-        s->spatium_ante = space;
-        s->principium   = bol;
+        s        ->spatium_ante = space;
+        s        ->principium   = bol;
         return s;
     }
 
     /* pp-number: digit, vel '.' + digit */
     if (isdigit(c) || (c == '.' && isdigit(specta_duo(f)))) {
         char buf[LIM_IDENT];
-        int n    = 0;
-        buf[n++] = sume_char(f);
+        int n = 0;
+        buf[n ++] = sume_char(f);
         for (;;) {
             c = specta_unum(f);
             if (c < 0)
@@ -550,8 +550,8 @@ static signum_t *lex_proximum(flumen_t *f)
                 if (d == '+' || d == '-') {
                     if (n + 2 >= LIM_IDENT)
                         erratum("numerus nimis longus");
-                    buf[n++] = sume_char(f);
-                    buf[n++] = sume_char(f);
+                    buf[n ++] = sume_char(f);
+                    buf[n ++] = sume_char(f);
                     continue;
                 }
             }
@@ -564,8 +564,8 @@ static signum_t *lex_proximum(flumen_t *f)
             break;
         }
         signum_t *s = signum_crea(T_PPN, buf, n, linea_ini, f->plica);
-        s->spatium_ante = space;
-        s->principium   = bol;
+        s        ->spatium_ante = space;
+        s        ->principium   = bol;
         return s;
     }
 
@@ -573,10 +573,10 @@ static signum_t *lex_proximum(flumen_t *f)
      * permitteretur. Hic formam nudam tractamus; prefix iam qua ident
      * lectus est. */
     if (c == '"') {
-        char *buf = xmalloc(256);
-        int cap   = 256;
-        int n     = 0;
-        buf[n++]  = sume_char(f);
+        char    *buf = xmalloc(256);
+        int cap = 256;
+        int n   = 0;
+        buf[n   ++]  = sume_char(f);
         for (;;) {
             c = sume_char(f);
             if (c < 0 || c == '\n')
@@ -596,16 +596,16 @@ static signum_t *lex_proximum(flumen_t *f)
             }
         }
         signum_t *s   = signum_crea(T_STR, buf, n, linea_ini, f->plica);
-        s->spatium_ante = space;
-        s->principium   = bol;
+        s        ->spatium_ante = space;
+        s        ->principium   = bol;
         free(buf);
         return s;
     }
 
     if (c == '\'') {
         char buf[256];
-        int n    = 0;
-        buf[n++] = sume_char(f);
+        int n = 0;
+        buf[n ++] = sume_char(f);
         for (;;) {
             c = sume_char(f);
             if (c < 0 || c == '\n')
@@ -623,17 +623,17 @@ static signum_t *lex_proximum(flumen_t *f)
                 erratum("constans characteris nimis longa");
         }
         signum_t *s   = signum_crea(T_CHR, buf, n, linea_ini, f->plica);
-        s->spatium_ante = space;
-        s->principium   = bol;
+        s        ->spatium_ante = space;
+        s        ->principium   = bol;
         return s;
     }
 
     /* punctuator — proba longiores primum */
     char pun[4] = {0};
-    pun[0]      = sume_char(f);
-    int lon     = 1;
-    int c2      = specta_unum(f);
-    int c3      = specta_duo(f);
+    pun[0]  = sume_char(f);
+    int lon = 1;
+    int c2  = specta_unum(f);
+    int c3  = specta_duo(f);
     /* tres characteres: <<= >>= ... */
     if (
         (pun[0] == '<' && c2 == '<' && c3 == '=') ||
@@ -664,8 +664,8 @@ static signum_t *lex_proximum(flumen_t *f)
     }
 
     signum_t *s   = signum_crea(T_PUN, pun, lon, linea_ini, f->plica);
-    s->spatium_ante = space;
-    s->principium   = bol;
+    s        ->spatium_ante = space;
+    s        ->principium   = bol;
     return s;
 }
 
@@ -701,7 +701,7 @@ static int acervus_tolle(void)
 {
     if (!flumen_currens)
         return 0;
-    flumen_t *f = flumen_currens;
+    flumen_t       *f = flumen_currens;
     flumen_currens = f->sub;
     flumen_altitudo--;
     free(f->data);
@@ -727,16 +727,16 @@ static void pendentia_trude(signum_t *lista)
     signum_t *ult = lista;
     while (ult->seq)
         ult = ult->seq;
-    ult->seq = pendentia;
+    ult       ->seq = pendentia;
     pendentia = lista;
 }
 
 static signum_t *signum_proximum_raw(void)
 {
     if (pendentia) {
-        signum_t *s = pendentia;
-        pendentia   = s->seq;
-        s->seq      = NULL;
+        signum_t  *s = pendentia;
+        pendentia = s->seq;
+        s         ->seq      = NULL;
         return s;
     }
     while (flumen_currens) {
@@ -855,7 +855,7 @@ static void cond_tolle(void)
 {
     if (!cond_stack)
         erratum("#endif sine #if");
-    cond_t *c  = cond_stack;
+    cond_t     *c  = cond_stack;
     cond_stack = c->sub;
     free(c);
 }
@@ -903,10 +903,10 @@ static int expande_clausus = 0;
 /* signum_ad_chordam — stringificatio ad formam "..." */
 static signum_t *signum_ad_chordam(signum_t *lista, int linea, const char *plica)
 {
-    int cap = 256;
-    char *buf = xmalloc(cap);
-    int n = 0;
-    buf[n++] = '"';
+    int cap    = 256;
+    char       *buf = xmalloc(cap);
+    int n      = 0;
+    buf[n      ++] = '"';
     int primum = 1;
     for (signum_t *s = lista; s; s = s->seq) {
         if (s->genus == T_LOC)
@@ -936,7 +936,7 @@ static signum_t *signum_ad_chordam(signum_t *lista, int linea, const char *plica
         cap *= 2;
         buf = xrealloc(buf, cap);
     }
-    buf[n++] = '"';
+    buf[n    ++] = '"';
     signum_t *r = signum_crea(T_STR, buf, n, linea, plica);
     free(buf);
     return r;
@@ -950,8 +950,8 @@ static signum_t *concat_signa(signum_t *a, signum_t *b)
     if (b->genus == T_LOC)
         return signum_copia(a);
 
-    int n     = a->lon + b->lon;
-    char *buf = xmalloc(n + 1);
+    int n = a->lon + b->lon;
+    char  *buf = xmalloc(n + 1);
     memcpy(buf, a->textus, a->lon);
     memcpy(buf + a->lon, b->textus, b->lon);
     buf[n] = 0;
@@ -967,8 +967,8 @@ static signum_t *concat_signa(signum_t *a, signum_t *b)
         g = T_PUN;
 
     signum_t *r     = signum_crea(g, buf, n, a->linea, a->plica);
-    r->spatium_ante = a->spatium_ante;
-    r->hs           = hs_intersectio(a->hs, b->hs);
+    r        ->spatium_ante = a->spatium_ante;
+    r        ->hs           = hs_intersectio(a->hs, b->hs);
     free(buf);
     return r;
 }
@@ -997,7 +997,7 @@ static signum_t **sume_argumenta(macra_t *m, int *num_out)
     signum_t **args = xmalloc(LIM_ARGUMENTA * sizeof(signum_t *));
     for (int i = 0; i < LIM_ARGUMENTA; i++)
         args[i] = NULL;
-    int num = 0;
+    int num  = 0;
     int prof = 1;
 
     signum_t *arg_caput = NULL;
@@ -1037,7 +1037,7 @@ static signum_t **sume_argumenta(macra_t *m, int *num_out)
             } else if (s->textus[0] == ',' && prof == 1) {
                 int in_va = m->variadica && (num >= m->num_param);
                 if (!in_va) {
-                    args[num++] = arg_caput;
+                    args[num  ++] = arg_caput;
                     arg_caput = arg_ult = NULL;
                     free(s->textus);
                     free(s);
@@ -1097,13 +1097,13 @@ static signum_t *substitue(
                 erratum("'#' ante non-parametrum '%s'", next->textus);
             signum_t *arg = (idx < LIM_ARGUMENTA) ? args[idx] : NULL;
             signum_t *str = signum_ad_chordam(arg, linea, plica);
-            str->spatium_ante = ip->spatium_ante;
+            str      ->spatium_ante = ip->spatium_ante;
             if (!rslt_caput)
                 rslt_caput = str;
             if (rslt_ult)
                 rslt_ult->seq = str;
             rslt_ult = str;
-            ip = next;
+            ip       = next;
             continue;
         }
 
@@ -1121,13 +1121,13 @@ static signum_t *substitue(
             int idx = (next->genus == T_NOM) ? quaere_param(m, next, &va) : -1;
             if (idx >= 0) {
                 signum_t *arg = (idx < LIM_ARGUMENTA) ? args[idx] : NULL;
-                rhs = copia_lista(arg);
+                rhs      = copia_lista(arg);
                 if (!rhs) {
                     rhs = signum_crea(T_LOC, "", 0, linea, plica);
                 }
             } else {
                 rhs = signum_copia(next);
-                rhs->seq = NULL;
+                rhs ->seq = NULL;
             }
             /* concat rslt_ult et primum signum rhs */
             signum_t *lhs = rslt_ult;
@@ -1138,7 +1138,7 @@ static signum_t *substitue(
             else
                 for (pre = rslt_caput; pre->seq != lhs; pre = pre->seq) {}
             signum_t *combo = concat_signa(lhs, rhs);
-            combo->spatium_ante = lhs->spatium_ante;
+            combo    ->spatium_ante = lhs->spatium_ante;
             if (pre)
                 pre->seq = combo;
             else
@@ -1183,7 +1183,7 @@ static signum_t *substitue(
                 expande_clausus--;
                 if (!inst) {
                     inst = signum_crea(T_LOC, "", 0, linea, plica);
-                    inst->spatium_ante = ip->spatium_ante;
+                    inst ->spatium_ante = ip->spatium_ante;
                 }
             }
             /* prima spatium ex ip */
@@ -1212,9 +1212,9 @@ static signum_t *substitue(
 
     /* statue hide set; pone lineam et plicam ad locum callsitis */
     for (signum_t *p = rslt_caput; p; p = p->seq) {
-        p->hs    = hs_unio(p->hs, hs);
-        p->linea = linea;
-        p->plica = plica;
+        p ->hs    = hs_unio(p->hs, hs);
+        p ->linea = linea;
+        p ->plica = plica;
     }
     /* tolle T_LOC placemarkers */
     signum_t *p = rslt_caput;
@@ -1231,7 +1231,7 @@ static signum_t *substitue(
             p = next;
         } else {
             prev = p;
-            p = p->seq;
+            p    = p->seq;
         }
     }
     return rslt_caput;
@@ -1249,12 +1249,12 @@ static signum_t *macra_specialis_expande(macra_t *m, int linea, const char *plic
         break;
     case SPEC_FILE: {
             int n = (int)strlen(plica ? plica : "<nihil>");
-            char *q = xmalloc(n + 3);
-            q[0] = '"';
+            char  *q = xmalloc(n + 3);
+            q[0]  = '"';
             memcpy(q + 1, plica ? plica : "<nihil>", n);
-            q[n+1] = '"';
-            q[n+2] = 0;
-            s = signum_crea(T_STR, q, n + 2, linea, plica);
+            q[n +1] = '"';
+            q[n +2] = 0;
+            s   = signum_crea(T_STR, q, n + 2, linea, plica);
             free(q);
             break;
         }
@@ -1305,8 +1305,8 @@ static signum_t *expande_lista(signum_t *ts)
 
     while (ts) {
         signum_t *s = ts;
-        ts = ts->seq;
-        s->seq = NULL;
+        ts       = ts->seq;
+        s        ->seq = NULL;
 
         macra_t *m = NULL;
         if (s->genus == T_NOM && !hs_continet(s->hs, s->textus))
@@ -1324,8 +1324,8 @@ static signum_t *expande_lista(signum_t *ts)
         /* macra specialis */
         if (m->specialis != SPEC_NIHIL) {
             signum_t *sp = macra_specialis_expande(m, s->linea, s->plica);
-            sp->spatium_ante = s->spatium_ante;
-            sp->hs = hs_adde(s->hs, m->nomen);
+            sp       ->spatium_ante = s->spatium_ante;
+            sp       ->hs = hs_adde(s->hs, m->nomen);
             free(s->textus);
             free(s);
             if (!exitus_caput)
@@ -1337,7 +1337,7 @@ static signum_t *expande_lista(signum_t *ts)
         }
 
         if (!m->functionalis) {
-            hs_t *new_hs = hs_adde(s->hs, m->nomen);
+            hs_t     *new_hs = hs_adde(s->hs, m->nomen);
             signum_t *sub = substitue(m, NULL, 0, new_hs, s->linea, s->plica);
             if (sub)
                 sub->spatium_ante = s->spatium_ante;
@@ -1348,7 +1348,7 @@ static signum_t *expande_lista(signum_t *ts)
                 signum_t *u = sub;
                 while (u->seq)
                     u = u->seq;
-                u->seq = ts;
+                u  ->seq = ts;
                 ts = sub;
             }
             continue;
@@ -1372,14 +1372,14 @@ static signum_t *expande_lista(signum_t *ts)
             /* usa peek ex ts */
         }
         int found_paren = 0;
-        signum_t *praeter = NULL;   /* signa saltata interim */
-        signum_t *praeter_ult = NULL;
+        signum_t        *praeter = NULL;   /* signa saltata interim */
+        signum_t        *praeter_ult = NULL;
 
         /* saltet spatia et linear-lines; nil sic quia jam signa */
         signum_t *p = peek;
         while (p && p->genus == T_LIN) {
             signum_t *nx = p->seq;
-            p->seq = NULL;
+            p        ->seq = NULL;
             if (!praeter)
                 praeter = p;
             if (praeter_ult)
@@ -1425,7 +1425,7 @@ static signum_t *expande_lista(signum_t *ts)
             if (peek != ts) {
                 /* peek venit ex flumine: reponamus */
                 if (p) {
-                    p->seq = ts;
+                    p  ->seq = ts;
                     ts = p;
                 }
                 if (praeter_ult) {
@@ -1455,12 +1455,12 @@ static signum_t *expande_lista(signum_t *ts)
          * converte ts ad listam temporariam in pendentia et sume. */
         /* Trudit ts ad pendentia */
         if (ts) {
-            signum_t *old_pend = pendentia;
+            signum_t  *old_pend = pendentia;
             pendentia = ts;
-            signum_t *u = ts;
+            signum_t  *u = ts;
             while (u->seq)
                 u = u->seq;
-            u->seq = old_pend;
+            u  ->seq = old_pend;
             ts = NULL;
         }
         int num;
@@ -1528,7 +1528,7 @@ static signum_t *expande_lista(signum_t *ts)
             signum_t *u = sub;
             while (u->seq)
                 u = u->seq;
-            u->seq = ts;
+            u  ->seq = ts;
             ts = sub;
         }
 
@@ -1567,11 +1567,11 @@ static int aest_est_pun(signum_t *s, const char *p)
 static long long aest_numerus(const char *s, int lon)
 {
     long long val = 0;
-    int i = 0;
-    int base = 10;
+    int i         = 0;
+    int base      = 10;
     if (lon >= 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X')) {
         base = 16;
-        i = 2;
+        i    = 2;
     } else if (lon >= 1 && s[0] == '0') {
         base = 8;
     }
@@ -1623,7 +1623,7 @@ static long long aest_characteris(const char *s, int lon)
                 break;
             case '0': case '1': case '2': case '3':
             case '4': case '5': case '6': case '7': {
-                    c = 0;
+                    c     = 0;
                     int k = 0;
                     while (k < 3 && i < lon && s[i] >= '0' && s[i] <= '7') {
                         c = c * 8 + s[i] - '0';
@@ -1893,7 +1893,7 @@ static long long aest_cond(aest_t *a)
     if (aest_est_pun(aest_curr(a), "?")) {
         aest_advance(a);
         long long b = aest_expressio(a);
-        signum_t *s = aest_curr(a);
+        signum_t    *s = aest_curr(a);
         if (!aest_est_pun(s, ":"))
             erratum("expectavi ':' in ?: de #if");
         aest_advance(a);
@@ -1930,8 +1930,8 @@ static signum_t *praepara_conditionem(signum_t *signa)
     signum_t *p     = signa;
     while (p) {
         if (p->genus == T_NOM && signum_eq(p, "defined")) {
-            signum_t *n = p->seq;
-            signum_t *nomen_sig = NULL;
+            signum_t       *n = p->seq;
+            signum_t       *nomen_sig = NULL;
             int consumenda = 1;
             if (n && n->genus == T_PUN && signum_eq(n, "(")) {
                 nomen_sig = n->seq;
@@ -1943,7 +1943,7 @@ static signum_t *praepara_conditionem(signum_t *signa)
                 consumenda = 4; /* defined ( nomen ) */
                 (void)rp;
             } else if (n && n->genus == T_NOM) {
-                nomen_sig = n;
+                nomen_sig  = n;
                 consumenda = 2;
             } else {
                 erratum("defined sine nomine");
@@ -1972,7 +1972,7 @@ static signum_t *praepara_conditionem(signum_t *signa)
         if (ult)
             ult->seq = c;
         ult = c;
-        p = p->seq;
+        p   = p->seq;
     }
     /* Phase 2: expande macras */
     signum_t *expansa = expande_lista(caput);
@@ -2042,8 +2042,8 @@ static void tractat_directivam(void)
                 } else if (cond_stack->captum) {
                     cond_stack->verum = 0;
                 } else {
-                    cond_stack->verum = 1;
-                    cond_stack->captum = 1;
+                    cond_stack ->verum = 1;
+                    cond_stack ->captum = 1;
                 }
                 return;
             }
@@ -2107,7 +2107,7 @@ static void directiva_define(signum_t *r)
     if (!r || r->genus != T_NOM)
         erratum("#define sine nomine");
     signum_t *nomen_sig = r;
-    macra_t *m = xmalloc(sizeof(*m));
+    macra_t  *m = xmalloc(sizeof(*m));
     memset(m, 0, sizeof(*m));
     m->nomen = xstrndup(nomen_sig->textus, nomen_sig->lon);
 
@@ -2138,7 +2138,7 @@ static void directiva_define(signum_t *r)
             }
             primum = 0;
             if (q->genus == T_PUN && signum_eq(q, "...")) {
-                m->variadica = 1;
+                m ->variadica = 1;
                 q = q->seq;
                 if (!q || !(q->genus == T_PUN && signum_eq(q, ")")))
                     erratum("'...' debet esse ultimum parametrum");
@@ -2149,7 +2149,7 @@ static void directiva_define(signum_t *r)
                 erratum("nomen parametri expectatum");
             if (m->num_param >= LIM_PARAMETRA)
                 erratum("nimis multi parametri in macra");
-            m->param[m->num_param++] = xstrndup(q->textus, q->lon);
+            m ->param[m->num_param++] = xstrndup(q->textus, q->lon);
             q = q->seq;
         }
         after = q;
@@ -2234,7 +2234,7 @@ static void directiva_include(signum_t *r)
         /* expande */
         signum_t *copia = copia_lista(r);
         signum_t *exp   = expande_lista(copia);
-        r = exp;
+        r        = exp;
         if (!r)
             erratum("#include sine plica");
     }
@@ -2249,11 +2249,11 @@ static void directiva_include(signum_t *r)
         if (n >= LIM_VIA)
             erratum("via nimis longa");
         memcpy(nomen, r->textus + 1, n);
-        nomen[n] = 0;
+        nomen[n]   = 0;
         quaestivum = 1;
     } else if (r->genus == T_PUN && signum_eq(r, "<")) {
         /* post expansionem: < foo . h > */
-        int n = 0;
+        int n    = 0;
         signum_t *q = r->seq;
         while (q && !(q->genus == T_PUN && signum_eq(q, ">"))) {
             if (q->spatium_ante && n > 0) {
@@ -2267,7 +2267,7 @@ static void directiva_include(signum_t *r)
             n += q->lon;
             q = q->seq;
         }
-        nomen[n] = 0;
+        nomen[n]   = 0;
         quaestivum = 0;
     } else {
         erratum("#include expectat \"...\" vel <...>");
@@ -2294,11 +2294,11 @@ static void directiva_if(signum_t *r, int neg_ifdef, int is_ifdef, int is_if)
         if (!r || r->genus != T_NOM)
             erratum("#ifdef/#ifndef sine nomine");
         int def = macra_quaere(r->textus, r->lon) != NULL;
-        valor = neg_ifdef ? !def : def;
+        valor   = neg_ifdef ? !def : def;
     } else if (is_if) {
         signum_t *copia = copia_lista(r);
         signum_t *prep  = praepara_conditionem(copia);
-        valor = aestima_conditionem(prep);
+        valor    = aestima_conditionem(prep);
     }
     cond_trude(valor, pater);
 }
@@ -2324,11 +2324,11 @@ static void directiva_elif(signum_t *linea)
         cond_stack->verum = 0;
         return;
     }
-    signum_t *copia = copia_lista(p);
-    signum_t *prep  = praepara_conditionem(copia);
-    int valor       = aestima_conditionem(prep);
-    cond_stack->verum  = valor;
-    cond_stack->captum = valor ? 1 : cond_stack->captum;
+    signum_t   *copia = copia_lista(p);
+    signum_t   *prep  = praepara_conditionem(copia);
+    int valor  = aestima_conditionem(prep);
+    cond_stack ->verum  = valor;
+    cond_stack ->captum = valor ? 1 : cond_stack->captum;
 }
 
 /* --- #else --- */
@@ -2347,8 +2347,8 @@ static void directiva_else(void)
     if (cond_stack->captum) {
         cond_stack->verum = 0;
     } else {
-        cond_stack->verum = 1;
-        cond_stack->captum = 1;
+        cond_stack ->verum = 1;
+        cond_stack ->captum = 1;
     }
 }
 
@@ -2370,14 +2370,14 @@ static void directiva_line(signum_t *r)
     long long n = aest_numerus(exp->textus, exp->lon);
     if (n <= 0)
         erratum("#line numerus invalidus");
-    signum_t *q = exp->seq;
+    signum_t   *q = exp->seq;
     const char *plica_nova = NULL;
     if (q && q->genus == T_STR) {
         /* exordine " ... " */
         int lon = q->lon - 2;
         if (lon < 0)
             lon = 0;
-        char *s = xstrndup(q->textus + 1, lon);
+        char       *s = xstrndup(q->textus + 1, lon);
         plica_nova = s;
     }
     if (flumen_currens) {
@@ -2534,8 +2534,8 @@ static void praedefini_macras(void)
     for (size_t i = 0; i < sizeof(praed)/sizeof(praed[0]); i++) {
         macra_t *m  = xmalloc(sizeof(*m));
         memset(m, 0, sizeof(*m));
-        m->nomen     = xstrdup(praed[i].nomen);
-        m->specialis = praed[i].sp;
+        m ->nomen     = xstrdup(praed[i].nomen);
+        m ->specialis = praed[i].sp;
         macra_pone(m);
     }
 }
@@ -2552,7 +2552,7 @@ static void defini_macram_arg(const char *s)
             erratum("nomen -D nimis longum");
         memcpy(nomen, s, n);
         nomen[n] = 0;
-        valor = eq + 1;
+        valor    = eq + 1;
     } else {
         snprintf(nomen, sizeof(nomen), "%s", s);
     }
@@ -2643,8 +2643,8 @@ int main(int argc, char *argv[])
                 usus();
             if (num_opt >= 256)
                 erratum("nimis multae -D optiones");
-            opt_macrae[num_opt].D_non_U = 1;
-            opt_macrae[num_opt].arg     = v;
+            opt_macrae[num_opt] .D_non_U = 1;
+            opt_macrae[num_opt] .arg     = v;
             num_opt++;
         } else if (strncmp(argv[i], "-U", 2) == 0) {
             const char *v = argv[i][2] ? argv[i] + 2 :
@@ -2653,8 +2653,8 @@ int main(int argc, char *argv[])
                 usus();
             if (num_opt >= 256)
                 erratum("nimis multae optiones -U");
-            opt_macrae[num_opt].D_non_U = 0;
-            opt_macrae[num_opt].arg     = v;
+            opt_macrae[num_opt] .D_non_U = 0;
+            opt_macrae[num_opt] .arg     = v;
             num_opt++;
         } else if (
             strcmp(argv[i], "-h") == 0 ||
@@ -2686,9 +2686,9 @@ int main(int argc, char *argv[])
         if (n + 1 >= LIM_VIA)
             erratum("nomen plicae nimis longum");
         memcpy(auto_exitus, plica_fontis, n);
-        auto_exitus[n-1] = 'i';
-        auto_exitus[n]   = 0;
-        plica_exitus     = auto_exitus;
+        auto_exitus[n  -1] = 'i';
+        auto_exitus[n] = 0;
+        plica_exitus   = auto_exitus;
     }
 
     /* aperi exitum in plica temporaria — renominabitur post successum */

@@ -64,11 +64,11 @@ static int sym_crea(const char *nomen)
     CRESC_SERIEM(symbola, num_symbolorum, cap_symbolorum, sym_t);
     int i = num_symbolorum++;
     strncpy(symbola[i].nomen, nomen, 255);
-    symbola[i].nomen[255] = 0;
-    symbola[i].genus = SYM_IGNOTUS;
-    symbola[i].id = -1;
-    symbola[i].est_globalis = 0;
-    symbola[i].definitum = 0;
+    symbola[i] .nomen[255] = 0;
+    symbola[i] .genus = SYM_IGNOTUS;
+    symbola[i] .id = -1;
+    symbola[i] .est_globalis = 0;
+    symbola[i] .definitum = 0;
     return i;
 }
 
@@ -138,7 +138,7 @@ static int lege_nom(char *buf, int max)
 static int lege_sym_cum_rel(char *buf, int max, char *rel, int rmax)
 {
     rel[0] = 0;
-    int n = lege_nom(buf, max);
+    int n  = lege_nom(buf, max);
     if (n == 0)
         return 0;
     if (adest() && fons[pos] == '@') {
@@ -233,7 +233,7 @@ static int reg_kind_ult = 0;
 static int parse_reg(int *est_w)
 {
     saltus_spatii();
-    *est_w = 0;
+    est_w[0]     = 0;
     reg_kind_ult = 0;
     if (!adest())
         erratum_ad(linea_num, "exspectavi registrum");
@@ -288,7 +288,7 @@ static int est_prox_registrum(void)
     saltus_spatii();
     if (!adest())
         return 0;
-    char c = fons[pos];
+    char c  = fons[pos];
     char c1 = (pos+1 < fons_lon) ? fons[pos+1] : 0;
     char c2 = (pos+2 < fons_lon) ? fons[pos+2] : 0;
     if (c == 'x' || c == 'X' || c == 'w' || c == 'W') {
@@ -476,8 +476,8 @@ static void parse_mem(mem_t *m)
         saltus_spatii();
         /* intus potest esse #imm, Xm, vel _sym@PAGEOFF */
         if (spectus() == '#') {
-            m->habet_imm = 1;
-            m->imm = lege_imm();
+            m ->habet_imm = 1;
+            m ->imm = lege_imm();
         } else if (
             est_initium_nom(spectus())
             && !(
@@ -504,8 +504,8 @@ static void parse_mem(mem_t *m)
             /* proba parse_reg */
             int save = pos;
             (void)save;
-            m->habet_rm = 1;
-            m->rm = parse_reg(&m->rm_w);
+            m ->habet_rm = 1;
+            m ->rm = parse_reg(&m->rm_w);
             if (matcha(',')) {
                 /* shift vel extend */
                 char ext[16];
@@ -536,8 +536,8 @@ static void parse_mem(mem_t *m)
         m->post_index = 1;
         saltus_spatii();
         if (spectus() == '#') {
-            m->habet_imm = 1;
-            m->imm = lege_imm();
+            m ->habet_imm = 1;
+            m ->imm = lege_imm();
         } else
             erratum_ad(linea_num, "post-index exspectat valorem immediatum");
     }
@@ -622,7 +622,7 @@ static void pass1(void)
         /* label vel directiva vel instructio */
         char nom[256];
         int save_p = pos;
-        int nl = lege_nom(nom, 256);
+        int nl     = lege_nom(nom, 256);
         if (nl == 0) {
             saltus_ad_eol();
             continue;
@@ -631,12 +631,12 @@ static void pass1(void)
         if (adest() && fons[pos] == ':') {
             pos++;
             /* labelum definitum — registra sectionem eius */
-            int si = sym_quaere_vel_crea(nom);
-            symbola[si].definitum = 1;
+            int si      = sym_quaere_vel_crea(nom);
+            symbola[si] .definitum = 1;
             if (sect == SEC_TEXT) {
                 if (nom[0] == '_') {
-                    symbola[si].genus = SYM_FUNC;
-                    symbola[si].est_globalis = ultimus_globl_def;
+                    symbola[si] .genus = SYM_FUNC;
+                    symbola[si] .est_globalis = ultimus_globl_def;
                 } else {
                     symbola[si].genus = SYM_TXT_LAB;
                 }
@@ -700,27 +700,27 @@ static void pass1(void)
                 char sn[256];
                 lege_nom(sn, 256);
                 exige(',');
-                long sz = lege_num();
+                long sz  = lege_num();
                 long col = 1;
                 if (matcha(','))
                     col = lege_num();
                 int si = sym_quaere_vel_crea(sn);
                 if (num_globalium >= MAX_GLOBALES)
                     erratum("nimis multae globales");
-                int gi = num_globalium++;
+                int gi     = num_globalium++;
                 const char *nn2 = (sn[0] == '_') ? sn + 1 : sn;
                 strncpy(globales[gi].nomen, nn2, 255);
-                globales[gi].typus = NULL;
-                globales[gi].magnitudo = (int)sz;
-                globales[gi].colineatio = 1 << col;
-                globales[gi].est_bss = 1;
-                globales[gi].est_staticus = !strcmp(nom, ".lcomm");
-                globales[gi].valor_initialis = 0;
-                globales[gi].habet_valorem = 0;
-                globales[gi].data_offset = 0;
-                symbola[si].genus = SYM_GLOB;
-                symbola[si].id = gi;
-                symbola[si].definitum = 1;
+                globales[gi] .typus = NULL;
+                globales[gi] .magnitudo = (int)sz;
+                globales[gi] .colineatio = 1 << col;
+                globales[gi] .est_bss = 1;
+                globales[gi] .est_staticus = !strcmp(nom, ".lcomm");
+                globales[gi] .valor_initialis = 0;
+                globales[gi] .habet_valorem = 0;
+                globales[gi] .data_offset = 0;
+                symbola[si]  .genus = SYM_GLOB;
+                symbola[si]  .id = gi;
+                symbola[si]  .definitum = 1;
                 if (!strcmp(nom, ".comm"))
                     symbola[si].est_globalis = 1;
             } else if (!strcmp(nom, ".zerofill")) {
@@ -731,25 +731,25 @@ static void pass1(void)
                 exige(',');
                 lege_nom(sn, 256);
                 exige(',');
-                long sz = lege_num();
+                long sz  = lege_num();
                 long col = 0;
                 if (matcha(','))
                     col = lege_num();
                 int si = sym_quaere_vel_crea(sn);
                 if (num_globalium >= MAX_GLOBALES)
                     erratum("nimis multae globales");
-                int gi = num_globalium++;
+                int gi     = num_globalium++;
                 const char *nn2 = (sn[0] == '_') ? sn + 1 : sn;
                 strncpy(globales[gi].nomen, nn2, 255);
-                globales[gi].typus = NULL;
-                globales[gi].magnitudo = (int)sz;
-                globales[gi].colineatio = 1 << col;
-                globales[gi].est_bss = 1;
-                globales[gi].est_staticus = !symbola[si].est_globalis;
-                globales[gi].data_offset = 0;
-                symbola[si].genus = SYM_GLOB;
-                symbola[si].id = gi;
-                symbola[si].definitum = 1;
+                globales[gi] .typus = NULL;
+                globales[gi] .magnitudo = (int)sz;
+                globales[gi] .colineatio = 1 << col;
+                globales[gi] .est_bss = 1;
+                globales[gi] .est_staticus = !symbola[si].est_globalis;
+                globales[gi] .data_offset = 0;
+                symbola[si]  .genus = SYM_GLOB;
+                symbola[si]  .id = gi;
+                symbola[si]  .definitum = 1;
                 (void)seg;
                 (void)sct;
             }
@@ -807,21 +807,21 @@ static int glob_sym_ensure(int si)
         return symbola[si].id;
     if (num_globalium >= MAX_GLOBALES)
         erratum("nimis multae globales");
-    int gi = num_globalium++;
+    int gi     = num_globalium++;
     const char *nm = symbola[si].nomen;
     const char *nn = (nm[0] == '_') ? nm + 1 : nm;
     strncpy(globales[gi].nomen, nn, 255);
-    globales[gi].nomen[255] = 0;
-    globales[gi].typus = NULL;
-    globales[gi].magnitudo = 0;
-    globales[gi].colineatio = 1;
-    globales[gi].est_bss = 0;
-    globales[gi].est_staticus = !symbola[si].est_globalis;
-    globales[gi].valor_initialis = 0;
-    globales[gi].habet_valorem = 0;
-    globales[gi].data_offset = 0;
-    symbola[si].genus = SYM_GLOB;
-    symbola[si].id = gi;
+    globales[gi] .nomen[255] = 0;
+    globales[gi] .typus = NULL;
+    globales[gi] .magnitudo = 0;
+    globales[gi] .colineatio = 1;
+    globales[gi] .est_bss = 0;
+    globales[gi] .est_staticus = !symbola[si].est_globalis;
+    globales[gi] .valor_initialis = 0;
+    globales[gi] .habet_valorem = 0;
+    globales[gi] .data_offset = 0;
+    symbola[si]  .genus = SYM_GLOB;
+    symbola[si]  .id = gi;
     return gi;
 }
 
@@ -830,8 +830,8 @@ static int sym_got_id(int si)
     sym_t *s = &symbola[si];
     if (s->genus == SYM_IGNOTUS) {
         /* non definitum hic → externum */
-        s->genus = SYM_EXT;
-        s->id = got_adde(s->nomen);
+        s ->genus = SYM_EXT;
+        s ->id = got_adde(s->nomen);
         return s->id;
     }
     if (s->genus == SYM_EXT)
@@ -939,55 +939,55 @@ static uint32_t enc_option(int ext_genus, int rm_w)
 static void enc_str64_r(int rt, int rn, int rm, int ext_genus, int S)
 {
     uint32_t opt = enc_option(ext_genus, 0);
-    uint32_t s = S ? 1 : 0;
+    uint32_t s   = S ? 1 : 0;
     emit32(0xF8200800 | (rm << 16) | (opt << 13) | (s << 12) | (rn << 5) | rt);
 }
 static void enc_ldr64_r(int rt, int rn, int rm, int ext_genus, int S)
 {
     uint32_t opt = enc_option(ext_genus, 0);
-    uint32_t s = S ? 1 : 0;
+    uint32_t s   = S ? 1 : 0;
     emit32(0xF8600800 | (rm << 16) | (opt << 13) | (s << 12) | (rn << 5) | rt);
 }
 static void enc_str32_r(int rt, int rn, int rm, int ext_genus, int S)
 {
     uint32_t opt = enc_option(ext_genus, 0);
-    uint32_t s = S ? 1 : 0;
+    uint32_t s   = S ? 1 : 0;
     emit32(0xB8200800 | (rm << 16) | (opt << 13) | (s << 12) | (rn << 5) | rt);
 }
 static void enc_ldr32_r(int rt, int rn, int rm, int ext_genus, int S)
 {
     uint32_t opt = enc_option(ext_genus, 0);
-    uint32_t s = S ? 1 : 0;
+    uint32_t s   = S ? 1 : 0;
     emit32(0xB8600800 | (rm << 16) | (opt << 13) | (s << 12) | (rn << 5) | rt);
 }
 static void enc_strb_r(int rt, int rn, int rm, int ext_genus, int S)
 {
     uint32_t opt = enc_option(ext_genus, 0);
-    uint32_t s = S ? 1 : 0;
+    uint32_t s   = S ? 1 : 0;
     emit32(0x38200800 | (rm << 16) | (opt << 13) | (s << 12) | (rn << 5) | rt);
 }
 static void enc_ldrb_r(int rt, int rn, int rm, int ext_genus, int S)
 {
     uint32_t opt = enc_option(ext_genus, 0);
-    uint32_t s = S ? 1 : 0;
+    uint32_t s   = S ? 1 : 0;
     emit32(0x38600800 | (rm << 16) | (opt << 13) | (s << 12) | (rn << 5) | rt);
 }
 static void enc_strh_r(int rt, int rn, int rm, int ext_genus, int S)
 {
     uint32_t opt = enc_option(ext_genus, 0);
-    uint32_t s = S ? 1 : 0;
+    uint32_t s   = S ? 1 : 0;
     emit32(0x78200800 | (rm << 16) | (opt << 13) | (s << 12) | (rn << 5) | rt);
 }
 static void enc_ldrh_r(int rt, int rn, int rm, int ext_genus, int S)
 {
     uint32_t opt = enc_option(ext_genus, 0);
-    uint32_t s = S ? 1 : 0;
+    uint32_t s   = S ? 1 : 0;
     emit32(0x78600800 | (rm << 16) | (opt << 13) | (s << 12) | (rn << 5) | rt);
 }
 static void enc_ldrsw_r(int rt, int rn, int rm, int ext_genus, int S)
 {
     uint32_t opt = enc_option(ext_genus, 0);
-    uint32_t s = S ? 1 : 0;
+    uint32_t s   = S ? 1 : 0;
     emit32(0xB8A00800 | (rm << 16) | (opt << 13) | (s << 12) | (rn << 5) | rt);
 }
 
@@ -1274,15 +1274,15 @@ static int enc_bitmask_imm(uint64_t val, int sf, uint32_t *out)
                     continue;
                 if (!sf && N == 1)
                     continue;
-                int esize = 1 << len;
+                int esize  = 1 << len;
                 int levels = esize - 1;
-                int S = imms & levels;
-                int R = immr & levels;
+                int S      = imms & levels;
+                int R      = immr & levels;
                 if (S == levels)
                     continue;
-                uint64_t welem = ((uint64_t)1 << (S + 1)) - 1;
-                uint64_t mask = (esize == 64) ? ~(uint64_t)0 : (((uint64_t)1 << esize) - 1);
-                uint64_t rored = ((welem >> R) | (welem << (esize - R))) & mask;
+                uint64_t welem  = ((uint64_t)1 << (S + 1)) - 1;
+                uint64_t mask   = (esize == 64) ? ~(uint64_t)0 : (((uint64_t)1 << esize) - 1);
+                uint64_t rored  = ((welem >> R) | (welem << (esize - R))) & mask;
                 uint64_t result = 0;
                 for (int i = 0; i < 64; i += esize)
                     result |= rored << i;
@@ -1339,10 +1339,10 @@ static void dir_quad(void)
         char sn[256];
         lege_nom(sn, 256);
         alinea_data(8);
-        int si = sym_quaere_vel_crea(sn);
-        sym_t *s = &symbola[si];
+        int si        = sym_quaere_vel_crea(sn);
+        sym_t         *s = &symbola[si];
         uint64_t zero = 0;
-        int data_off = init_data_lon;
+        int data_off  = init_data_lon;
         scribe_data(&zero, 8);
         if (s->genus == SYM_CHORDA) {
             int coff = chordae[s->id].offset;
@@ -1351,8 +1351,8 @@ static void dir_quad(void)
             /* symbolum externum (functio vel globalis in alia .o):
              * emitte relocationem externam per GOT */
             int gid = got_adde(s->nomen);
-            s->genus = SYM_EXT;
-            s->id = gid;
+            s       ->genus = SYM_EXT;
+            s       ->id = gid;
             data_reloc_adde(data_off, DR_EXT_FUNC, gid);
         } else if (s->genus == SYM_EXT) {
             data_reloc_adde(data_off, DR_EXT_FUNC, s->id);
@@ -1387,7 +1387,7 @@ static void dir_short(void)
 }
 static void dir_byte(void)
 {
-    long v = lege_num();
+    long v    = lege_num();
     uint8_t u = (uint8_t)v;
     scribe_data(&u, 1);
 }
@@ -1440,41 +1440,41 @@ static void dir_p2align(void)
 /* definitio labeli cum effectu in alveis */
 static void pone_labelum(const char *nom)
 {
-    int si = sym_quaere_vel_crea(nom);
-    symbola[si].definitum = 1;
+    int si      = sym_quaere_vel_crea(nom);
+    symbola[si] .definitum = 1;
     if (sectio_currens == SEC_TEXT) {
         int lab_id;
         if (nom[0] == '_') {
             /* functio */
             if (symbola[si].id < 0) {
-                int lab = func_loc_adde(nom + 1, !symbola[si].est_globalis);
-                symbola[si].genus = SYM_FUNC;
-                symbola[si].id = num_func_loc - 1;
-                lab_id = lab;
+                int lab     = func_loc_adde(nom + 1, !symbola[si].est_globalis);
+                symbola[si] .genus = SYM_FUNC;
+                symbola[si] .id = num_func_loc - 1;
+                lab_id      = lab;
             } else {
                 lab_id = func_loci[symbola[si].id].label;
             }
         } else {
             if (symbola[si].id < 0)
                 symbola[si].id = label_novus();
-            symbola[si].genus = SYM_TXT_LAB;
-            lab_id = symbola[si].id;
+            symbola[si] .genus = SYM_TXT_LAB;
+            lab_id      = symbola[si].id;
         }
         label_pone(lab_id);
     } else if (sectio_currens == SEC_CSTRING) {
         /* id assignabitur cum .asciz sequitur */
-        symbola[si].genus = SYM_CHORDA;
+        symbola[si]      .genus = SYM_CHORDA;
         ultimum_data_sym = si;
     } else {
         /* data/const/bss — globalis. Sī iam placeholder creātum per
          * glob_sym_ensure, updā data_offset et colineationem nunc. */
-        int gi = glob_sym_ensure(si);
-        globales[gi].colineatio = colineatio_currens;
-        globales[gi].est_bss = (sectio_currens == SEC_BSS);
-        globales[gi].est_staticus = !symbola[si].est_globalis;
+        int gi       = glob_sym_ensure(si);
+        globales[gi] .colineatio = colineatio_currens;
+        globales[gi] .est_bss = (sectio_currens == SEC_BSS);
+        globales[gi] .est_staticus = !symbola[si].est_globalis;
         alinea_data(colineatio_currens);
-        globales[gi].data_offset = init_data_lon;
-        symbola[si].genus = SYM_GLOB;
+        globales[gi]     .data_offset = init_data_lon;
+        symbola[si]      .genus = SYM_GLOB;
         ultimum_data_sym = si;
     }
 }
@@ -1486,7 +1486,7 @@ static void pone_labelum(const char *nom)
 static void ins_mov(void)
 {
     int w1, w2;
-    int rd = parse_reg(&w1);
+    int rd    = parse_reg(&w1);
     int rd_sp = (reg_kind_ult == 1);
     exige(',');
     saltus_spatii();
@@ -1498,7 +1498,7 @@ static void ins_mov(void)
             emit_movi(rd, v);
         return;
     }
-    int rn = parse_reg(&w2);
+    int rn    = parse_reg(&w2);
     int rn_sp = (reg_kind_ult == 1);
     if (w1 != w2)
         erratum_ad(linea_num, "mov: mixta magnitudo");
@@ -1522,7 +1522,7 @@ static void ins_mov_variant(const char *op)
     int w;
     int rd = parse_reg(&w);
     exige(',');
-    long imm = lege_imm();
+    long imm  = lege_imm();
     int shift = 0;
     if (matcha(',')) {
         char sh[16];
@@ -1560,7 +1560,7 @@ static void ins_add_sub_generic(int est_sub, int est_s)
     saltus_spatii();
     if (spectus() == '#') {
         long imm = lege_imm();
-        int sh = 0;
+        int sh   = 0;
         if (matcha(',')) {
             char nm[16];
             lege_nom(nm, 16);
@@ -1600,7 +1600,7 @@ static void ins_add_sub_generic(int est_sub, int est_s)
         if (strcmp(rel, "PAGEOFF") != 0)
             erratum_ad(linea_num, "add @%s non supportatum", rel);
         int si = sym_quaere_vel_crea(sn);
-        sym_t *s = &symbola[si];
+        sym_t  *s = &symbola[si];
         if (s->genus == SYM_CHORDA) {
             fixup_adde(FIX_ADD_LO12, codex_lon, s->id, 0);
             emit32(0x91000000 | (rn << 5) | rd);
@@ -1750,22 +1750,22 @@ static void ins_logic(const char *op)
             uint32_t sf_bit = w1 ? 0 : (0xD3400000 ^ 0x53000000);
             /* base 32-bit: UBFM = 0x53000000, SBFM = 0x13000000 */
             if (!strcmp(op, "lsl") || !strcmp(op, "lslv")) {
-                int immr = (width - k) & (width - 1);
-                int imms = width - 1 - k;
+                int immr      = (width - k) & (width - 1);
+                int imms      = width - 1 - k;
                 uint32_t base = 0x53000000;
                 if (!w1)
                     base = 0xD3400000;
                 emit32(base | ((immr & 0x3F) << 16) | ((imms & 0x3F) << 10) | (rn << 5) | rd);
             } else if (!strcmp(op, "lsr") || !strcmp(op, "lsrv")) {
-                int immr = k;
-                int imms = width - 1;
+                int immr      = k;
+                int imms      = width - 1;
                 uint32_t base = 0x53000000;
                 if (!w1)
                     base = 0xD3400000;
                 emit32(base | ((immr & 0x3F) << 16) | ((imms & 0x3F) << 10) | (rn << 5) | rd);
             } else {
-                int immr = k;
-                int imms = width - 1;
+                int immr      = k;
+                int imms      = width - 1;
                 uint32_t base = 0x13000000;
                 if (!w1)
                     base = 0x9340FC00 & ~(uint32_t)0xFC00;
@@ -1793,7 +1793,7 @@ static void ins_logic(const char *op)
         emit32(base | fields | (rn << 5) | rd);
         return;
     }
-    int rm = parse_reg(&w3);
+    int rm      = parse_reg(&w3);
     int sh_type = 0, sh_amt = 0;
     if (matcha(',')) {
         char nm[16];
@@ -2052,7 +2052,7 @@ static void ins_b(int est_bl)
     char nom[256];
     lege_nom(nom, 256);
     int si = sym_quaere_vel_crea(nom);
-    sym_t *s = &symbola[si];
+    sym_t  *s = &symbola[si];
     if (s->genus == SYM_TXT_LAB) {
         if (s->id < 0)
             s->id = label_novus();
@@ -2075,14 +2075,14 @@ static void ins_b(int est_bl)
     } else if (s->genus == SYM_IGNOTUS) {
         if (est_bl) {
             /* ad externum — emit FIX_BL_EXT */
-            s->genus = SYM_EXT;
-            s->id = got_adde(nom);
+            s ->genus = SYM_EXT;
+            s ->id = got_adde(nom);
             fixup_adde(FIX_BL_EXT, codex_lon, s->id, 0);
             emit32(0x94000000);
         } else {
             /* b ad ignotum: adsumimus labelem futurum */
-            s->genus = SYM_TXT_LAB;
-            s->id = label_novus();
+            s ->genus = SYM_TXT_LAB;
+            s ->id = label_novus();
             emit_b_label(s->id);
         }
     } else if (s->genus == SYM_EXT) {
@@ -2100,7 +2100,7 @@ static void ins_bcond(int cond)
     char nom[256];
     lege_nom(nom, 256);
     int si = sym_quaere_vel_crea(nom);
-    sym_t *s = &symbola[si];
+    sym_t  *s = &symbola[si];
     if (s->genus == SYM_TXT_LAB || s->genus == SYM_IGNOTUS) {
         if (s->id < 0)
             s->id = label_novus();
@@ -2118,7 +2118,7 @@ static void ins_cbz_cbnz(int est_cbnz)
     char nom[256];
     lege_nom(nom, 256);
     int si = sym_quaere_vel_crea(nom);
-    sym_t *s = &symbola[si];
+    sym_t  *s = &symbola[si];
     if (s->id < 0)
         s->id = label_novus();
     s->genus = SYM_TXT_LAB;
@@ -2128,7 +2128,7 @@ static void ins_cbz_cbnz(int est_cbnz)
         fixup_adde(FIX_CBNZ, codex_lon, s->id, 0);
     else
         fixup_adde(FIX_CBZ, codex_lon, s->id, 0);
-    uint32_t sf = w1 ? 0 : 0x80000000;
+    uint32_t sf   = w1 ? 0 : 0x80000000;
     uint32_t base = est_cbnz ? 0x35000000 : 0x34000000;
     emit32(sf | base | rt);
 }
@@ -2143,7 +2143,7 @@ static void ins_tbz_tbnz(int est_tbnz)
     char nom[256];
     lege_nom(nom, 256);
     int si = sym_quaere_vel_crea(nom);
-    sym_t *s = &symbola[si];
+    sym_t  *s = &symbola[si];
     if (s->id < 0)
         s->id = label_novus();
     s->genus = SYM_TXT_LAB;
@@ -2183,7 +2183,7 @@ static void ins_adrp(void)
     char sn[256], rel[32];
     lege_sym_cum_rel(sn, 256, rel, 32);
     int si = sym_quaere_vel_crea(sn);
-    sym_t *s = &symbola[si];
+    sym_t  *s = &symbola[si];
     if (!strcmp(rel, "PAGE")) {
         if (s->genus == SYM_CHORDA) {
             emit_adrp_fixup(rd, FIX_ADRP, s->id);
@@ -2223,7 +2223,7 @@ static void ins_adr(void)
     if (rel[0])
         erratum_ad(linea_num, "adr cum @%s non supportatur", rel);
     int si = sym_quaere_vel_crea(sn);
-    sym_t *s = &symbola[si];
+    sym_t  *s = &symbola[si];
     if (s->genus != SYM_TXT_LAB && s->genus != SYM_IGNOTUS)
         erratum_ad(linea_num, "adr: symbolum '%s' non label", sn);
     if (s->id < 0)
@@ -2257,7 +2257,7 @@ static void enc_ldr_str_mem(
     if (m->habet_rel_sym) {
         /* fixup: e.g. ldr x8, [x8, _sym@GOTPAGEOFF] */
         if (!strcmp(m->rel, "GOTPAGEOFF") && magn == 8 && !est_store) {
-            int si = sym_quaere_vel_crea(m->rel_sym);
+            int si  = sym_quaere_vel_crea(m->rel_sym);
             int gid = sym_got_id(si);
             fixup_adde(FIX_LDR_GOT_LO12, codex_lon, gid, 8);
             emit32(0xF9400000 | (m->rn << 5) | rt);
@@ -2265,7 +2265,7 @@ static void enc_ldr_str_mem(
         }
         if (!strcmp(m->rel, "PAGEOFF")) {
             int si = sym_quaere_vel_crea(m->rel_sym);
-            sym_t *s = &symbola[si];
+            sym_t  *s = &symbola[si];
             if (s->genus == SYM_GLOB || s->genus == SYM_IGNOTUS) {
                 int gid = glob_sym_ensure(si);
                 if (est_store) {
@@ -2499,7 +2499,7 @@ static int est_prox_fpreg(void)
     saltus_spatii();
     if (!adest())
         return 0;
-    char c = fons[pos];
+    char c  = fons[pos];
     char c1 = (pos+1 < fons_lon) ? fons[pos+1] : 0;
     if (
         c != 'q' && c != 'Q' && c != 'd' && c != 'D'
@@ -2680,7 +2680,7 @@ static void ins_bfm_variant(uint32_t base, int est_bfi)
 static void ins_fmov(void)
 {
     saltus_spatii();
-    int m1 = 0, m2 = 0, w;
+    int m1  = 0, m2 = 0, w;
     char c0 = spectus();
     if (c0 == 'd' || c0 == 'D' || c0 == 's' || c0 == 'S') {
         int rd = parse_fpreg(&m1);
@@ -2699,29 +2699,33 @@ static void ins_fmov(void)
                 erratum_ad(linea_num, "fmov d/s solum supportatur");
             return;
         }
-        /* fmov dd, xn (vel xzr) */
+        /* fmov dd, xn (vel xzr)  aut  fmov sd, wn */
         int rn = parse_reg(&w);
-        if (w)
-            erratum_ad(linea_num, "fmov dd, Xn: x-reg requiritur");
-        if (m1 == 8)
+        if (m1 == 8) {
+            if (w)
+                erratum_ad(linea_num, "fmov dd, Xn: x-reg requiritur");
             emit32(0x9E670000 | (rn << 5) | rd);
-        else if (m1 == 4)
+        } else if (m1 == 4) {
+            if (!w)
+                erratum_ad(linea_num, "fmov sd, Wn: w-reg requiritur");
             emit32(0x1E270000 | (rn << 5) | rd);
-        else
+        } else
             erratum_ad(linea_num, "fmov d/s solum supportatur");
         return;
     }
-    /* fmov xd, dn */
+    /* fmov xd, dn  aut  fmov wd, sn */
     int rd = parse_reg(&w);
     exige(',');
     int rn = parse_fpreg(&m2);
-    if (w)
-        erratum_ad(linea_num, "fmov Xd, Dn: x-reg requiritur");
-    if (m2 == 8)
+    if (m2 == 8) {
+        if (w)
+            erratum_ad(linea_num, "fmov Xd, Dn: x-reg requiritur");
         emit32(0x9E660000 | (rn << 5) | rd);
-    else if (m2 == 4)
+    } else if (m2 == 4) {
+        if (!w)
+            erratum_ad(linea_num, "fmov Wd, Sn: w-reg requiritur");
         emit32(0x1E260000 | (rn << 5) | rd);
-    else
+    } else
         erratum_ad(linea_num, "fmov d/s solum supportatur");
 }
 
@@ -3201,7 +3205,7 @@ static void processa_lineam(void)
     }
     char nom[256];
     int save = pos;
-    int n = lege_nom(nom, 256);
+    int n    = lege_nom(nom, 256);
     if (n == 0) {
         saltus_ad_eol();
         return;
@@ -3273,8 +3277,8 @@ static void processa_lineam(void)
         if (!strcmp(nom, ".globl") || !strcmp(nom, ".global")) {
             char sn[256];
             lege_nom(sn, 256);
-            int si = sym_quaere_vel_crea(sn);
-            symbola[si].est_globalis = 1;
+            int si      = sym_quaere_vel_crea(sn);
+            symbola[si] .est_globalis = 1;
             saltus_ad_eol();
             return;
         }
@@ -3348,7 +3352,7 @@ static void processa_lineam(void)
             char sn[256];
             lege_nom(sn, 256);
             exige(',');
-            long sz = lege_num();
+            long sz  = lege_num();
             long col = 1;
             if (matcha(','))
                 col = lege_num();
@@ -3356,20 +3360,20 @@ static void processa_lineam(void)
             if (symbola[si].genus == SYM_IGNOTUS) {
                 if (num_globalium >= MAX_GLOBALES)
                     erratum("nimis multae globales");
-                int gi = num_globalium++;
+                int gi     = num_globalium++;
                 const char *nn = (sn[0] == '_') ? sn + 1 : sn;
                 strncpy(globales[gi].nomen, nn, 255);
-                globales[gi].typus = NULL;
-                globales[gi].magnitudo = (int)sz;
-                globales[gi].colineatio = (int)(1 << col);
-                globales[gi].est_bss = 1;
-                globales[gi].est_staticus = (!strcmp(nom, ".lcomm"));
-                globales[gi].valor_initialis = 0;
-                globales[gi].habet_valorem = 0;
-                globales[gi].data_offset = 0;
-                symbola[si].genus = SYM_GLOB;
-                symbola[si].id = gi;
-                symbola[si].definitum = 1;
+                globales[gi] .typus = NULL;
+                globales[gi] .magnitudo = (int)sz;
+                globales[gi] .colineatio = (int)(1 << col);
+                globales[gi] .est_bss = 1;
+                globales[gi] .est_staticus = (!strcmp(nom, ".lcomm"));
+                globales[gi] .valor_initialis = 0;
+                globales[gi] .habet_valorem = 0;
+                globales[gi] .data_offset = 0;
+                symbola[si]  .genus = SYM_GLOB;
+                symbola[si]  .id = gi;
+                symbola[si]  .definitum = 1;
             }
             saltus_ad_eol();
             return;
@@ -3388,24 +3392,24 @@ static void processa_lineam(void)
             exige(',');
             lege_nom(sn, 256);
             exige(',');
-            long sz = lege_num();
+            long sz  = lege_num();
             long col = 0;
             if (matcha(','))
                 col = lege_num();
             int si = sym_quaere_vel_crea(sn);
             if (num_globalium >= MAX_GLOBALES)
                 erratum("nimis globales");
-            int gi = num_globalium++;
+            int gi     = num_globalium++;
             const char *nn = (sn[0] == '_') ? sn + 1 : sn;
             strncpy(globales[gi].nomen, nn, 255);
-            globales[gi].magnitudo = (int)sz;
-            globales[gi].colineatio = (int)(1 << col);
-            globales[gi].est_bss = 1;
-            globales[gi].est_staticus = !symbola[si].est_globalis;
-            globales[gi].data_offset = 0;
-            symbola[si].genus = SYM_GLOB;
-            symbola[si].id = gi;
-            symbola[si].definitum = 1;
+            globales[gi] .magnitudo = (int)sz;
+            globales[gi] .colineatio = (int)(1 << col);
+            globales[gi] .est_bss = 1;
+            globales[gi] .est_staticus = !symbola[si].est_globalis;
+            globales[gi] .data_offset = 0;
+            symbola[si]  .genus = SYM_GLOB;
+            symbola[si]  .id = gi;
+            symbola[si]  .definitum = 1;
             (void)seg;
             (void)sct;
             saltus_ad_eol();
@@ -3436,8 +3440,8 @@ static void usus(void)
 int main(int argc, char *argv[])
 {
     nomen_programmi = "imm";
-    const char *plica_in = NULL;
-    const char *plica_out = NULL;
+    const char      *plica_in = NULL;
+    const char      *plica_out = NULL;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-o")) {
             if (++i >= argc)
@@ -3463,9 +3467,9 @@ int main(int argc, char *argv[])
         if (lin + 1 >= (int)sizeof(out_buf))
             erratum("nomen plicae nimis longum");
         memcpy(out_buf, plica_in, lin);
-        out_buf[lin-1] = 'o';
+        out_buf[lin  -1] = 'o';
         out_buf[lin] = 0;
-        plica_out = out_buf;
+        plica_out    = out_buf;
     }
     plica_currentis = plica_in;
 
@@ -3475,16 +3479,16 @@ int main(int argc, char *argv[])
     char *buf = lege_plicam(plica_in, &flon);
     if (!buf)
         erratum("non possum legere '%s'", plica_in);
-    fons = buf;
-    fons_lon = flon;
-    pos = 0;
+    fons      = buf;
+    fons_lon  = flon;
+    pos       = 0;
     linea_num = 1;
 
     /* pass 1: collige omnes labels */
     pass1();
 
     /* pass 2: processa */
-    pos = 0;
+    pos       = 0;
     linea_num = 1;
     while (adest()) {
         processa_lineam();

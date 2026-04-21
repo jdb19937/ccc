@@ -290,8 +290,8 @@ inicio:
         int num_len      = 0;
         int est_fluitans = 0;
 
-        long val = 0;
-        num_buf[num_len++] = (char)c;
+        long val        = 0;
+        num_buf[num_len ++] = (char)c;
         if (c == '0') {
             c = lege_c();
             if (c == 'x' || c == 'X') {
@@ -324,8 +324,8 @@ inicio:
         }
         /* §6.4.4.2: punctum decimale → constans fluitans */
         if (c == '.') {
-            est_fluitans       = 1;
-            num_buf[num_len++] = '.';
+            est_fluitans    = 1;
+            num_buf[num_len ++] = '.';
             while ((c = lege_c()) != -1 && c >= '0' && c <= '9')
                 num_buf[num_len++] = (char)c;
         }
@@ -367,8 +367,8 @@ inicio:
             sig.valor        = 0;
             return T_NUM_FLUAT;
         }
-        sig.genus = T_NUM;
-        sig.valor = val;
+        sig .genus = T_NUM;
+        sig .valor = val;
         return T_NUM;
     }
 
@@ -385,9 +385,9 @@ inicio:
                 );
             sig.chorda[i++] = c;
         }
-        sig.chorda[i]   = '\0';
-        sig.lon_chordae = i;
-        sig.genus       = T_STR;
+        sig .chorda[i]   = '\0';
+        sig .lon_chordae = i;
+        sig .genus       = T_STR;
 
         /* §6.4.5p4: concatenatio chordarum litteralium adiacentium */
         for (;;) {
@@ -409,8 +409,8 @@ inicio:
                         );
                     sig.chorda[i++] = c;
                 }
-                sig.chorda[i]   = '\0';
-                sig.lon_chordae = i;
+                sig .chorda[i]   = '\0';
+                sig .lon_chordae = i;
             } else {
                 if (c != -1)
                     repone_c();
@@ -425,8 +425,8 @@ inicio:
         c = lege_c();
         if (c == '\\')
             c = lege_effugium();
-        sig.valor = c;
-        c         = lege_c();
+        sig .valor = c;
+        c   = lege_c();
         if (c != '\'')
             erratum_ad(
                 cur_linea,
@@ -439,7 +439,7 @@ inicio:
     /* identificator vel vocabulum clavis */
     if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
         int i = 0;
-        sig.chorda[i++] = c;
+        sig   .chorda[i++] = c;
         while ((c = lege_c()) != -1) {
             if (
                 (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
@@ -696,7 +696,7 @@ int lex_specta(void)
     signum_t salva;
     memcpy(&salva, &sig, sizeof(signum_t));
     int salva_linea = sig_linea;
-    const char *salva_plica = plica_currentis;
+    const char      *salva_plica = plica_currentis;
     lege_signum_internum();
     memcpy(&sig_spectans, &sig, sizeof(signum_t));
     plica_spectans = plica_currentis;

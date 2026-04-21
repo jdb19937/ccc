@@ -51,8 +51,8 @@ void res_adde(const char *via, int genus)
     char *copia = strdup(via);
     if (!copia)
         erratum("memoria exhausta");
-    biblio_res[num_biblio_res].via   = copia;
-    biblio_res[num_biblio_res].genus = genus;
+    biblio_res[num_biblio_res] .via   = copia;
+    biblio_res[num_biblio_res] .genus = genus;
     num_biblio_res++;
 }
 
@@ -156,9 +156,9 @@ static int ar_numerus(const uint8_t *p, int lon)
 
 char **biblio_extrahe_objecta(int *numerum)
 {
-    char **viae = NULL;
-    int    num  = 0;
-    int    cap  = 0;
+    char       **viae = NULL;
+    int    num = 0;
+    int    cap = 0;
 
     for (int bi = 0; bi < num_biblio_res; bi++) {
         if (biblio_res[bi].genus != BIBLIO_A)

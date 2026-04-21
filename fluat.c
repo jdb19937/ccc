@@ -53,13 +53,13 @@ void fluat_initia(void)
 {
     /* §6.2.5¶10, Annex F §F.2: float = IEC 60559 singularis */
     ty_float = typus_novus(TY_FLOAT);
-    ty_float->magnitudo = 4;    /* 32-bit */
-    ty_float->colineatio = 4;
+    ty_float ->magnitudo = 4;    /* 32-bit */
+    ty_float ->colineatio = 4;
 
     /* §6.2.5¶10, Annex F §F.2: double = IEC 60559 duplex */
     ty_double = typus_novus(TY_DOUBLE);
-    ty_double->magnitudo = 8;   /* 64-bit */
-    ty_double->colineatio = 8;
+    ty_double ->magnitudo = 8;   /* 64-bit */
+    ty_double ->colineatio = 8;
 }
 
 /*

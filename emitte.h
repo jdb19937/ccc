@@ -152,6 +152,34 @@ typedef struct {
 #define LR  30
 
 /* ================================================================
+ * emmerae sectionum init_data
+ *
+ * Sectiones __DATA a clang emissae (imprimis __objc_*) debent in
+ * executabili servare nomina propria, ut runtime ObjC classes
+ * inveniat et registret. Ergo init_data in emmeras dividitur per
+ * nomen sectionis. Omnes in uno alveo init_data iacent, sed
+ * scribo.c plures sectiones Mach-O emittit, quaeque in emmeram
+ * propriam pointens.
+ * ================================================================ */
+
+#define N_IDATA_EMM 18
+
+typedef struct {
+    const char *sectname;   /* nomen sectionis in executabili */
+    uint32_t    flags;      /* S_REGULAR, S_LITERAL_POINTERS, etc. */
+    int         align_log2;
+    int         dedup;      /* 1 = solum prima instantia inclūditur */
+    int         start;      /* offset in init_data (positus post liga) */
+    int         size;       /* magnitudo in octetis */
+} idata_emm_t;
+
+extern idata_emm_t idata_emm[N_IDATA_EMM];
+
+/* resolve nomen sectionis ad indicem emmerae. Sectiones ignotae
+ * (e.g. __compact_unwind) in emmeram __data pertinent. */
+int idata_emm_pro_nomine(const char *sectname);
+
+/* ================================================================
  * alvei communes
  * ================================================================ */
 

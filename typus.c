@@ -19,8 +19,8 @@ typus_t *typus_novus(int genus)
         erratum("nimis multi typi");
     typus_t *t = &typi_area[typi_vertex++];
     memset(t, 0, sizeof(typus_t));
-    t->genus = genus;
-    t->num_elementorum = -1;
+    t ->genus = genus;
+    t ->num_elementorum = -1;
     return t;
 }
 
@@ -42,45 +42,45 @@ void typus_initia(void)
 {
     typi_vertex = 0;
 
-    ty_void  = typus_novus(TY_VOID);
-    ty_void->magnitudo = 0;
-    ty_void->colineatio = 1;
+    ty_void = typus_novus(TY_VOID);
+    ty_void ->magnitudo = 0;
+    ty_void ->colineatio = 1;
 
-    ty_char  = typus_novus(TY_CHAR);
-    ty_char->magnitudo = 1;
-    ty_char->colineatio = 1;
+    ty_char = typus_novus(TY_CHAR);
+    ty_char ->magnitudo = 1;
+    ty_char ->colineatio = 1;
 
     ty_uchar = typus_novus(TY_UCHAR);
-    ty_uchar->magnitudo = 1;
-    ty_uchar->colineatio = 1;
-    ty_uchar->est_sine_signo = 1;
+    ty_uchar ->magnitudo = 1;
+    ty_uchar ->colineatio = 1;
+    ty_uchar ->est_sine_signo = 1;
 
     ty_short = typus_novus(TY_SHORT);
-    ty_short->magnitudo = 2;
-    ty_short->colineatio = 2;
+    ty_short ->magnitudo = 2;
+    ty_short ->colineatio = 2;
 
     ty_ushort = typus_novus(TY_USHORT);
-    ty_ushort->magnitudo = 2;
-    ty_ushort->colineatio = 2;
-    ty_ushort->est_sine_signo = 1;
+    ty_ushort ->magnitudo = 2;
+    ty_ushort ->colineatio = 2;
+    ty_ushort ->est_sine_signo = 1;
 
-    ty_int   = typus_novus(TY_INT);
-    ty_int->magnitudo = 4;
-    ty_int->colineatio = 4;
+    ty_int = typus_novus(TY_INT);
+    ty_int ->magnitudo = 4;
+    ty_int ->colineatio = 4;
 
-    ty_uint  = typus_novus(TY_UINT);
-    ty_uint->magnitudo = 4;
-    ty_uint->colineatio = 4;
-    ty_uint->est_sine_signo = 1;
+    ty_uint = typus_novus(TY_UINT);
+    ty_uint ->magnitudo = 4;
+    ty_uint ->colineatio = 4;
+    ty_uint ->est_sine_signo = 1;
 
-    ty_long  = typus_novus(TY_LONG);
-    ty_long->magnitudo = 8;
-    ty_long->colineatio = 8;
+    ty_long = typus_novus(TY_LONG);
+    ty_long ->magnitudo = 8;
+    ty_long ->colineatio = 8;
 
     ty_ulong = typus_novus(TY_ULONG);
-    ty_ulong->magnitudo = 8;
-    ty_ulong->colineatio = 8;
-    ty_ulong->est_sine_signo = 1;
+    ty_ulong ->magnitudo = 8;
+    ty_ulong ->colineatio = 8;
+    ty_ulong ->est_sine_signo = 1;
 }
 
 /* ================================================================
@@ -90,9 +90,9 @@ void typus_initia(void)
 typus_t *typus_indicem(typus_t *basis)
 {
     typus_t *t    = typus_novus(TY_PTR);
-    t->basis      = basis;
-    t->magnitudo  = 8;
-    t->colineatio = 8;
+    t       ->basis      = basis;
+    t       ->magnitudo  = 8;
+    t       ->colineatio = 8;
     return t;
 }
 
@@ -101,10 +101,10 @@ typus_t *typus_tabulam(typus_t *basis, int num)
     if (!basis)
         erratum("typus_tabulam: basis nulla");
     typus_t *t = typus_novus(TY_ARRAY);
-    t->basis = basis;
-    t->num_elementorum = num;
-    t->colineatio = basis->colineatio;
-    t->magnitudo = basis->magnitudo * num;
+    t       ->basis = basis;
+    t       ->num_elementorum = num;
+    t       ->colineatio = basis->colineatio;
+    t       ->magnitudo = basis->magnitudo * num;
     return t;
 }
 
@@ -138,8 +138,10 @@ int typus_est_integer(const typus_t *t)
 {
     if (!t)
         return 0;
-    /* §6.2.5¶17: char, short, int, long, long long et sine-signō */
-    return (t->genus >= TY_CHAR && t->genus <= TY_ULLONG);
+    /* §6.2.5¶17: char, short, int, long, long long, sine-signō, et
+     * typī ēnumerātī (ēnumerātiōnēs sunt typī integrī) */
+    return (t->genus >= TY_CHAR && t->genus <= TY_ULLONG)
+        || t->genus == TY_ENUM;
 }
 
 int typus_est_index(const typus_t *t)

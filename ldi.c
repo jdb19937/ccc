@@ -58,8 +58,8 @@ int main(int argc, char *argv[])
 {
     nomen_programmi = "ldi";
     const char *plicae[256];
-    int num_plicarum         = 0;
-    const char *plica_exitus = NULL;
+    int num_plicarum = 0;
+    const char       *plica_exitus = NULL;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "-o") == 0) {
@@ -102,13 +102,13 @@ int main(int argc, char *argv[])
 
     if (!plica_exitus) {
         /* exue extensionem .o vel .a ex prima plica */
-        int lon       = (int)strlen(plicae[0]);
-        char *defalta = malloc(lon - 1);
+        int lon = (int)strlen(plicae[0]);
+        char    *defalta = malloc(lon - 1);
         if (!defalta)
             erratum("memoria exhausta");
         memcpy(defalta, plicae[0], lon - 2);
-        defalta[lon - 2] = '\0';
-        plica_exitus     = defalta;
+        defalta[lon  - 2] = '\0';
+        plica_exitus = defalta;
     }
 
     /* adde .a plicae ad biblio_res ut extrahantur */
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     for (int i = 0; i < num_plicarum; i++)
         if (est_plica_objecti(plicae[i]))
             num_obj++;
-    int totum = num_obj + num_extractorum;
+    int totum  = num_obj + num_extractorum;
     const char **omnes = malloc(totum * sizeof(const char *));
     if (!omnes)
         erratum("memoria exhausta");

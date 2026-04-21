@@ -36,7 +36,7 @@ static char reg_bufs[8][8];
 static int  reg_buf_idx = 0;
 static char *reg_buf(void)
 {
-    char *b = reg_bufs[reg_buf_idx];
+    char        *b = reg_bufs[reg_buf_idx];
     reg_buf_idx = (reg_buf_idx + 1) & 7;
     return b;
 }
@@ -563,8 +563,11 @@ void esym_fldr64(int dt, int rn, int imm)
             L("ldr\t%s, [%s]", dn(dt), xn(rn));
     } else if (imm >= -256 && imm <= 255)
         L("ldur\t%s, [%s, #%d]", dn(dt), xn(rn), imm);
-    else
-        erratum("esym_fldr64: offset extra rangum: %d", imm);
+    else {
+        L("mov\tx16, #%d", imm);
+        L("add\tx16, %s, x16", xn(rn));
+        L("ldr\t%s, [x16]", dn(dt));
+    }
 }
 void esym_fstr64(int dt, int rn, int imm)
 {
@@ -575,8 +578,11 @@ void esym_fstr64(int dt, int rn, int imm)
             L("str\t%s, [%s]", dn(dt), xn(rn));
     } else if (imm >= -256 && imm <= 255)
         L("stur\t%s, [%s, #%d]", dn(dt), xn(rn), imm);
-    else
-        erratum("esym_fstr64: offset extra rangum: %d", imm);
+    else {
+        L("mov\tx16, #%d", imm);
+        L("add\tx16, %s, x16", xn(rn));
+        L("str\t%s, [x16]", dn(dt));
+    }
 }
 void esym_fadd(int rd, int rn, int rm) { L("fadd\t%s, %s, %s", dn(rd), dn(rn), dn(rm)); }
 void esym_fsub(int rd, int rn, int rm) { L("fsub\t%s, %s, %s", dn(rd), dn(rn), dn(rm)); }
@@ -592,8 +598,8 @@ void esym_fmov_dd(int rd, int rn)      { L("fmov\t%s, %s", dn(rd), dn(rn)); }
  * Signed vs unsigned per est_sine_signo. Integer ante in r sub typū src. */
 void esym_int_to_double(int r, typus_t *src)
 {
-    int mag = typus_magnitudo(src);
-    int sgn = !src->est_sine_signo;
+    int mag    = typus_magnitudo(src);
+    int sgn    = !src->est_sine_signo;
     const char *op = sgn ? "scvtf" : "ucvtf";
     if (mag == 8)
         L("%s\t%s, %s", op, dn(r), xn(r));

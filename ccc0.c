@@ -69,7 +69,7 @@ static char *quaere_iccc(const char *argv0)
     if (!slash)
         return strdup("iccc");
     int dirlon = (int)(slash - argv0);
-    char *via  = malloc(dirlon + 6);
+    char       *via  = malloc(dirlon + 6);
     if (!via)
         erratum("memoria exhausta");
     memcpy(via, argv0, dirlon);
@@ -92,13 +92,13 @@ static void exsecute_iccc(
         if (!arg)
             _exit(127);
         int n = 0;
-        arg[n++] = (char *)iccc_via;
+        arg[n ++] = (char *)iccc_via;
         for (int i = 0; i < num_iccc_args; i++)
             arg[n++] = iccc_args[i];
-        arg[n++] = "-o";
-        arg[n++] = (char *)plica_i;
-        arg[n++] = (char *)plica_c;
-        arg[n]   = NULL;
+        arg[n  ++] = "-o";
+        arg[n  ++] = (char *)plica_i;
+        arg[n  ++] = (char *)plica_c;
+        arg[n] = NULL;
         execvp(iccc_via, arg);
         fprintf(
             stderr, "ccc0: non possum exsecure '%s': %s\n",
