@@ -1626,6 +1626,13 @@ static void genera_expr(nodus_t *n, int dest)
                     esym_bfi(ra3, ra2, mb->campus_positus, mb->campus_bitorum);
                     esym_str32(ra3, r, mb->offset);
                     reg_libera(r3);
+                } else if (typus_est_fluat(mb->typus)) {
+                    if (!typus_est_fluat(n->membra[i]->typus))
+                        esym_int_to_double(r2, n->membra[i]->typus);
+                    int r3 = reg_alloca();
+                    esym_addi(reg_arm(r3), r, mb->offset);
+                    esym_fstore_to_addr(r2, reg_arm(r3), mb->typus);
+                    reg_libera(r3);
                 } else {
                     int mmag = mag_typi(mb->typus);
                     esym_store(reg_arm(r2), r, mb->offset, mmag > 8 ? 8 : mmag);
@@ -1663,6 +1670,16 @@ static void genera_sententia(nodus_t *n)
         if (n->sinister)
             genera_expr(n->sinister, 0);
         reg_vertex = 0;
+        {
+            int frame = cur_frame_mag - 16;
+            if (frame <= 4095) {
+                esym_subi(SP, FP, frame);
+            } else {
+                esym_movi(16, frame);
+                esym_sub(16, FP, 16);
+                esym_addi(SP, 16, 0);
+            }
+        }
         break;
 
     case N_VAR_DECL:
