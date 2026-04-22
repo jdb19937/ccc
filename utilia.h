@@ -19,6 +19,9 @@ void erratum(const char *fmt, ...);
 void erratum_ad(int linea, const char *fmt, ...);
 char *lege_plicam(const char *via, int *longitudo);
 
+/* redde 1 si chorda n octetis est UTF-8 valida, 0 aliter */
+int utf8_valida(const char *s, int n);
+
 /* macro prō crescentiā seriērum dynāmicārum (realloc cum duplicātiōne) */
 #define CRESC_SERIEM(arr, numerus, capac, typus)            \
     do {                                                    \

@@ -447,8 +447,54 @@ static int specta_duo(flumen_t *f)
  * lexator — producit signum proximum ex flumine
  * ================================================================ */
 
-static int est_nondigit(int c) { return isalpha(c) || c == '_'; }
-static int est_ident_char(int c) { return isalnum(c) || c == '_'; }
+/* octeti >= 0x80 admittuntur in identificatoribus (sequentiae UTF-8) */
+static int est_nondigit(int c) { return isalpha(c) || c == '_' || c >= 0x80; }
+static int est_ident_char(int c) { return isalnum(c) || c == '_' || c >= 0x80; }
+
+static int utf8_valida(const char *s, int n)
+{
+    const unsigned char *p   = (const unsigned char *)s;
+    const unsigned char *fin = p + n;
+    while (p < fin) {
+        unsigned c = *p++;
+        if (c < 0x80)
+            continue;
+        int extra;
+        unsigned minimum;
+        if ((c & 0xE0) == 0xC0) {
+            if (c < 0xC2)
+                return 0;
+            extra   = 1;
+            minimum = 0x80;
+        } else if ((c & 0xF0) == 0xE0) {
+            extra   = 2;
+            minimum = 0x800;
+        } else if ((c & 0xF8) == 0xF0) {
+            if (c > 0xF4)
+                return 0;
+            extra   = 3;
+            minimum = 0x10000;
+        } else {
+            return 0;
+        }
+        if (p + extra > fin)
+            return 0;
+        unsigned punctum = c & (0x7Fu >> extra);
+        for (int i = 0; i < extra; i++) {
+            unsigned cc = *p++;
+            if ((cc & 0xC0) != 0x80)
+                return 0;
+            punctum = (punctum << 6) | (cc & 0x3F);
+        }
+        if (punctum < minimum)
+            return 0;
+        if (punctum >= 0xD800 && punctum <= 0xDFFF)
+            return 0;
+        if (punctum > 0x10FFFF)
+            return 0;
+    }
+    return 1;
+}
 
 /* praetermitte spatia et commentaria; redde '\n' si invenitur, 0 si pervenit
  * ad signum, -1 si EOF. Pone *space = 1 si quod spatium transivit. */
@@ -530,6 +576,9 @@ static signum_t *lex_proximum(flumen_t *f)
                 erratum("nomen nimis longum");
             buf[n++] = sume_char(f);
         }
+        buf[n] = 0;
+        if (!utf8_valida(buf, n))
+            erratum("identificator cum UTF-8 invalida: '%s'", buf);
         signum_t *s = signum_crea(T_NOM, buf, n, linea_ini, f->plica);
         s        ->spatium_ante = space;
         s        ->principium   = bol;
@@ -1454,17 +1503,42 @@ static signum_t *expande_lista(signum_t *ts)
          * Implementatio simplex: si ts est vacua, sume ex flumine. Alias
          * converte ts ad listam temporariam in pendentia et sume. */
         /* Trudit ts ad pendentia */
+        signum_t   *old_pend_saved = NULL;
+        int had_ts = 0;
         if (ts) {
-            signum_t  *old_pend = pendentia;
-            pendentia = ts;
-            signum_t  *u = ts;
+            had_ts         = 1;
+            old_pend_saved = pendentia;
+            pendentia      = ts;
+            signum_t       *u = ts;
             while (u->seq)
                 u = u->seq;
-            u  ->seq = old_pend;
+            u  ->seq = old_pend_saved;
             ts = NULL;
         }
         int num;
         signum_t **args = sume_argumenta(m, &num);
+        /* post sume_argumenta: pendentia potest continere residuum ts
+         * sequitum per old_pend_saved. Separemus: reditum residuum ts ad ts,
+         * et restitue old_pend_saved ad pendentia. */
+        if (had_ts) {
+            if (old_pend_saved == NULL) {
+                ts        = pendentia;
+                pendentia = NULL;
+            } else {
+                /* quaere nodum primum old_pend_saved in pendentia */
+                signum_t **pp = &pendentia;
+                while (*pp && *pp != old_pend_saved)
+                    pp = &(*pp)->seq;
+                if (*pp == old_pend_saved) {
+                    signum_t *ts_rem = (pendentia == old_pend_saved) ? NULL : pendentia;
+
+                    pp[0]     = NULL;
+                    ts        = ts_rem;
+                    pendentia = old_pend_saved;
+                }
+                /* alias: old_pend_saved consumptum — nihil separandum */
+            }
+        }
 
         /* argumenta expecta */
         int expectata = m->num_param;

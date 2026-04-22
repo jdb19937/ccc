@@ -9,7 +9,6 @@
 #include "parser.h"
 #include "generasym.h"
 #include "emittesym.h"
-#include "emitte.h"
 #include "fluat.h"
 #include "generasym_intern.h"
 
@@ -119,10 +118,18 @@ static void genera_sententia(nodus_t *n)
                     long val = 0;
                     if (n->sinister && n->sinister->genus == N_NUM)
                         val = n->sinister->valor;
+                    else if (
+                        n->sinister && n->typus_decl
+                        && !typus_est_fluat(n->typus_decl)
+                        && n->typus_decl->genus != TY_PTR
+                        && n->typus_decl->genus != TY_ARRAY
+                        && n->typus_decl->genus != TY_STRUCT
+                    )
+                        val = evalua_constans(n->sinister);
                     int gid = gsym_globalis_adde(n->nomen, n->typus_decl, n->est_staticus, val);
                     s       ->globalis_index = gid;
                 }
-                if (n->num_membrorum > 0 && n->membra) {
+                if ((n->num_membrorum > 0 && n->membra) || n->sinister) {
                     if (num_staticarum_localium >= 1024)
                         erratum("nimis multae staticae locales cum initializatoribus");
                     staticae_locales[num_staticarum_localium++] = n;
@@ -205,38 +212,34 @@ static void genera_sententia(nodus_t *n)
                             reg_vertex = 0;
                         }
                     } else {
-                        typus_t *elem_typus = (s->typus && s->typus->genus == TY_ARRAY) ?
-                            s->typus->basis : ty_int;
-                        while (
-                            elem_typus && (
-                                elem_typus->genus == TY_ARRAY ||
-                                elem_typus->genus == TY_STRUCT
-                            )
-                        ) {
-                            if (elem_typus->genus == TY_ARRAY && elem_typus->basis)
-                                elem_typus = elem_typus->basis;
-                            else if (
-                                elem_typus->genus == TY_STRUCT &&
-                                elem_typus->membra &&
-                                elem_typus->num_membrorum > 0
-                            )
-                                elem_typus = elem_typus->membra[0].typus;
-                            else
-                                break;
-                        }
-                        int elem_mag = typus_magnitudo(elem_typus);
-                        if (elem_mag < 1)
-                            erratum_ad(n->linea, "magnitudo elementi structūrae invalida");
+                        /* tabula (fortasse structurarum): utere init_offset
+                         * quod parser_sent.c iam computavit pro quoque scalari. */
                         for (int i = 0; i < n->num_membrorum; i++) {
+                            nodus_t *elem = n->membra[i];
+                            if (elem->init_offset < 0)
+                                erratum_ad(
+                                    elem->linea,
+                                    "initializator tabulae sine offset computato"
+                                );
+                            if (elem->init_size < 1)
+                                erratum_ad(
+                                    elem->linea,
+                                    "initializator tabulae sine magnitudine"
+                                );
+                            if (!elem->typus)
+                                erratum_ad(
+                                    elem->linea,
+                                    "initializator sine typo"
+                                );
                             reg_vertex = 0;
-                            genera_expr(n->membra[i], 0);
-                            int elem_off = off_basis + i * elem_mag;
+                            genera_expr(elem, 0);
+                            int elem_off = off_basis + elem->init_offset;
                             esym_movi(17, -elem_off);
                             esym_sub(17, FP, 17);
-                            if (typus_est_fluat(elem_typus))
-                                esym_fstore_to_addr(0, 17, elem_typus);
+                            if (typus_est_fluat(elem->typus))
+                                esym_fstore_to_addr(0, 17, elem->typus);
                             else
-                                esym_store(0, 17, 0, elem_mag > 8 ? 8 : elem_mag);
+                                esym_store(0, 17, 0, elem->init_size > 8 ? 8 : elem->init_size);
                             reg_vertex = 0;
                         }
                     }

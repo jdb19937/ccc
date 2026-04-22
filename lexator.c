@@ -348,12 +348,18 @@ inicio:
             if (c == 'f' || c == 'F' || c == 'l' || c == 'L')
                 c = lege_c();
         } else {
+            sig .num_sfx_u = 0;
+            sig .num_sfx_l = 0;
             while (
                 c == 'u' || c == 'U' || c == 'l' || c == 'L' ||
                 c == 'f' || c == 'F'
             ) {
                 if (c == 'f' || c == 'F')
                     est_fluitans = 1;
+                else if (c == 'u' || c == 'U')
+                    sig.num_sfx_u = 1;
+                else
+                    sig.num_sfx_l++;
                 c = lege_c();
             }
         }
@@ -436,14 +442,18 @@ inicio:
         return T_CHARLIT;
     }
 
-    /* identificator vel vocabulum clavis */
-    if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_') {
+    /* identificator vel vocabulum clavis
+     * (octeti >= 0x80 admittuntur ut sequentiae UTF-8) */
+    if (
+        (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '_'
+        || (c & 0x80)
+    ) {
         int i = 0;
         sig   .chorda[i++] = c;
         while ((c = lege_c()) != -1) {
             if (
                 (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
-                (c >= '0' && c <= '9') || c == '_'
+                (c >= '0' && c <= '9') || c == '_' || (c & 0x80)
             ) {
                 if (i >= MAX_CHORDA - 1)
                     erratum_ad(cur_linea, "identificator nimis longus");
@@ -454,6 +464,11 @@ inicio:
             }
         }
         sig.chorda[i] = '\0';
+
+        if (!utf8_valida(sig.chorda, i))
+            erratum_ad(
+                cur_linea, "identificator cum UTF-8 invalida: '%s'", sig.chorda
+            );
 
         /* est vocabulum clavis? */
         for (int j = 0; vocabula[j].nomen; j++) {

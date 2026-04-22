@@ -10,7 +10,6 @@
 #include "parser.h"
 #include "generasym.h"
 #include "emittesym.h"
-#include "emitte.h"
 #include "fluat.h"
 #include "generasym_intern.h"
 
@@ -26,6 +25,27 @@ void genera_lectio_campi_bitorum(int r, membrum_t *mb)
         esym_sbfx(r, r, mb->campus_positus, mb->campus_bitorum);
     else
         esym_ubfx(r, r, mb->campus_positus, mb->campus_bitorum);
+}
+
+/* quaere membrum campī bitorum ex nodo N_MEMBER/N_ARROW; reddit NULL
+ * si non est campus bitorum. */
+static membrum_t *campus_bitorum_ex_lval(nodus_t *lv)
+{
+    if (!lv || (lv->genus != N_MEMBER && lv->genus != N_ARROW))
+        return NULL;
+    typus_t *cb_st = NULL;
+    if (lv->genus == N_MEMBER && lv->sinister)
+        cb_st = lv->sinister->typus;
+    else if (
+        lv->genus == N_ARROW && lv->sinister
+        && lv->sinister->typus
+        && lv->sinister->typus->genus == TY_PTR
+    )
+        cb_st = lv->sinister->typus->basis;
+    membrum_t *mb = quaere_membrum(cb_st, lv->nomen);
+    if (mb && mb->campus_bitorum == 0)
+        mb = NULL;
+    return mb;
 }
 
 void genera_magnitudo_typi(typus_t *t, int dest_reg)
@@ -476,36 +496,66 @@ void genera_expr(nodus_t *n, int dest)
                 esym_cset(r, GSYM_COND_EQ);
                 break;
             case T_PLUSPLUS:
-                {
-                    int r2 = reg_alloca();
-                    genera_lval(n->sinister, r2);
-                    int mag = mag_typi(n->typus);
-                    int inc = 1;
-                    if (typus_est_index(n->typus))
-                        inc = mag_typi(typus_basis_indicis(n->typus));
-                    if (est_unsigned(n->typus))
-                        esym_load_unsigned(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
-                    else
-                        esym_load(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
-                    esym_addi(r, r, inc);
-                    esym_store(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
-                    reg_libera(r2);
-                    break;
-                }
             case T_MINUSMINUS:
                 {
                     int r2 = reg_alloca();
                     genera_lval(n->sinister, r2);
-                    int mag = mag_typi(n->typus);
-                    int dec = 1;
+                    membrum_t *cb_mem = campus_bitorum_ex_lval(n->sinister);
+                    if (cb_mem) {
+                        /* §6.7.2.1: pre-op in campo bitorum */
+                        int r3  = reg_alloca();
+                        int ra2 = reg_arm(r2);
+                        int ra3 = reg_arm(r3);
+                        esym_ldr32(ra3, ra2, 0);
+                        if (cb_mem->campus_signatus)
+                            esym_sbfx(r, ra3, cb_mem->campus_positus, cb_mem->campus_bitorum);
+                        else
+                            esym_ubfx(r, ra3, cb_mem->campus_positus, cb_mem->campus_bitorum);
+                        if (n->op == T_PLUSPLUS)
+                            esym_addi(r, r, 1);
+                        else
+                            esym_subi(r, r, 1);
+                        esym_bfi(ra3, r, cb_mem->campus_positus, cb_mem->campus_bitorum);
+                        esym_str32(ra3, ra2, 0);
+                        reg_libera(r3);
+                        reg_libera(r2);
+                        break;
+                    }
+                    int mag  = mag_typi(n->typus);
+                    int step = 1;
                     if (typus_est_index(n->typus))
-                        dec = mag_typi(typus_basis_indicis(n->typus));
-                    if (est_unsigned(n->typus))
-                        esym_load_unsigned(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
+                        step = mag_typi(typus_basis_indicis(n->typus));
+                    int mag_op = mag > 8 ? 8 : mag;
+                    int uns    = est_unsigned(n->typus);
+                    if (uns)
+                        esym_load_unsigned(r, reg_arm(r2), 0, mag_op);
                     else
-                        esym_load(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
-                    esym_subi(r, r, dec);
-                    esym_store(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
+                        esym_load(r, reg_arm(r2), 0, mag_op);
+                    if (n->op == T_PLUSPLUS)
+                        esym_addi(r, r, step);
+                    else
+                        esym_subi(r, r, step);
+                    /* trunca ad magnitudinem typi — aliter valor effectus
+                     * supra fines typi extendit (e.g. 0xFF+1 debet esse 0, non 256) */
+                    if (mag_op < 8 && !typus_est_index(n->typus)) {
+                        if (mag_op == 1) {
+                            if (uns)
+                                esym_uxtb(r, r);
+                            else
+                                esym_sxtb(r, r);
+                        } else if (mag_op == 2) {
+                            if (uns)
+                                esym_uxth(r, r);
+                            else
+                                esym_sxth(r, r);
+                        } else if (mag_op == 4) {
+                            if (uns)
+                                esym_uxtw(r, r);
+                            else
+                                esym_sxtw(r, r);
+                        }
+                    }
+                    esym_store(r, reg_arm(r2), 0, mag_op);
                     reg_libera(r2);
                     break;
                 }
@@ -519,6 +569,27 @@ void genera_expr(nodus_t *n, int dest)
         {
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);
+            membrum_t *cb_mem = campus_bitorum_ex_lval(n->sinister);
+            if (cb_mem) {
+                /* §6.7.2.1: post-op in campo bitorum */
+                int r3  = reg_alloca();
+                int ra2 = reg_arm(r2);
+                int ra3 = reg_arm(r3);
+                esym_ldr32(ra3, ra2, 0);
+                if (cb_mem->campus_signatus)
+                    esym_sbfx(r, ra3, cb_mem->campus_positus, cb_mem->campus_bitorum);
+                else
+                    esym_ubfx(r, ra3, cb_mem->campus_positus, cb_mem->campus_bitorum);
+                if (n->op == T_PLUSPLUS)
+                    esym_addi(17, r, 1);
+                else
+                    esym_subi(17, r, 1);
+                esym_bfi(ra3, 17, cb_mem->campus_positus, cb_mem->campus_bitorum);
+                esym_str32(ra3, ra2, 0);
+                reg_libera(r3);
+                reg_libera(r2);
+                break;
+            }
             int mag = mag_typi(n->typus);
             if (est_unsigned(n->typus))
                 esym_load_unsigned(r, reg_arm(r2), 0, mag > 8 ? 8 : mag);
@@ -602,6 +673,50 @@ void genera_expr(nodus_t *n, int dest)
         {
             int r2 = reg_alloca();
             genera_lval(n->sinister, r2);
+            membrum_t *cb_mem = campus_bitorum_ex_lval(n->sinister);
+            if (cb_mem) {
+                /* §6.7.2.1: compound-assign in campo bitorum */
+                int r3  = reg_alloca();
+                int ra2 = reg_arm(r2);
+                int ra3 = reg_arm(r3);
+                esym_ldr32(ra3, ra2, 0);
+                if (cb_mem->campus_signatus)
+                    esym_sbfx(r, ra3, cb_mem->campus_positus, cb_mem->campus_bitorum);
+                else
+                    esym_ubfx(r, ra3, cb_mem->campus_positus, cb_mem->campus_bitorum);
+                int r4 = reg_alloca();
+                genera_expr(n->dexter, r4);
+                int rb = reg_arm(r4);
+                switch (n->op) {
+                case T_PLUSEQ:   esym_add(r, r, rb); break;
+                case T_MINUSEQ:  esym_sub(r, r, rb); break;
+                case T_STAREQ:   esym_mul(r, r, rb); break;
+                case T_SLASHEQ:  esym_sdiv(r, r, rb); break;
+                case T_PERCENTEQ:
+                    esym_sdiv(17, r, rb);
+                    esym_mul(17, 17, rb);
+                    esym_sub(r, r, 17);
+                    break;
+                case T_AMPEQ:    esym_and(r, r, rb); break;
+                case T_PIPEEQ:   esym_orr(r, r, rb); break;
+                case T_CARETEQ:  esym_eor(r, r, rb); break;
+                case T_LTLTEQ:   esym_lsl(r, r, rb); break;
+                case T_GTGTEQ:
+                    if (cb_mem->campus_signatus == 0)
+                        esym_lsr(r, r, rb);
+                    else
+                        esym_asr(r, r, rb);
+                    break;
+                default:
+                    erratum_ad(n->linea, "compound-assign operator %d in campō bitōrum ignotus", n->op);
+                }
+                reg_libera(r4);
+                esym_bfi(ra3, r, cb_mem->campus_positus, cb_mem->campus_bitorum);
+                esym_str32(ra3, ra2, 0);
+                reg_libera(r3);
+                reg_libera(r2);
+                break;
+            }
             int mag = mag_typi(n->sinister->typus);
             if (typus_est_fluat(n->sinister->typus)) {
                 esym_fload_from_addr(r, reg_arm(r2), n->sinister->typus);
@@ -971,10 +1086,14 @@ void genera_expr(nodus_t *n, int dest)
                         k++;
                     }
                 } else if (pt && typus_est_fluat(pt)) {
-                    /* spill continet d-reg (8 bytarum); si TY_FLOAT,
-                     * converte ad s-reg et scribe 4 bytes. */
+                    /* spill continet d-reg (8 bytarum); si TY_FLOAT in
+                     * positione prōtotypātā, converte ad s-reg et scribe
+                     * 4 bytes. In positione variadicā (C99 §6.5.2.2/6),
+                     * float prōmōvētur ad double — scrībimus 8 byte
+                     * sine conversiōne. */
+                    int est_var_arg_i = (est_variadica && i >= num_nominati);
                     esym_fldr64(17, FP, -(arg_spill_base + i * 8));
-                    if (pt->genus == TY_FLOAT) {
+                    if (pt->genus == TY_FLOAT && !est_var_arg_i) {
                         esym_fcvt_ds(17, 17);
                         esym_fstr32(17, SP, off);
                     } else {
@@ -1388,30 +1507,40 @@ void genera_expr(nodus_t *n, int dest)
                 }
                 reg_libera(rz);
             }
-            int num_camp = n->typus->num_membrorum;
-            for (int i = 0; i < n->num_membrorum && i < num_camp; i++) {
+            for (int i = 0; i < n->num_membrorum; i++) {
+                nodus_t *elem = n->membra[i];
+                if (elem->init_offset < 0)
+                    erratum_ad(
+                        elem->linea,
+                        "initializator structurae sine offset computato"
+                    );
+                if (elem->init_size < 1 && elem->init_bitwidth == 0)
+                    erratum_ad(
+                        elem->linea,
+                        "initializator structurae sine magnitudine"
+                    );
+                if (!elem->typus)
+                    erratum_ad(elem->linea, "initializator sine typo");
                 reg_vertex = rv_salvus;
                 int r2     = reg_alloca();
-                genera_expr(n->membra[i], r2);
-                membrum_t *mb = &n->typus->membra[i];
-                if (mb->campus_bitorum > 0) {
+                genera_expr(elem, r2);
+                int eoff = elem->init_offset;
+                if (elem->init_bitwidth > 0) {
                     int r3  = reg_alloca();
                     int ra2 = reg_arm(r2);
                     int ra3 = reg_arm(r3);
-                    esym_ldr32(ra3, r, mb->offset);
-                    esym_bfi(ra3, ra2, mb->campus_positus, mb->campus_bitorum);
-                    esym_str32(ra3, r, mb->offset);
+                    esym_ldr32(ra3, r, eoff);
+                    esym_bfi(ra3, ra2, elem->init_bitpos, elem->init_bitwidth);
+                    esym_str32(ra3, r, eoff);
                     reg_libera(r3);
-                } else if (typus_est_fluat(mb->typus)) {
-                    if (!typus_est_fluat(n->membra[i]->typus))
-                        esym_int_to_double(r2, n->membra[i]->typus);
+                } else if (typus_est_fluat(elem->typus)) {
                     int r3 = reg_alloca();
-                    esym_addi(reg_arm(r3), r, mb->offset);
-                    esym_fstore_to_addr(r2, reg_arm(r3), mb->typus);
+                    esym_addi(reg_arm(r3), r, eoff);
+                    esym_fstore_to_addr(r2, reg_arm(r3), elem->typus);
                     reg_libera(r3);
                 } else {
-                    int mmag = mag_typi(mb->typus);
-                    esym_store(reg_arm(r2), r, mb->offset, mmag > 8 ? 8 : mmag);
+                    int mmag = elem->init_size;
+                    esym_store(reg_arm(r2), r, eoff, mmag > 8 ? 8 : mmag);
                 }
                 reg_libera(r2);
             }

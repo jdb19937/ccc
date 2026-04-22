@@ -47,6 +47,29 @@ float fmaxf(float x, float y);
 float acosf(float x);
 float asinf(float x);
 
+/* long double variants (long double tractatur ut double) */
+double fabsl(double);
+double sqrtl(double);
+double expl(double);
+double logl(double);
+double log2l(double);
+double log10l(double);
+double powl(double, double);
+double sinl(double);
+double cosl(double);
+double tanl(double);
+double asinl(double);
+double acosl(double);
+double atanl(double);
+double atan2l(double, double);
+double sinhl(double);
+double coshl(double);
+double tanhl(double);
+double floorl(double);
+double ceill(double);
+double roundl(double);
+double fmodl(double, double);
+
 #define M_PI  3.14159265358979323846
 #define M_E   2.7182818284590452354
 

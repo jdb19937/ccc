@@ -242,6 +242,11 @@ typus_t *parse_struct_vel_union(void)
                         cb_positus = 0;
                     }
                 } else {
+                    /* §6.7.2.1: claude ūnitātem campōrum bitōrum pendentem */
+                    if (est_struct && cb_positus > 0) {
+                        offset     = cb_offset + 4;
+                        cb_positus = 0;
+                    }
                     int col = typus_colineatio(typ_mem);
                     if (est_struct && col > 0)
                         offset = (offset + col - 1) & ~(col - 1);

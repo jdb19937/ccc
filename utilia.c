@@ -66,3 +66,48 @@ char *lege_plicam(const char *via, int *longitudo)
     return data;
 }
 
+int utf8_valida(const char *s, int n)
+{
+    const unsigned char *p   = (const unsigned char *)s;
+    const unsigned char *fin = p + n;
+    while (p < fin) {
+        unsigned c = *p++;
+        if (c < 0x80)
+            continue;
+        int extra;
+        unsigned minimum;
+        if ((c & 0xE0) == 0xC0) {
+            if (c < 0xC2)         /* sequentia 2-octeta sur-longa */
+                return 0;
+            extra   = 1;
+            minimum = 0x80;
+        } else if ((c & 0xF0) == 0xE0) {
+            extra   = 2;
+            minimum = 0x800;
+        } else if ((c & 0xF8) == 0xF0) {
+            if (c > 0xF4)
+                return 0;
+            extra   = 3;
+            minimum = 0x10000;
+        } else {
+            return 0;
+        }
+        if (p + extra > fin)
+            return 0;
+        unsigned punctum = c & (0x7Fu >> extra);
+        for (int i = 0; i < extra; i++) {
+            unsigned cc = *p++;
+            if ((cc & 0xC0) != 0x80)
+                return 0;
+            punctum = (punctum << 6) | (cc & 0x3F);
+        }
+        if (punctum < minimum)
+            return 0;
+        if (punctum >= 0xD800 && punctum <= 0xDFFF)
+            return 0;
+        if (punctum > 0x10FFFF)
+            return 0;
+    }
+    return 1;
+}
+

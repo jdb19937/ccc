@@ -28,6 +28,7 @@ typedef short int16_t;
 typedef int int32_t;
 typedef long int64_t;
 typedef unsigned int useconds_t;
+typedef unsigned int *uintptr_t;
 #define EOF (-1)
 #define SEEK_SET 0
 #define SEEK_CUR 1
@@ -43,6 +44,21 @@ typedef unsigned int useconds_t;
 typedef int jmp_buf[48];
 int setjmp(jmp_buf);
 void longjmp(jmp_buf, int);
+
+/* stdint — limites */
+#define INT8_MAX   0x7f
+#define INT8_MIN   (-INT8_MAX - 1)
+#define UINT8_MAX  0xff
+#define INT16_MAX  0x7fff
+#define INT16_MIN  (-INT16_MAX - 1)
+#define UINT16_MAX 0xffff
+#define INT32_MAX  0x7fffffff
+#define INT32_MIN  (-INT32_MAX - 1)
+#define UINT32_MAX 0xffffffffU
+#define INT64_MAX  0x7fffffffffffffffL
+#define INT64_MIN  (-INT64_MAX - 1L)
+#define UINT64_MAX 0xffffffffffffffffUL
+#define SIZE_MAX   UINT64_MAX
 
 /* inttypes — formae impressionis */
 #define PRId64 "ld"
@@ -62,8 +78,10 @@ void longjmp(jmp_buf, int);
 typedef struct __sFILE FILE;
 FILE *fopen(const char *, const char *);
 FILE *fdopen(int fildes, const char *mode);
+FILE *freopen(const char *path, const char *mode, FILE *stream);
 FILE *popen(const char *command, const char *mode);
 int fclose(FILE *);
+void rewind(FILE *stream);
 int pclose(FILE *stream);
 unsigned long fwrite(const void *, unsigned long, unsigned long, FILE *);
 int snprintf(char *, unsigned long, const char *, ...);
@@ -122,6 +140,7 @@ unsigned long strlen(const char *);
 char *strchr(const char *, int);
 char *strrchr(const char *, int);
 char *strstr(const char *, const char *);
+char *strcasestr(const char *haystack, const char *needle);
 char *strncpy(char *, const char *, unsigned long);
 char *strcpy(char *, const char *);
 char *strcat(char *, const char *);
@@ -193,6 +212,7 @@ int tcgetattr(int, struct termios *);
 int tcsetattr(int, int, const struct termios *);
 
 /* sys/ioctl */
+#define TIOCSCTTY  0x20007461
 #define TIOCGWINSZ 0x40087468
 #define TIOCSWINSZ 0x80087467
 struct winsize {
@@ -246,6 +266,7 @@ int pause(void);
 int waitpid(int, int *, int);
 int fork(void);
 int execvp(const char *, char *const *);
+int execv(const char *path, char *const argv[]);
 int pipe(int *);
 int dup2(int, int);
 int setpgid(int, int);

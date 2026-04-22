@@ -114,7 +114,8 @@ static void saltus_spatii(void)
 static int est_initium_nom(char c)
 {
     return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
-        || c == '_' || c == '.' || c == '$';
+        || c == '_' || c == '.' || c == '$'
+        || ((unsigned char)c & 0x80);
 }
 
 static int est_pars_nom(char c)
@@ -131,6 +132,8 @@ static int lege_nom(char *buf, int max)
     while (adest() && est_pars_nom(fons[pos]) && n + 1 < max)
         buf[n++] = fons[pos++];
     buf[n] = 0;
+    if (!utf8_valida(buf, n))
+        erratum_ad(linea_num, "nomen cum UTF-8 invalida: '%s'", buf);
     return n;
 }
 
@@ -3424,6 +3427,18 @@ static void processa_lineam(void)
     /* instructio */
     (void)save;
     processa_instructionem(nom);
+    saltus_spatii();
+    if (!est_eol()) {
+        char trail[64];
+        int tn = 0;
+        while (adest() && fons[pos] != '\n' && tn + 1 < (int)sizeof(trail))
+            trail[tn++] = fons[pos++];
+        trail[tn] = 0;
+        erratum_ad(
+            linea_num, "instructio '%s': residuum non consumptum: '%s'",
+            nom, trail
+        );
+    }
     saltus_ad_eol();
 }
 

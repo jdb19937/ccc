@@ -6,11 +6,31 @@
 #include "utilia.h"
 #include "parser.h"
 #include "emittesym.h"
-#include "emitte.h"
 #include "generasym_intern.h"
 #include "gsymconst.h"
 
 #include <string.h>
+
+/* §6.6: emitte relocationem pro identificatore in initializatore
+ * (sive functio, sive globale definitum, sive externum). */
+static void emitte_ident_reloc(int off, nodus_t *id)
+{
+    int flabel = gsym_func_loc_quaere(id->nomen);
+    if (flabel >= 0) {
+        gsym_data_reloc_adde(off, DR_TEXT, flabel);
+    } else if (
+        id->sym && id->sym->globalis_index >= 0
+        && !gsym_globales[id->sym->globalis_index].est_bss
+    ) {
+        gsym_data_reloc_adde(
+            off, DR_IDATA,
+            gsym_globales[id->sym->globalis_index].data_offset
+        );
+    } else {
+        int ei = gsym_extern_adde(id->nomen);
+        gsym_data_reloc_adde(off, DR_EXT_FUNC, ei);
+    }
+}
 
 static void emitte_quad_reloc(data_reloc_t *dr)
 {
@@ -402,21 +422,13 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
                         memcpy(gsym_init_data + elem_off, &dv, store_mag);
                     }
                 } else if (elem->genus == N_IDENT && elem->nomen) {
-                    int flabel = gsym_func_loc_quaere(elem->nomen);
-                    if (flabel >= 0) {
-                        gsym_data_reloc_adde(elem_off, DR_TEXT, flabel);
-                    } else if (
-                        elem->sym && elem->sym->globalis_index >= 0
-                        && !gsym_globales[elem->sym->globalis_index].est_bss
-                    ) {
-                        gsym_data_reloc_adde(
-                            elem_off, DR_IDATA,
-                            gsym_globales[elem->sym->globalis_index].data_offset
-                        );
-                    } else {
-                        int ei = gsym_extern_adde(elem->nomen);
-                        gsym_data_reloc_adde(elem_off, DR_EXT_FUNC, ei);
-                    }
+                    emitte_ident_reloc(elem_off, elem);
+                } else if (
+                    elem->genus == N_ADDR && elem->sinister
+                    && elem->sinister->genus == N_IDENT
+                    && elem->sinister->nomen
+                ) {
+                    emitte_ident_reloc(elem_off, elem->sinister);
                 } else if (elem->typus && typus_est_integer(elem->typus)) {
                     long v = gsymconst_evalua_integer(elem);
                     if (elem->init_bitwidth > 0) {
@@ -479,21 +491,14 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
             n->sinister && n->sinister->genus == N_IDENT
             && n->sinister->nomen
         ) {
-            int flabel = gsym_func_loc_quaere(n->sinister->nomen);
-            if (flabel >= 0) {
-                gsym_data_reloc_adde(data_off, DR_TEXT, flabel);
-            } else if (
-                n->sinister->sym && n->sinister->sym->globalis_index >= 0
-                && !gsym_globales[n->sinister->sym->globalis_index].est_bss
-            ) {
-                gsym_data_reloc_adde(
-                    data_off, DR_IDATA,
-                    gsym_globales[n->sinister->sym->globalis_index].data_offset
-                );
-            } else {
-                int ei = gsym_extern_adde(n->sinister->nomen);
-                gsym_data_reloc_adde(data_off, DR_EXT_FUNC, ei);
-            }
+            emitte_ident_reloc(data_off, n->sinister);
+        } else if (
+            n->sinister && n->sinister->genus == N_ADDR
+            && n->sinister->sinister
+            && n->sinister->sinister->genus == N_IDENT
+            && n->sinister->sinister->nomen
+        ) {
+            emitte_ident_reloc(data_off, n->sinister->sinister);
         } else if (n->sinister && n->sinister->genus == N_NUM_FLUAT) {
             int store_mag = gsym_globales[gid].magnitudo;
             if (store_mag == 4) {
@@ -547,6 +552,45 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
             if (gsym_init_data_lon + mag0 > MAX_DATA)
                 erratum("gsym_init_data nimis magna (static local BSS)");
             memset(gsym_init_data + doff0, 0, mag0);
+            /* scalaris initialis: scribe valorem */
+            if (n->sinister) {
+                if (n->sinister->genus == N_STR) {
+                    int sid = gsym_chorda_adde(
+                        n->sinister->chorda, n->sinister->lon_chordae
+                    );
+                    gsym_data_reloc_adde(doff0, DR_CSTRING, sid);
+                } else if (n->sinister->genus == N_IDENT && n->sinister->nomen) {
+                    int flabel = gsym_func_loc_quaere(n->sinister->nomen);
+                    if (flabel >= 0)
+                        gsym_data_reloc_adde(doff0, DR_TEXT, flabel);
+                    else
+                        erratum_ad(
+                            n->linea,
+                            "staticae localis initiatio per identificatorem "
+                            "non functionem non sustentatur: '%s'",
+                            n->sinister->nomen
+                        );
+                } else if (
+                    typus_est_integer(n->typus_decl)
+                    || (n->typus_decl && n->typus_decl->genus == TY_PTR)
+                ) {
+                    long v = evalua_constans(n->sinister);
+                    memcpy(gsym_init_data + doff0, &v, mag0 > 8 ? 8 : mag0);
+                } else if (typus_est_fluat(n->typus_decl)) {
+                    double dv = gsymconst_evalua_fluat(n->sinister);
+                    if (mag0 == 4) {
+                        float fv = (float)dv;
+                        memcpy(gsym_init_data + doff0, &fv, 4);
+                    } else {
+                        memcpy(gsym_init_data + doff0, &dv, 8);
+                    }
+                } else {
+                    erratum_ad(
+                        n->linea,
+                        "initializator staticae localis non tractatur"
+                    );
+                }
+            }
             gsym_init_data_lon += mag0;
             gsym_globales[gid] .est_bss     = 0;
             gsym_globales[gid] .data_offset = doff0;
@@ -588,21 +632,29 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
 
         for (int j = 0; j < n->num_membrorum; j++) {
             nodus_t      *elem = n->membra[j];
-            int elem_off = data_off + j * sl_mag;
-            if (elem_off + sl_mag > data_off + mag)
+            int elem_off;
+            int store_mag;
+            if (elem->init_offset >= 0) {
+                elem_off  = data_off + elem->init_offset;
+                store_mag = elem->init_size > 0 ? elem->init_size : sl_mag;
+            } else {
+                elem_off  = data_off + j * sl_mag;
+                store_mag = sl_mag;
+            }
+            if (elem_off + store_mag > data_off + mag)
                 break;
             if (elem->genus == N_STR) {
                 int sid = gsym_chorda_adde(elem->chorda, elem->lon_chordae);
                 gsym_data_reloc_adde(elem_off, DR_CSTRING, sid);
             } else if (elem->genus == N_NUM) {
                 long v = elem->valor;
-                memcpy(gsym_init_data + elem_off, &v, sl_mag);
+                memcpy(gsym_init_data + elem_off, &v, store_mag);
             } else if (
                 elem->genus == N_UNOP && elem->op == T_MINUS
                 && elem->sinister && elem->sinister->genus == N_NUM
             ) {
                 long v = -elem->sinister->valor;
-                memcpy(gsym_init_data + elem_off, &v, sl_mag);
+                memcpy(gsym_init_data + elem_off, &v, store_mag);
             } else if (elem->genus == N_IDENT && elem->nomen) {
                 int flabel = gsym_func_loc_quaere(elem->nomen);
                 if (flabel >= 0)

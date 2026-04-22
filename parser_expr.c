@@ -108,9 +108,16 @@ static nodus_t *parse_expr_primaria(void)
     case T_NUM:
         n = nodus_novus(N_NUM);
         n ->valor = sig.valor;
-        n ->typus = ty_int;
-        if (sig.valor > 0x7FFFFFFF || sig.valor < -0x7FFFFFFF)
-            n->typus = ty_long;
+        /* §6.4.4.1: typus ex suffixo et amplitudine valoris */
+        {
+            int u      = sig.num_sfx_u;
+            int l      = sig.num_sfx_l;
+            int magnum = (sig.valor > 0x7FFFFFFF || sig.valor < -0x7FFFFFFF);
+            if (l >= 1 || magnum)
+                n->typus = u ? ty_ulong : ty_long;
+            else
+                n->typus = u ? ty_uint : ty_int;
+        }
         lex_proximum();
         return n;
 

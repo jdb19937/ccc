@@ -55,6 +55,9 @@ typedef struct {
     char chorda[MAX_CHORDA]; /* pro T_STR, T_IDENT */
     int lon_chordae;        /* longitudo chordae pro T_STR */
     int linea;
+    /* §6.4.4.1: suffixa constantis integrae */
+    int num_sfx_u;          /* U/u praesens */
+    int num_sfx_l;          /* numerus l/L suffixōrum (0, 1, 2) */
 } signum_t;
 
 /* ================================================================
