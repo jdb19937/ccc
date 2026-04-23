@@ -46,9 +46,12 @@ long evalua_constans(nodus_t *n)
             long s = evalua_constans(n->sinister);
             long d = evalua_constans(n->dexter);
             switch (n->op) {
-            case T_PLUS:     return s + d;
-            case T_MINUS:    return s - d;
-            case T_STAR:     return s * d;
+            case T_PLUS:
+                return s + d;
+            case T_MINUS:
+                return s - d;
+            case T_STAR:
+                return s * d;
             case T_SLASH:
                 if (d == 0)
                     erratum("divisio per zerum in constante");
@@ -57,28 +60,44 @@ long evalua_constans(nodus_t *n)
                 if (d == 0)
                     erratum("modulus per zerum in constante");
                 return s % d;
-            case T_LTLT:     return s << d;
-            case T_GTGT:     return s >> d;
-            case T_AMP:      return s & d;
-            case T_PIPE:     return s | d;
-            case T_CARET:    return s ^ d;
-            case T_LT:       return s < d;
-            case T_GT:       return s > d;
-            case T_LTEQ:     return s <= d;
-            case T_GTEQ:     return s >= d;
-            case T_EQEQ:     return s == d;
-            case T_BANGEQ:   return s != d;
-            case T_AMPAMP:   return s && d;
-            case T_PIPEPIPE: return s || d;
+            case T_LTLT:
+                return s << d;
+            case T_GTGT:
+                return s >> d;
+            case T_AMP:
+                return s & d;
+            case T_PIPE:
+                return s | d;
+            case T_CARET:
+                return s ^ d;
+            case T_LT:
+                return s < d;
+            case T_GT:
+                return s > d;
+            case T_LTEQ:
+                return s <= d;
+            case T_GTEQ:
+                return s >= d;
+            case T_EQEQ:
+                return s == d;
+            case T_BANGEQ:
+                return s != d;
+            case T_AMPAMP:
+                return s && d;
+            case T_PIPEPIPE:
+                return s || d;
             default:
                 erratum("operator non constans in enumeratore: %d", n->op);
             }
         }
     case N_UNOP:
         switch (n->op) {
-        case T_MINUS: return -evalua_constans(n->sinister);
-        case T_TILDE: return ~evalua_constans(n->sinister);
-        case T_BANG:  return !evalua_constans(n->sinister);
+        case T_MINUS:
+            return -evalua_constans(n->sinister);
+        case T_TILDE:
+            return ~evalua_constans(n->sinister);
+        case T_BANG:
+            return !evalua_constans(n->sinister);
         default:
             erratum("operator unarius non constans: %d", n->op);
         }
@@ -583,17 +602,36 @@ static nodus_t *parse_expr_unaria(void)
 static int praecedentia(int op)
 {
     switch (op) {
-    case T_STAR: case T_SLASH: case T_PERCENT: return 13;
-    case T_PLUS: case T_MINUS: return 12;
-    case T_LTLT: case T_GTGT: return 11;
-    case T_LT: case T_GT: case T_LTEQ: case T_GTEQ: return 10;
-    case T_EQEQ: case T_BANGEQ: return 9;
-    case T_AMP: return 8;
-    case T_CARET: return 7;
-    case T_PIPE: return 6;
-    case T_AMPAMP: return 5;
-    case T_PIPEPIPE: return 4;
-    default: return -1;
+    case T_STAR:
+    case T_SLASH:
+    case T_PERCENT:
+        return 13;
+    case T_PLUS:
+    case T_MINUS:
+        return 12;
+    case T_LTLT:
+    case T_GTGT:
+        return 11;
+    case T_LT:
+    case T_GT:
+    case T_LTEQ:
+    case T_GTEQ:
+        return 10;
+    case T_EQEQ:
+    case T_BANGEQ:
+        return 9;
+    case T_AMP:
+        return 8;
+    case T_CARET:
+        return 7;
+    case T_PIPE:
+        return 6;
+    case T_AMPAMP:
+        return 5;
+    case T_PIPEPIPE:
+        return 4;
+    default:
+        return -1;
     }
 }
 

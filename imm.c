@@ -179,7 +179,7 @@ static long lege_num(void)
     if (adest() && fons[pos] == '-') {
         neg = 1;
         pos++;
-    }else if (adest() && fons[pos] == '+') {
+    } else if (adest() && fons[pos] == '+') {
         pos++;
     }
     if (!adest() || fons[pos] < '0' || fons[pos] > '9')
@@ -368,16 +368,36 @@ static int parse_chorda_lit(char *out, int max)
         if (c == '\\' && adest()) {
             char e = fons[pos++];
             switch (e) {
-            case 'n': c = '\n'; break;
-            case 't': c = '\t'; break;
-            case 'r': c = '\r'; break;
-            case '\\': c = '\\'; break;
-            case '"': c = '"'; break;
-            case '\'': c = '\''; break;
-            case 'a': c = '\a'; break;
-            case 'b': c = '\b'; break;
-            case 'f': c = '\f'; break;
-            case 'v': c = '\v'; break;
+            case 'n':
+                c = '\n';
+                break;
+            case 't':
+                c = '\t';
+                break;
+            case 'r':
+                c = '\r';
+                break;
+            case '\\':
+                c = '\\';
+                break;
+            case '"':
+                c = '"';
+                break;
+            case '\'':
+                c = '\'';
+                break;
+            case 'a':
+                c = '\a';
+                break;
+            case 'b':
+                c = '\b';
+                break;
+            case 'f':
+                c = '\f';
+                break;
+            case 'v':
+                c = '\v';
+                break;
             case 'x': {
                     int v = 0, k = 0;
                     while (k < 2 && adest()) {
@@ -1817,16 +1837,16 @@ static void ins_logic(const char *op)
     if (sh_amt || sh_type) {
         /* encode logicum shifted reg */
         uint32_t base32 = 0, base64 = 0;
-        if (!strcmp(op, "and"))   {
+        if (!strcmp(op, "and")) {
             base32 = 0x0A000000;
             base64 = 0x8A000000;
-        }else if (!strcmp(op, "orr")) {
+        } else if (!strcmp(op, "orr")) {
             base32 = 0x2A000000;
             base64 = 0xAA000000;
-        }else if (!strcmp(op, "eor")) {
+        } else if (!strcmp(op, "eor")) {
             base32 = 0x4A000000;
             base64 = 0xCA000000;
-        }else
+        } else
             erratum_ad(linea_num, "%s: shift non supp cum hoc op", op);
         uint32_t base = w1 ? base32 : base64;
         emit32(
@@ -2483,7 +2503,7 @@ static void ins_madd_msub(int est_sub)
             enc_msub32(rd, rn, rm, ra);
         else
             enc_madd32(rd, rn, rm, ra);
-    }else    {
+    } else {
         if (est_sub)
             enc_msub64(rd, rn, rm, ra);
         else
@@ -2858,59 +2878,59 @@ static void processa_instructionem(const char *op)
         ins_bcond(c);
         return;
     }
-    if (!strcmp(op, "mov"))   {
+    if (!strcmp(op, "mov")) {
         ins_mov();
         return;
     }
-    if (!strcmp(op, "movz"))  {
+    if (!strcmp(op, "movz")) {
         ins_mov_variant("movz");
         return;
     }
-    if (!strcmp(op, "movk"))  {
+    if (!strcmp(op, "movk")) {
         ins_mov_variant("movk");
         return;
     }
-    if (!strcmp(op, "movn"))  {
+    if (!strcmp(op, "movn")) {
         ins_mov_variant("movn");
         return;
     }
-    if (!strcmp(op, "add"))   {
+    if (!strcmp(op, "add")) {
         ins_add_sub_generic(0, 0);
         return;
     }
-    if (!strcmp(op, "sub"))   {
+    if (!strcmp(op, "sub")) {
         ins_add_sub_generic(1, 0);
         return;
     }
-    if (!strcmp(op, "adds"))  {
+    if (!strcmp(op, "adds")) {
         ins_add_sub_generic(0, 1);
         return;
     }
-    if (!strcmp(op, "subs"))  {
+    if (!strcmp(op, "subs")) {
         ins_add_sub_generic(1, 1);
         return;
     }
-    if (!strcmp(op, "mul"))   {
+    if (!strcmp(op, "mul")) {
         ins_mul(0);
         return;
     }
-    if (!strcmp(op, "sdiv"))  {
+    if (!strcmp(op, "sdiv")) {
         ins_div(1);
         return;
     }
-    if (!strcmp(op, "udiv"))  {
+    if (!strcmp(op, "udiv")) {
         ins_div(0);
         return;
     }
-    if (!strcmp(op, "and"))   {
+    if (!strcmp(op, "and")) {
         ins_logic("and");
         return;
     }
-    if (!strcmp(op, "orr"))   {
+    if (!strcmp(op, "orr")) {
         ins_logic("orr");
         return;
     }
-    if (!strcmp(op, "eor"))   {
+    if (!strcmp(op, "eor")) {
         ins_logic("eor");
         return;
     }
@@ -2926,35 +2946,35 @@ static void processa_instructionem(const char *op)
         ins_logic("asrv");
         return;
     }
-    if (!strcmp(op, "neg"))   {
+    if (!strcmp(op, "neg")) {
         ins_neg(0);
         return;
     }
-    if (!strcmp(op, "negs"))  {
+    if (!strcmp(op, "negs")) {
         ins_neg(1);
         return;
     }
-    if (!strcmp(op, "mvn"))   {
+    if (!strcmp(op, "mvn")) {
         ins_mvn();
         return;
     }
-    if (!strcmp(op, "cmp"))   {
+    if (!strcmp(op, "cmp")) {
         ins_cmp(0);
         return;
     }
-    if (!strcmp(op, "cmn"))   {
+    if (!strcmp(op, "cmn")) {
         ins_cmp(1);
         return;
     }
-    if (!strcmp(op, "tst"))   {
+    if (!strcmp(op, "tst")) {
         ins_tst();
         return;
     }
-    if (!strcmp(op, "cset"))  {
+    if (!strcmp(op, "cset")) {
         ins_cset();
         return;
     }
-    if (!strcmp(op, "csel"))  {
+    if (!strcmp(op, "csel")) {
         ins_csel();
         return;
     }
@@ -2970,51 +2990,51 @@ static void processa_instructionem(const char *op)
         ins_ext(op);
         return;
     }
-    if (!strcmp(op, "b"))     {
+    if (!strcmp(op, "b")) {
         ins_b(0);
         return;
     }
-    if (!strcmp(op, "bl"))    {
+    if (!strcmp(op, "bl")) {
         ins_b(1);
         return;
     }
-    if (!strcmp(op, "blr"))   {
+    if (!strcmp(op, "blr")) {
         ins_br_blr(1);
         return;
     }
-    if (!strcmp(op, "br"))    {
+    if (!strcmp(op, "br")) {
         ins_br_blr(0);
         return;
     }
-    if (!strcmp(op, "ret"))   {
+    if (!strcmp(op, "ret")) {
         ins_ret();
         return;
     }
-    if (!strcmp(op, "cbz"))   {
+    if (!strcmp(op, "cbz")) {
         ins_cbz_cbnz(0);
         return;
     }
-    if (!strcmp(op, "cbnz"))  {
+    if (!strcmp(op, "cbnz")) {
         ins_cbz_cbnz(1);
         return;
     }
-    if (!strcmp(op, "tbz"))   {
+    if (!strcmp(op, "tbz")) {
         ins_tbz_tbnz(0);
         return;
     }
-    if (!strcmp(op, "tbnz"))  {
+    if (!strcmp(op, "tbnz")) {
         ins_tbz_tbnz(1);
         return;
     }
-    if (!strcmp(op, "adrp"))  {
+    if (!strcmp(op, "adrp")) {
         ins_adrp();
         return;
     }
-    if (!strcmp(op, "adr"))   {
+    if (!strcmp(op, "adr")) {
         ins_adr();
         return;
     }
-    if (!strcmp(op, "ldr"))   {
+    if (!strcmp(op, "ldr")) {
         if (est_prox_fpreg()) {
             ins_fp_ldr_str(0, 0);
             return;
@@ -3022,7 +3042,7 @@ static void processa_instructionem(const char *op)
         ins_ldr_str(0, 0, 0);
         return;
     }
-    if (!strcmp(op, "str"))   {
+    if (!strcmp(op, "str")) {
         if (est_prox_fpreg()) {
             ins_fp_ldr_str(1, 0);
             return;
@@ -3030,19 +3050,19 @@ static void processa_instructionem(const char *op)
         ins_ldr_str(1, 0, 0);
         return;
     }
-    if (!strcmp(op, "ldrb"))  {
+    if (!strcmp(op, "ldrb")) {
         ins_ldr_str(0, 1, 0);
         return;
     }
-    if (!strcmp(op, "strb"))  {
+    if (!strcmp(op, "strb")) {
         ins_ldr_str(1, 1, 0);
         return;
     }
-    if (!strcmp(op, "ldrh"))  {
+    if (!strcmp(op, "ldrh")) {
         ins_ldr_str(0, 2, 0);
         return;
     }
-    if (!strcmp(op, "strh"))  {
+    if (!strcmp(op, "strh")) {
         ins_ldr_str(1, 2, 0);
         return;
     }
@@ -3058,7 +3078,7 @@ static void processa_instructionem(const char *op)
         ins_ldr_str(0, 4, 1);
         return;
     }
-    if (!strcmp(op, "ldur"))  {
+    if (!strcmp(op, "ldur")) {
         if (est_prox_fpreg()) {
             ins_fp_ldr_str(0, 1);
             return;
@@ -3066,7 +3086,7 @@ static void processa_instructionem(const char *op)
         ins_ur(0, 0, 0);
         return;
     }
-    if (!strcmp(op, "stur"))  {
+    if (!strcmp(op, "stur")) {
         if (est_prox_fpreg()) {
             ins_fp_ldr_str(1, 1);
             return;
@@ -3074,7 +3094,7 @@ static void processa_instructionem(const char *op)
         ins_ur(1, 0, 0);
         return;
     }
-    if (!strcmp(op, "movi"))  {
+    if (!strcmp(op, "movi")) {
         ins_movi();
         return;
     }
@@ -3094,68 +3114,68 @@ static void processa_instructionem(const char *op)
         ins_ur(1, 2, 0);
         return;
     }
-    if (!strcmp(op, "ldursb")){
+    if (!strcmp(op, "ldursb")) {
         ins_ur(0, 1, 1);
         return;
     }
-    if (!strcmp(op, "ldursh")){
+    if (!strcmp(op, "ldursh")) {
         ins_ur(0, 2, 1);
         return;
     }
-    if (!strcmp(op, "ldursw")){
+    if (!strcmp(op, "ldursw")) {
         ins_ur(0, 4, 1);
         return;
     }
-    if (!strcmp(op, "ldp"))   {
+    if (!strcmp(op, "ldp")) {
         ins_ldp_stp(1);
         return;
     }
-    if (!strcmp(op, "stp"))   {
+    if (!strcmp(op, "stp")) {
         ins_ldp_stp(0);
         return;
     }
-    if (!strcmp(op, "madd"))  {
+    if (!strcmp(op, "madd")) {
         ins_madd_msub(0);
         return;
     }
-    if (!strcmp(op, "msub"))  {
+    if (!strcmp(op, "msub")) {
         ins_madd_msub(1);
         return;
     }
-    if (!strcmp(op, "nop"))   {
+    if (!strcmp(op, "nop")) {
         emit32(0xD503201F);
         return;
     }
     /* floating-point */
-    if (!strcmp(op, "fmov"))  {
+    if (!strcmp(op, "fmov")) {
         ins_fmov();
         return;
     }
-    if (!strcmp(op, "fadd"))  {
+    if (!strcmp(op, "fadd")) {
         ins_fp_arith(0x1E602800, 0x1E202800);
         return;
     }
-    if (!strcmp(op, "fsub"))  {
+    if (!strcmp(op, "fsub")) {
         ins_fp_arith(0x1E603800, 0x1E203800);
         return;
     }
-    if (!strcmp(op, "fmul"))  {
+    if (!strcmp(op, "fmul")) {
         ins_fp_arith(0x1E600800, 0x1E200800);
         return;
     }
-    if (!strcmp(op, "fdiv"))  {
+    if (!strcmp(op, "fdiv")) {
         ins_fp_arith(0x1E601800, 0x1E201800);
         return;
     }
-    if (!strcmp(op, "fneg"))  {
+    if (!strcmp(op, "fneg")) {
         ins_fneg();
         return;
     }
-    if (!strcmp(op, "fcmp"))  {
+    if (!strcmp(op, "fcmp")) {
         ins_fcmp();
         return;
     }
-    if (!strcmp(op, "fcvt"))  {
+    if (!strcmp(op, "fcvt")) {
         ins_fcvt();
         return;
     }
@@ -3167,20 +3187,20 @@ static void processa_instructionem(const char *op)
         ins_cvt_to_fp(1);
         return;
     }
-    if (!strcmp(op, "fcvtzs")){
+    if (!strcmp(op, "fcvtzs")) {
         ins_fcvtzs();
         return;
     }
     /* campus bitōrum */
-    if (!strcmp(op, "bfi"))   {
+    if (!strcmp(op, "bfi")) {
         ins_bfm_variant(0x33000000, 1);
         return;
     }
-    if (!strcmp(op, "ubfx"))  {
+    if (!strcmp(op, "ubfx")) {
         ins_bfm_variant(0x53000000, 0);
         return;
     }
-    if (!strcmp(op, "sbfx"))  {
+    if (!strcmp(op, "sbfx")) {
         ins_bfm_variant(0x13000000, 0);
         return;
     }
@@ -3447,7 +3467,7 @@ static void processa_lineam(void)
 
 static void usus(void)
 {
-    fprintf(stderr, "usus: imm <plica.s> [-o <plica.o>]\n");
+    fprintf(stderr, "usus: imm <plica.s> [-o <plica.o>] [-P <praefixum>]\n");
     exit(1);
 }
 
@@ -3456,11 +3476,18 @@ int main(int argc, char *argv[])
     nomen_programmi = "imm";
     const char      *plica_in = NULL;
     const char      *plica_out = NULL;
+    const char      *praefixum = NULL;
     for (int i = 1; i < argc; i++) {
         if (!strcmp(argv[i], "-o")) {
             if (++i >= argc)
                 usus();
             plica_out = argv[i];
+        } else if (!strcmp(argv[i], "-P")) {
+            if (++i >= argc)
+                usus();
+            praefixum = argv[i];
+        } else if (!strncmp(argv[i], "-P", 2)) {
+            praefixum = argv[i] + 2;
         } else if (!strcmp(argv[i], "-h") || !strcmp(argv[i], "--help")) {
             usus();
         } else if (argv[i][0] == '-') {
@@ -3471,6 +3498,7 @@ int main(int argc, char *argv[])
             plica_in = argv[i];
         }
     }
+    scribo_praefixum_pone(praefixum);
     if (!plica_in)
         usus();
     int lin = (int)strlen(plica_in);

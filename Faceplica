@@ -78,12 +78,18 @@ purga:
 	rm -f initia.fac reinitia.fac
 	rm -rf initia reinitia
 
-proba:
+proba: omnia
+	./proba_prefix.py
+	./proba_corpus.py ../corpus/arte
+	./proba_corpus.py ../corpus/automata
 	./proba_corpus.py ../corpus/casus
-	./proba_corpus.py ../corpus/silva
+	./proba_corpus.py ../corpus/copulae
 	./proba_corpus.py ../corpus/cruces
 	./proba_corpus.py ../corpus/linguae
-	$(FACE) initia
+	./proba_corpus.py ../corpus/rete
+	./proba_corpus.py ../corpus/silva
+	./proba_corpus.py ../corpus/structura
+	# $(FACE) initia
 	# $(FACE) reinitia
 
 linte:

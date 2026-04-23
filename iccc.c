@@ -1686,13 +1686,16 @@ static long long aest_characteris(const char *s, int lon)
             if (i >= lon)
                 erratum("escape truncatum");
             switch (s[i]) {
-            case 'n': c = '\n';
+            case 'n':
+                c = '\n';
                 i++;
                 break;
-            case 't': c = '\t';
+            case 't':
+                c = '\t';
                 i++;
                 break;
-            case 'r': c = '\r';
+            case 'r':
+                c = '\r';
                 i++;
                 break;
             case '0': case '1': case '2': case '3':
@@ -1717,31 +1720,40 @@ static long long aest_characteris(const char *s, int lon)
                     }
                     break;
                 }
-            case '\\': c = '\\';
+            case '\\':
+                c = '\\';
                 i++;
                 break;
-            case '\'': c = '\'';
+            case '\'':
+                c = '\'';
                 i++;
                 break;
-            case '"':  c = '"';
+            case '"':
+                c = '"';
                 i++;
                 break;
-            case 'a':  c = '\a';
+            case 'a':
+                c = '\a';
                 i++;
                 break;
-            case 'b':  c = '\b';
+            case 'b':
+                c = '\b';
                 i++;
                 break;
-            case 'f':  c = '\f';
+            case 'f':
+                c = '\f';
                 i++;
                 break;
-            case 'v':  c = '\v';
+            case 'v':
+                c = '\v';
                 i++;
                 break;
-            case '?':  c = '?';
+            case '?':
+                c = '?';
                 i++;
                 break;
-            default:   c = s[i];
+            default:
+                c = s[i];
                 i++;
                 break;
             }
@@ -1817,7 +1829,7 @@ static long long aest_muldiv(aest_t *a)
         if (aest_est_pun(s, "*")) {
             aest_advance(a);
             v = v * aest_unaria(a);
-        }else if (aest_est_pun(s, "/")) {
+        } else if (aest_est_pun(s, "/")) {
             aest_advance(a);
             long long r = aest_unaria(a);
             if (r == 0)
@@ -1843,10 +1855,10 @@ static long long aest_addsub(aest_t *a)
         if (aest_est_pun(s, "+")) {
             aest_advance(a);
             v = v + aest_muldiv(a);
-        }else if (aest_est_pun(s, "-")) {
+        } else if (aest_est_pun(s, "-")) {
             aest_advance(a);
             v = v - aest_muldiv(a);
-        }else
+        } else
             break;
     }
     return v;
@@ -1860,10 +1872,10 @@ static long long aest_shift(aest_t *a)
         if (aest_est_pun(s, "<<")) {
             aest_advance(a);
             v = v << aest_addsub(a);
-        }else if (aest_est_pun(s, ">>")) {
+        } else if (aest_est_pun(s, ">>")) {
             aest_advance(a);
             v = v >> aest_addsub(a);
-        }else
+        } else
             break;
     }
     return v;
@@ -1874,19 +1886,19 @@ static long long aest_rel(aest_t *a)
     long long v = aest_shift(a);
     for (;;) {
         signum_t *s = aest_curr(a);
-        if (aest_est_pun(s, "<"))  {
+        if (aest_est_pun(s, "<")) {
             aest_advance(a);
             v = (v <  aest_shift(a));
-        }else if (aest_est_pun(s, ">"))  {
+        } else if (aest_est_pun(s, ">")) {
             aest_advance(a);
             v = (v >  aest_shift(a));
-        }else if (aest_est_pun(s, "<=")) {
+        } else if (aest_est_pun(s, "<=")) {
             aest_advance(a);
             v = (v <= aest_shift(a));
-        }else if (aest_est_pun(s, ">=")) {
+        } else if (aest_est_pun(s, ">=")) {
             aest_advance(a);
             v = (v >= aest_shift(a));
-        }else
+        } else
             break;
     }
     return v;
@@ -1900,10 +1912,10 @@ static long long aest_eq(aest_t *a)
         if (aest_est_pun(s, "==")) {
             aest_advance(a);
             v = (v == aest_rel(a));
-        }else if (aest_est_pun(s, "!=")) {
+        } else if (aest_est_pun(s, "!=")) {
             aest_advance(a);
             v = (v != aest_rel(a));
-        }else
+        } else
             break;
     }
     return v;
@@ -2692,7 +2704,7 @@ int main(int argc, char *argv[])
     typedef struct {
         int D_non_U;
         const char *arg;
-    }opt_macra_t;
+    } opt_macra_t;
     opt_macra_t opt_macrae[256];
     int num_opt = 0;
 

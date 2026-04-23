@@ -319,7 +319,7 @@ void emit_movi(int rd, long imm)
             if (first) {
                 emit_movz(rd, chunk, i * 16);
                 first = 0;
-            }else
+            } else
                 emit_movk(rd, chunk, i * 16);
         }
     }
@@ -502,27 +502,27 @@ static void emit_mem(uint32_t opcode, int rt, int rn, int imm, int scale)
 }
 
 /* LDR Xt, [Xn, #imm] (64-bit, unsigned offset) */
-void emit_ldr64(int rt, int rn, int imm)  { emit_mem(0xF9400000, rt, rn, imm, 8); }
+void emit_ldr64(int rt, int rn, int imm) { emit_mem(0xF9400000, rt, rn, imm, 8); }
 /* STR Xt, [Xn, #imm] (64-bit, unsigned offset) */
-void emit_str64(int rt, int rn, int imm)  { emit_mem(0xF9000000, rt, rn, imm, 8); }
+void emit_str64(int rt, int rn, int imm) { emit_mem(0xF9000000, rt, rn, imm, 8); }
 /* LDR Wt, [Xn, #imm] (32-bit) */
-void emit_ldr32(int rt, int rn, int imm)  { emit_mem(0xB9400000, rt, rn, imm, 4); }
+void emit_ldr32(int rt, int rn, int imm) { emit_mem(0xB9400000, rt, rn, imm, 4); }
 /* STR Wt, [Xn, #imm] (32-bit) */
-void emit_str32(int rt, int rn, int imm)  { emit_mem(0xB9000000, rt, rn, imm, 4); }
+void emit_str32(int rt, int rn, int imm) { emit_mem(0xB9000000, rt, rn, imm, 4); }
 /* LDRB Wt, [Xn, #imm] */
-void emit_ldrb(int rt, int rn, int imm)   { emit_mem(0x39400000, rt, rn, imm, 1); }
+void emit_ldrb(int rt, int rn, int imm) { emit_mem(0x39400000, rt, rn, imm, 1); }
 /* STRB Wt, [Xn, #imm] */
-void emit_strb(int rt, int rn, int imm)   { emit_mem(0x39000000, rt, rn, imm, 1); }
+void emit_strb(int rt, int rn, int imm) { emit_mem(0x39000000, rt, rn, imm, 1); }
 /* LDRH Wt, [Xn, #imm] */
-void emit_ldrh(int rt, int rn, int imm)   { emit_mem(0x79400000, rt, rn, imm, 2); }
+void emit_ldrh(int rt, int rn, int imm) { emit_mem(0x79400000, rt, rn, imm, 2); }
 /* STRH Wt, [Xn, #imm] */
-void emit_strh(int rt, int rn, int imm)   { emit_mem(0x79000000, rt, rn, imm, 2); }
+void emit_strh(int rt, int rn, int imm) { emit_mem(0x79000000, rt, rn, imm, 2); }
 /* LDRSB Xt, [Xn, #imm] (sign-extend byte to 64-bit) */
-void emit_ldrsb(int rt, int rn, int imm)  { emit_mem(0x39800000, rt, rn, imm, 1); }
+void emit_ldrsb(int rt, int rn, int imm) { emit_mem(0x39800000, rt, rn, imm, 1); }
 /* LDRSH Xt, [Xn, #imm] */
-void emit_ldrsh(int rt, int rn, int imm)  { emit_mem(0x79800000, rt, rn, imm, 2); }
+void emit_ldrsh(int rt, int rn, int imm) { emit_mem(0x79800000, rt, rn, imm, 2); }
 /* LDRSW Xt, [Xn, #imm] */
-void emit_ldrsw(int rt, int rn, int imm)  { emit_mem(0xB9800000, rt, rn, imm, 4); }
+void emit_ldrsw(int rt, int rn, int imm) { emit_mem(0xB9800000, rt, rn, imm, 4); }
 
 /* SXTW Xd, Wn (= SBFM Xd, Xn, #0, #31) */
 void emit_sxtw(int rd, int rn)

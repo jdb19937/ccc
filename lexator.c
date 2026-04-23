@@ -203,16 +203,26 @@ static int lege_effugium(void)
 {
     int c = lege_c();
     switch (c) {
-    case 'n':  return '\n';
-    case 't':  return '\t';
-    case 'r':  return '\r';
-    case '\\': return '\\';
-    case '\'': return '\'';
-    case '"':  return '"';
-    case 'a':  return '\a';
-    case 'b':  return '\b';
-    case 'f':  return '\f';
-    case 'v':  return '\v';
+    case 'n':
+        return '\n';
+    case 't':
+        return '\t';
+    case 'r':
+        return '\r';
+    case '\\':
+        return '\\';
+    case '\'':
+        return '\'';
+    case '"':
+        return '"';
+    case 'a':
+        return '\a';
+    case 'b':
+        return '\b';
+    case 'f':
+        return '\f';
+    case 'v':
+        return '\v';
     case 'x': {
             int val = 0;
             for (int i = 0; i < 2; i++) {
@@ -659,17 +669,39 @@ inicio:
             sig.genus = T_BANG;
             return T_BANG;
         }
-    case '~': sig.genus = T_TILDE;     return T_TILDE;
-    case '?': sig.genus = T_QUESTION;  return T_QUESTION;
-    case ':': sig.genus = T_COLON;     return T_COLON;
-    case ';': sig.genus = T_SEMICOLON; return T_SEMICOLON;
-    case ',': sig.genus = T_COMMA;     return T_COMMA;
-    case '(': sig.genus = T_LPAREN;    return T_LPAREN;
-    case ')': sig.genus = T_RPAREN;    return T_RPAREN;
-    case '[': sig.genus = T_LBRACKET;  return T_LBRACKET;
-    case ']': sig.genus = T_RBRACKET;  return T_RBRACKET;
-    case '{': sig.genus = T_LBRACE;    return T_LBRACE;
-    case '}': sig.genus = T_RBRACE;    return T_RBRACE;
+    case '~':
+        sig.genus = T_TILDE;
+        return T_TILDE;
+    case '?':
+        sig.genus = T_QUESTION;
+        return T_QUESTION;
+    case ':':
+        sig.genus = T_COLON;
+        return T_COLON;
+    case ';':
+        sig.genus = T_SEMICOLON;
+        return T_SEMICOLON;
+    case ',':
+        sig.genus = T_COMMA;
+        return T_COMMA;
+    case '(':
+        sig.genus = T_LPAREN;
+        return T_LPAREN;
+    case ')':
+        sig.genus = T_RPAREN;
+        return T_RPAREN;
+    case '[':
+        sig.genus = T_LBRACKET;
+        return T_LBRACKET;
+    case ']':
+        sig.genus = T_RBRACKET;
+        return T_RBRACKET;
+    case '{':
+        sig.genus = T_LBRACE;
+        return T_LBRACE;
+    case '}':
+        sig.genus = T_RBRACE;
+        return T_RBRACE;
     case '.': {
             int c2 = lege_c();
             if (c2 == '.') {

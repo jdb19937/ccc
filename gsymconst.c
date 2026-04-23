@@ -33,13 +33,18 @@ double gsymconst_evalua_fluat(nodus_t *n)
     if (!n)
         erratum("evalua_constans_fluat: nodus nullus");
     switch (n->genus) {
-    case N_NUM_FLUAT: return n->valor_f;
-    case N_NUM:       return (double)n->valor;
-    case N_CAST:      return gsymconst_evalua_fluat(n->sinister);
+    case N_NUM_FLUAT:
+        return n->valor_f;
+    case N_NUM:
+        return (double)n->valor;
+    case N_CAST:
+        return gsymconst_evalua_fluat(n->sinister);
     case N_UNOP:
         switch (n->op) {
-        case T_MINUS: return -gsymconst_evalua_fluat(n->sinister);
-        case T_PLUS:  return  gsymconst_evalua_fluat(n->sinister);
+        case T_MINUS:
+            return -gsymconst_evalua_fluat(n->sinister);
+        case T_PLUS:
+            return  gsymconst_evalua_fluat(n->sinister);
         }
         erratum_ad(
             n->linea,
@@ -51,10 +56,14 @@ double gsymconst_evalua_fluat(nodus_t *n)
             double a = gsymconst_evalua_fluat(n->sinister);
             double b = gsymconst_evalua_fluat(n->dexter);
             switch (n->op) {
-            case T_PLUS:  return a + b;
-            case T_MINUS: return a - b;
-            case T_STAR:  return a * b;
-            case T_SLASH: return a / b;
+            case T_PLUS:
+                return a + b;
+            case T_MINUS:
+                return a - b;
+            case T_STAR:
+                return a * b;
+            case T_SLASH:
+                return a / b;
             }
             erratum_ad(
                 n->linea,
@@ -76,14 +85,20 @@ long gsymconst_evalua_integer(nodus_t *n)
     if (!n)
         erratum("evalua: nodus nullus");
     switch (n->genus) {
-    case N_NUM: return n->valor;
-    case N_CAST: return gsymconst_evalua_integer(n->sinister);
+    case N_NUM:
+        return n->valor;
+    case N_CAST:
+        return gsymconst_evalua_integer(n->sinister);
     case N_UNOP:
         switch (n->op) {
-        case T_MINUS: return -gsymconst_evalua_integer(n->sinister);
-        case T_TILDE: return ~gsymconst_evalua_integer(n->sinister);
-        case T_BANG:  return !gsymconst_evalua_integer(n->sinister);
-        case T_PLUS:  return gsymconst_evalua_integer(n->sinister);
+        case T_MINUS:
+            return -gsymconst_evalua_integer(n->sinister);
+        case T_TILDE:
+            return ~gsymconst_evalua_integer(n->sinister);
+        case T_BANG:
+            return !gsymconst_evalua_integer(n->sinister);
+        case T_PLUS:
+            return gsymconst_evalua_integer(n->sinister);
         }
         break;
     case N_ADDR:
@@ -140,20 +155,28 @@ long gsymconst_evalua_integer(nodus_t *n)
             long a = gsymconst_evalua_integer(n->sinister);
             long b = gsymconst_evalua_integer(n->dexter);
             switch (n->op) {
-            case T_PLUS:    return a + b;
-            case T_MINUS:   return a - b;
-            case T_STAR:    return a * b;
+            case T_PLUS:
+                return a + b;
+            case T_MINUS:
+                return a - b;
+            case T_STAR:
+                return a * b;
             case T_SLASH:   if (!b)
                     erratum("divisio per 0 in constante");
                 return a / b;
             case T_PERCENT: if (!b)
                     erratum("divisio per 0 in constante");
                 return a % b;
-            case T_AMP:     return a & b;
-            case T_PIPE:    return a | b;
-            case T_CARET:   return a ^ b;
-            case T_LTLT:    return a << b;
-            case T_GTGT:    return a >> b;
+            case T_AMP:
+                return a & b;
+            case T_PIPE:
+                return a | b;
+            case T_CARET:
+                return a ^ b;
+            case T_LTLT:
+                return a << b;
+            case T_GTGT:
+                return a >> b;
             }
             break;
         }

@@ -44,22 +44,30 @@ static const char *xn(int r)
 {
     char *b = reg_buf();
     switch (r) {
-    case 29: strcpy(b, "x29"); return b;
-    case 30: strcpy(b, "x30"); return b;
-    case 31: strcpy(b, "sp");  return b;
-    default: snprintf(b, 8, "x%d", r); return b;
+    case 29:
+        strcpy(b, "x29");
+        return b;
+    case 30:
+        strcpy(b, "x30");
+        return b;
+    case 31:
+        strcpy(b, "sp");
+        return b;
+    default:
+        snprintf(b, 8, "x%d", r);
+        return b;
     }
 }
 static const char *xn_z(int r)
 {
     char *b = reg_buf();
-    if (r == 31)      {
+    if (r == 31) {
         strcpy(b, "xzr");
         return b;
-    }else if (r == 29) {
+    } else if (r == 29) {
         strcpy(b, "x29");
         return b;
-    }else if (r == 30) {
+    } else if (r == 30) {
         strcpy(b, "x30");
         return b;
     }
@@ -92,21 +100,36 @@ static const char *sn(int r)
 static const char *cond_str(int c)
 {
     switch (c) {
-    case 0x0: return "eq";
-    case 0x1: return "ne";
-    case 0x2: return "hs";
-    case 0x3: return "lo";
-    case 0x4: return "mi";
-    case 0x5: return "pl";
-    case 0x6: return "vs";
-    case 0x7: return "vc";
-    case 0x8: return "hi";
-    case 0x9: return "ls";
-    case 0xA: return "ge";
-    case 0xB: return "lt";
-    case 0xC: return "gt";
-    case 0xD: return "le";
-    case 0xE: return "al";
+    case 0x0:
+        return "eq";
+    case 0x1:
+        return "ne";
+    case 0x2:
+        return "hs";
+    case 0x3:
+        return "lo";
+    case 0x4:
+        return "mi";
+    case 0x5:
+        return "pl";
+    case 0x6:
+        return "vs";
+    case 0x7:
+        return "vc";
+    case 0x8:
+        return "hi";
+    case 0x9:
+        return "ls";
+    case 0xA:
+        return "ge";
+    case 0xB:
+        return "lt";
+    case 0xC:
+        return "gt";
+    case 0xD:
+        return "le";
+    case 0xE:
+        return "al";
     }
     erratum("esym: conditio ignota: %d", c);
     return "?";
@@ -131,13 +154,13 @@ void esym_finit(void)
  * sectiones et symbola
  * ================================================================ */
 
-void esym_sectio_text(void)    { fprintf(out, "\t.section\t__TEXT,__text,regular,pure_instructions\n"); }
-void esym_sectio_data(void)    { fprintf(out, "\t.section\t__DATA,__data\n"); }
-void esym_sectio_const(void)   { fprintf(out, "\t.section\t__TEXT,__const\n"); }
+void esym_sectio_text(void) { fprintf(out, "\t.section\t__TEXT,__text,regular,pure_instructions\n"); }
+void esym_sectio_data(void) { fprintf(out, "\t.section\t__DATA,__data\n"); }
+void esym_sectio_const(void) { fprintf(out, "\t.section\t__TEXT,__const\n"); }
 void esym_sectio_cstring(void) { fprintf(out, "\t.section\t__TEXT,__cstring,cstring_literals\n"); }
 
-void esym_globl(const char *nomen)     { fprintf(out, "\t.globl\t_%s\n", nomen); }
-void esym_p2align(int n)               { fprintf(out, "\t.p2align\t%d\n", n); }
+void esym_globl(const char *nomen) { fprintf(out, "\t.globl\t_%s\n", nomen); }
+void esym_p2align(int n) { fprintf(out, "\t.p2align\t%d\n", n); }
 
 void esym_func_header(const char *nomen, int est_staticus)
 {
@@ -147,18 +170,18 @@ void esym_func_header(const char *nomen, int est_staticus)
     fprintf(out, "_%s:\n", nomen);
 }
 
-void esym_label_pone(int id)              { fprintf(out, "Lccc_%d:\n", id); }
-void esym_str_label_pone(int id)          { fprintf(out, "lccc_str_%d:\n", id); }
+void esym_label_pone(int id) { fprintf(out, "Lccc_%d:\n", id); }
+void esym_str_label_pone(int id) { fprintf(out, "lccc_str_%d:\n", id); }
 void esym_glob_label_pone(const char *nm) { fprintf(out, "_%s:\n", nm); }
 
 /* ================================================================
  * data directivae
  * ================================================================ */
 
-void esym_byte(int v)   { L(".byte\t%d", v & 0xff); }
-void esym_short(int v)  { L(".short\t%d", v & 0xffff); }
-void esym_long(long v)  { L(".long\t%ld", (long)(int32_t)v); }
-void esym_quad(long v)  { L(".quad\t%ld", v); }
+void esym_byte(int v) { L(".byte\t%d", v & 0xff); }
+void esym_short(int v) { L(".short\t%d", v & 0xffff); }
+void esym_long(long v) { L(".long\t%ld", (long)(int32_t)v); }
+void esym_quad(long v) { L(".quad\t%ld", v); }
 
 void esym_quad_sym(const char *nomen, int addendum)
 {
@@ -168,9 +191,9 @@ void esym_quad_sym(const char *nomen, int addendum)
         L(".quad\t_%s", nomen);
 }
 
-void esym_quad_str(int str_id)  { L(".quad\tlccc_str_%d", str_id); }
+void esym_quad_str(int str_id) { L(".quad\tlccc_str_%d", str_id); }
 void esym_quad_label(int label) { L(".quad\tLccc_%d", label); }
-void esym_space(int n)          { L(".space\t%d", n); }
+void esym_space(int n) { L(".space\t%d", n); }
 
 /* §5.2.1: characteres scapabiles. scribimus ut cc -S: octal escapes pro
  * non-printābilibus, cum certīs litterālibus nōminātim. */
@@ -242,20 +265,20 @@ void esym_movi(int rd, long imm)
         L("movk\t%s, #%u, lsl #48", xn(rd), (unsigned)h3);
 }
 
-void esym_mov(int rd, int rn)                   { L("mov\t%s, %s", xn(rd), xn_z(rn)); }
-void esym_movz(int rd, uint16_t v, int shift)   {
+void esym_mov(int rd, int rn) { L("mov\t%s, %s", xn(rd), xn_z(rn)); }
+void esym_movz(int rd, uint16_t v, int shift) {
     if (shift)
         L("movz\t%s, #%u, lsl #%d", xn(rd), v, shift);
     else
         L("movz\t%s, #%u", xn(rd), v);
 }
-void esym_movk(int rd, uint16_t v, int shift)   {
+void esym_movk(int rd, uint16_t v, int shift) {
     if (shift)
         L("movk\t%s, #%u, lsl #%d", xn(rd), v, shift);
     else
         L("movk\t%s, #%u", xn(rd), v);
 }
-void esym_movn(int rd, uint16_t v, int shift)   {
+void esym_movn(int rd, uint16_t v, int shift) {
     if (shift)
         L("movn\t%s, #%u, lsl #%d", xn(rd), v, shift);
     else
@@ -288,7 +311,7 @@ void esym_fconst(int dd, double val)
 
 /* arithmetica */
 
-void esym_add(int rd, int rn, int rm)   { L("add\t%s, %s, %s", xn(rd), xn(rn), xn_z(rm)); }
+void esym_add(int rd, int rn, int rm) { L("add\t%s, %s, %s", xn(rd), xn(rn), xn_z(rm)); }
 void esym_addi(int rd, int rn, int imm)
 {
     if (imm < 0) {
@@ -297,7 +320,7 @@ void esym_addi(int rd, int rn, int imm)
     }
     L("add\t%s, %s, #%d", xn(rd), xn(rn), imm);
 }
-void esym_sub(int rd, int rn, int rm)   { L("sub\t%s, %s, %s", xn(rd), xn(rn), xn_z(rm)); }
+void esym_sub(int rd, int rn, int rm) { L("sub\t%s, %s, %s", xn(rd), xn(rn), xn_z(rm)); }
 void esym_subi(int rd, int rn, int imm)
 {
     if (imm < 0) {
@@ -306,18 +329,18 @@ void esym_subi(int rd, int rn, int imm)
     }
     L("sub\t%s, %s, #%d", xn(rd), xn(rn), imm);
 }
-void esym_mul(int rd, int rn, int rm)   { L("mul\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
-void esym_sdiv(int rd, int rn, int rm)  { L("sdiv\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
-void esym_udiv(int rd, int rn, int rm)  { L("udiv\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
+void esym_mul(int rd, int rn, int rm) { L("mul\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
+void esym_sdiv(int rd, int rn, int rm) { L("sdiv\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
+void esym_udiv(int rd, int rn, int rm) { L("udiv\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
 
-void esym_and(int rd, int rn, int rm)   { L("and\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
-void esym_orr(int rd, int rn, int rm)   { L("orr\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
-void esym_eor(int rd, int rn, int rm)   { L("eor\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
-void esym_lsl(int rd, int rn, int rm)   { L("lsl\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
-void esym_lsr(int rd, int rn, int rm)   { L("lsr\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
-void esym_asr(int rd, int rn, int rm)   { L("asr\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
-void esym_neg(int rd, int rm)           { L("neg\t%s, %s", xn(rd), xn_z(rm)); }
-void esym_mvn(int rd, int rm)           { L("mvn\t%s, %s", xn(rd), xn_z(rm)); }
+void esym_and(int rd, int rn, int rm) { L("and\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
+void esym_orr(int rd, int rn, int rm) { L("orr\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
+void esym_eor(int rd, int rn, int rm) { L("eor\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
+void esym_lsl(int rd, int rn, int rm) { L("lsl\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
+void esym_lsr(int rd, int rn, int rm) { L("lsr\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
+void esym_asr(int rd, int rn, int rm) { L("asr\t%s, %s, %s", xn(rd), xn_z(rn), xn_z(rm)); }
+void esym_neg(int rd, int rm) { L("neg\t%s, %s", xn(rd), xn_z(rm)); }
+void esym_mvn(int rd, int rm) { L("mvn\t%s, %s", xn(rd), xn_z(rm)); }
 
 /* comparatio — w-reg ad concordandam cum genera.c usū */
 void esym_cmp(int rn, int rm, int sz)
@@ -336,17 +359,17 @@ void esym_cmpi(int rn, int imm, int sz)
     }
     L("cmp\t%s, #%d", r, imm);
 }
-void esym_cset(int rd, int cond)        { L("cset\t%s, %s", wn(rd), cond_str(cond)); }
+void esym_cset(int rd, int cond) { L("cset\t%s, %s", wn(rd), cond_str(cond)); }
 
 /* rami */
-void esym_b_label(int label)            { L("b\tLccc_%d", label); }
-void esym_bl_label(int label)           { L("bl\tLccc_%d", label); }  /* NB:
+void esym_b_label(int label) { L("b\tLccc_%d", label); }
+void esym_bl_label(int label) { L("bl\tLccc_%d", label); } /* NB:
     pro functionibus localibus praeferimus bl _nomen; hoc pro rara usu */
-void esym_bl_sym(const char *nomen)     { L("bl\t_%s", nomen); }
+void esym_bl_sym(const char *nomen) { L("bl\t_%s", nomen); }
 void esym_bcond_label(int c, int label) { L("b.%s\tLccc_%d", cond_str(c), label); }
-void esym_blr(int rn)                   { L("blr\t%s", xn_z(rn)); }
-void esym_ret(void)                     { L("ret"); }
-void esym_cbz_label(int rt, int label)  { L("cbz\t%s, Lccc_%d", xn_z(rt), label); }
+void esym_blr(int rn) { L("blr\t%s", xn_z(rn)); }
+void esym_ret(void) { L("ret"); }
+void esym_cbz_label(int rt, int label) { L("cbz\t%s, Lccc_%d", xn_z(rt), label); }
 void esym_cbnz_label(int rt, int label) { L("cbnz\t%s, Lccc_%d", xn_z(rt), label); }
 
 /* carrica et salva — pre/post index */
@@ -515,11 +538,20 @@ void esym_strb(int rt, int rn, int imm)
 void esym_store(int rt, int rn, int offset, int mag)
 {
     switch (mag) {
-    case 1: esym_strb(rt, rn, offset); break;
-    case 2: esym_strh(rt, rn, offset); break;
-    case 4: esym_str32(rt, rn, offset); break;
-    case 8: esym_str64(rt, rn, offset); break;
-    default: erratum("esym_store: magnitudo invalida: %d", mag);
+    case 1:
+        esym_strb(rt, rn, offset);
+        break;
+    case 2:
+        esym_strh(rt, rn, offset);
+        break;
+    case 4:
+        esym_str32(rt, rn, offset);
+        break;
+    case 8:
+        esym_str64(rt, rn, offset);
+        break;
+    default:
+        erratum("esym_store: magnitudo invalida: %d", mag);
     }
 }
 
@@ -550,32 +582,50 @@ void esym_memcpy_bytes(
 void esym_load(int rd, int rn, int offset, int mag)
 {
     switch (mag) {
-    case 1: esym_ldrsb(rd, rn, offset); break;
-    case 2: esym_ldrsh(rd, rn, offset); break;
-    case 4: esym_ldrsw(rd, rn, offset); break;
-    case 8: esym_ldr64(rd, rn, offset); break;
-    default: erratum("esym_load: magnitudo invalida: %d", mag);
+    case 1:
+        esym_ldrsb(rd, rn, offset);
+        break;
+    case 2:
+        esym_ldrsh(rd, rn, offset);
+        break;
+    case 4:
+        esym_ldrsw(rd, rn, offset);
+        break;
+    case 8:
+        esym_ldr64(rd, rn, offset);
+        break;
+    default:
+        erratum("esym_load: magnitudo invalida: %d", mag);
     }
 }
 
 void esym_load_unsigned(int rd, int rn, int offset, int mag)
 {
     switch (mag) {
-    case 1: esym_ldrb(rd, rn, offset); break;
-    case 2: esym_ldrh(rd, rn, offset); break;
-    case 4: esym_ldr32(rd, rn, offset); break;
-    case 8: esym_ldr64(rd, rn, offset); break;
-    default: erratum("esym_load_unsigned: magnitudo invalida: %d", mag);
+    case 1:
+        esym_ldrb(rd, rn, offset);
+        break;
+    case 2:
+        esym_ldrh(rd, rn, offset);
+        break;
+    case 4:
+        esym_ldr32(rd, rn, offset);
+        break;
+    case 8:
+        esym_ldr64(rd, rn, offset);
+        break;
+    default:
+        erratum("esym_load_unsigned: magnitudo invalida: %d", mag);
     }
 }
 
 /* extensiones */
-void esym_sxtw(int rd, int rn)  { L("sxtw\t%s, %s", xn(rd), wn(rn)); }
-void esym_sxtb(int rd, int rn)  { L("sxtb\t%s, %s", xn(rd), wn(rn)); }
-void esym_sxth(int rd, int rn)  { L("sxth\t%s, %s", xn(rd), wn(rn)); }
-void esym_uxtb(int rd, int rn)  { L("uxtb\t%s, %s", wn(rd), wn(rn)); }
-void esym_uxth(int rd, int rn)  { L("uxth\t%s, %s", wn(rd), wn(rn)); }
-void esym_uxtw(int rd, int rn)  { L("mov\t%s, %s", wn(rd), wn(rn)); }  /* MOV Wd, Wn cleares upper */
+void esym_sxtw(int rd, int rn) { L("sxtw\t%s, %s", xn(rd), wn(rn)); }
+void esym_sxtb(int rd, int rn) { L("sxtb\t%s, %s", xn(rd), wn(rn)); }
+void esym_sxth(int rd, int rn) { L("sxth\t%s, %s", xn(rd), wn(rn)); }
+void esym_uxtb(int rd, int rn) { L("uxtb\t%s, %s", wn(rd), wn(rn)); }
+void esym_uxth(int rd, int rn) { L("uxth\t%s, %s", wn(rd), wn(rn)); }
+void esym_uxtw(int rd, int rn) { L("mov\t%s, %s", wn(rd), wn(rn)); } /* MOV Wd, Wn cleares upper */
 
 /* FP */
 void esym_fldr64(int dt, int rn, int imm)
@@ -642,11 +692,11 @@ void esym_fadd(int rd, int rn, int rm) { L("fadd\t%s, %s, %s", dn(rd), dn(rn), d
 void esym_fsub(int rd, int rn, int rm) { L("fsub\t%s, %s, %s", dn(rd), dn(rn), dn(rm)); }
 void esym_fmul(int rd, int rn, int rm) { L("fmul\t%s, %s, %s", dn(rd), dn(rn), dn(rm)); }
 void esym_fdiv(int rd, int rn, int rm) { L("fdiv\t%s, %s, %s", dn(rd), dn(rn), dn(rm)); }
-void esym_fneg(int rd, int rn)         { L("fneg\t%s, %s", dn(rd), dn(rn)); }
-void esym_fcmp(int rn, int rm)         { L("fcmp\t%s, %s", dn(rn), dn(rm)); }
-void esym_fcvt_sd(int rd, int rn)      { L("fcvt\t%s, %s", dn(rd), sn(rn)); }
-void esym_fcvt_ds(int rd, int rn)      { L("fcvt\t%s, %s", sn(rd), dn(rn)); }
-void esym_fmov_dd(int rd, int rn)      { L("fmov\t%s, %s", dn(rd), dn(rn)); }
+void esym_fneg(int rd, int rn) { L("fneg\t%s, %s", dn(rd), dn(rn)); }
+void esym_fcmp(int rn, int rm) { L("fcmp\t%s, %s", dn(rn), dn(rm)); }
+void esym_fcvt_sd(int rd, int rn) { L("fcvt\t%s, %s", dn(rd), sn(rn)); }
+void esym_fcvt_ds(int rd, int rn) { L("fcvt\t%s, %s", sn(rd), dn(rn)); }
+void esym_fmov_dd(int rd, int rn) { L("fmov\t%s, %s", dn(rd), dn(rn)); }
 
 /* §6.3.1.4¶2: integer → fluitans. scvtf cum x- vel w-reg secundum magnitudinem.
  * Signed vs unsigned per est_sine_signo. Integer ante in r sub typū src. */
@@ -697,7 +747,7 @@ void esym_load_from_addr(int r, typus_t *t)
 }
 
 /* campus bitōrum */
-void esym_bfi(int wd, int wn_, int lsb, int width)  { L("bfi\t%s, %s, #%d, #%d", wn(wd), wn(wn_), lsb, width); }
+void esym_bfi(int wd, int wn_, int lsb, int width) { L("bfi\t%s, %s, #%d, #%d", wn(wd), wn(wn_), lsb, width); }
 void esym_ubfx(int wd, int wn_, int lsb, int width) { L("ubfx\t%s, %s, #%d, #%d", wn(wd), wn(wn_), lsb, width); }
 void esym_sbfx(int wd, int wn_, int lsb, int width) { L("sbfx\t%s, %s, #%d, #%d", wn(wd), wn(wn_), lsb, width); }
 

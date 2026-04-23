@@ -48,6 +48,7 @@ static void usus(void)
         "  -pedantic    activa modum pedanticum\n"
         "  -std=c99     norma linguae (solum c99)\n"
         "  -O<gradus>   gradus optimizationis (0-3)\n"
+        "  -P <praef>   praefixum adde symbolis exportatis\n"
         "  -h, --help   monstra hunc nuntium\n"
     );
     exit(1);
@@ -124,6 +125,7 @@ int main(int argc, char *argv[])
 {
     const char *plica_fontis = NULL;
     const char *plica_exitus = NULL;
+    const char *praefixum    = NULL;
 
     /* argumenta transmittenda ad ic (pro .c input) */
     char **iccc_args     = malloc(argc * sizeof(char *));
@@ -138,6 +140,12 @@ int main(int argc, char *argv[])
             plica_exitus = argv[i];
         } else if (strcmp(argv[i], "-c") == 0) {
             /* ignoratur — ccc semper obiectum generat */
+        } else if (strcmp(argv[i], "-P") == 0) {
+            if (++i >= argc)
+                usus();
+            praefixum = argv[i];
+        } else if (strncmp(argv[i], "-P", 2) == 0) {
+            praefixum = argv[i] + 2;
         } else if (strcmp(argv[i], "-s") == 0) {
             optio_s = 1;
         } else if (
@@ -260,12 +268,16 @@ int main(int argc, char *argv[])
         if (pid < 0)
             erratum("fork: %s", strerror(errno));
         if (pid == 0) {
-            char *args[6];
+            char *args[8];
             int a       = 0;
             args[a  ++] = imm_via;
             args[a  ++] = (char *)plica_s_nomen;
             args[a  ++] = "-o";
             args[a  ++] = (char *)plica_exitus;
+            if (praefixum) {
+                args[a  ++] = "-P";
+                args[a  ++] = (char *)praefixum;
+            }
             args[a]     = NULL;
             execvp(imm_via, args);
             fprintf(stderr, "ccc: non possum exsecure imm: %s\n", strerror(errno));

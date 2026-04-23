@@ -11,6 +11,55 @@
 
 #include <string.h>
 
+/* resolve an offset ad foliō typi nestatī (struct/array recursive).
+ * Reddit:
+ *   1  si folium est tabula char/uchar (initializator chordae copiātur in loco)
+ *   0  si folium est indices (chorda fit per relocationem DR_CSTRING)
+ *  -1  si offset non convenit ulli foliō (erratum verum in generatione) */
+static int init_est_char_array_ad_offset(typus_t *t, int off)
+{
+    while (t) {
+        if (t->genus == TY_STRUCT) {
+            if (!t->membra || t->num_membrorum <= 0 || off < 0)
+                return -1;
+            int inventus = -1;
+            for (int i = 0; i < t->num_membrorum; i++) {
+                int moff = t->membra[i].offset;
+                int msz  = typus_magnitudo(t->membra[i].typus);
+                if (msz < 1)
+                    continue;
+                if (off >= moff && off < moff + msz) {
+                    inventus = i;
+                    break;
+                }
+            }
+            if (inventus < 0)
+                return -1;
+            off -= t->membra[inventus].offset;
+            t    = t->membra[inventus].typus;
+            continue;
+        }
+        if (t->genus == TY_ARRAY && t->basis) {
+            int esz = typus_magnitudo(t->basis);
+            if (esz < 1)
+                return -1;
+            if (
+                (t->basis->genus == TY_CHAR || t->basis->genus == TY_UCHAR)
+                && (off % esz) == 0
+            )
+                return 1;
+            off = off % esz;
+            t   = t->basis;
+            continue;
+        }
+        /* folium scalaris — offset debet esse nullus */
+        if (off != 0)
+            return -1;
+        return 0;
+    }
+    return -1;
+}
+
 /* §6.6: emitte relocationem pro identificatore in initializatore
  * (sive functio, sive globale definitum, sive externum). */
 static void emitte_ident_reloc(int off, nodus_t *id)
@@ -288,23 +337,30 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
                 int store_mag;
                 int est_char_array = 0;
                 if (elem->init_offset >= 0 && elem->init_size > 0) {
+                    if (elem->init_offset + elem->init_size > mag)
+                        erratum_ad(
+                            elem->linea,
+                            "initializator '%s': offset %d + magnitudo %d excedit magnitudinem %d",
+                            n->nomen, elem->init_offset, elem->init_size, mag
+                        );
                     elem_off  = data_off + elem->init_offset;
                     store_mag = elem->init_size;
                     if (elem->genus == N_STR && est_struct) {
-                        for (int mi = 0; mi < elem_t->num_membrorum; mi++) {
-                            if (elem_t->membra[mi].offset != elem->init_offset)
-                                continue;
-                            typus_t *mt = elem_t->membra[mi].typus;
-                            if (
-                                mt && mt->genus == TY_ARRAY && mt->basis
-                                && (
-                                    mt->basis->genus == TY_CHAR
-                                    || mt->basis->genus == TY_UCHAR
-                                )
-                            )
-                                est_char_array = 1;
-                            break;
-                        }
+                        int memb_off = singula_structura
+                            ? elem->init_offset
+                            : (
+                                elem_mag > 0
+                                ? elem->init_offset % elem_mag
+                                : elem->init_offset
+                            );
+                        int res = init_est_char_array_ad_offset(elem_t, memb_off);
+                        if (res < 0)
+                            erratum_ad(
+                                elem->linea,
+                                "initializator '%s': offset %d non congruit ulli foliō structurae",
+                                n->nomen, memb_off
+                            );
+                        est_char_array = (res == 1);
                     } else if (elem->genus == N_STR && elem->init_size > 8) {
                         est_char_array = 1;
                     }
@@ -330,11 +386,12 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
                             scal_per_struct += numera_elementa_init(elem_t->membra[mi].typus);
                         if (scal_per_struct < 1)
                             erratum("numerus scalarium per structuram invalidus");
-                        int si      = j / scal_per_struct;
-                        int sj      = j % scal_per_struct;
-                        int run     = 0;
-                        int mem_off = 0;
-                        int sub_idx = sj;
+                        int si       = j / scal_per_struct;
+                        int sj       = j % scal_per_struct;
+                        int run      = 0;
+                        int mem_off  = 0;
+                        int sub_idx  = sj;
+                        int inventus = 0;
                         for (int mi = 0; mi < num_camp; mi++) {
                             typus_t *mt = elem_t->membra[mi].typus;
                             int cnt     = numera_elementa_init(mt);
@@ -366,11 +423,23 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
                                 } else {
                                     camp_fol_mag = (mt->genus == TY_ARRAY)
                                         ? typus_magnitudo(camp_fol) : mag_typi(mt);
+                                    if (camp_fol_mag < 1)
+                                        erratum_ad(
+                                            elem->linea,
+                                            "magnitudo campi scalaris invalida"
+                                        );
                                 }
+                                inventus = 1;
                                 break;
                             }
                             run += cnt;
                         }
+                        if (!inventus)
+                            erratum_ad(
+                                elem->linea,
+                                "initializator '%s': index scalaris %d excedit numerum scalarium %d",
+                                n->nomen, sj, scal_per_struct
+                            );
                         elem_off = data_off + si * elem_mag
                             + mem_off + sub_idx * camp_fol_mag;
                         store_mag = camp_fol_mag;
@@ -388,6 +457,12 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
                     elem_off  = data_off + j * elem_mag;
                     store_mag = elem_mag;
                 }
+                if (elem_off + store_mag > data_off + mag)
+                    erratum_ad(
+                        elem->linea,
+                        "initializator '%s': offset %d + magnitudo %d excedit magnitudinem %d",
+                        n->nomen, elem_off - data_off, store_mag, mag
+                    );
                 if (elem->genus == N_STR) {
                     if (est_struct && est_char_array) {
                         int lon = elem->lon_chordae < store_mag
@@ -658,27 +733,39 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
                 store_mag = sl_mag;
             }
             if (elem_off + store_mag > data_off + mag)
-                break;
+                erratum_ad(
+                    elem->linea,
+                    "initializator staticae localis: offset %d + magnitudo %d excedit magnitudinem %d",
+                    elem_off - data_off, store_mag, mag
+                );
             if (elem->genus == N_STR) {
                 int est_char_array = 0;
+                typus_t *struct_t  = NULL;
+                int memb_off       = elem->init_offset;
                 if (
                     sl_t && sl_t->genus == TY_STRUCT
                     && sl_t->membra && sl_t->num_membrorum > 0
                 ) {
-                    for (int mi = 0; mi < sl_t->num_membrorum; mi++) {
-                        if (sl_t->membra[mi].offset != elem->init_offset)
-                            continue;
-                        typus_t *mt = sl_t->membra[mi].typus;
-                        if (
-                            mt && mt->genus == TY_ARRAY && mt->basis
-                            && (
-                                mt->basis->genus == TY_CHAR
-                                || mt->basis->genus == TY_UCHAR
-                            )
-                        )
-                            est_char_array = 1;
-                        break;
-                    }
+                    struct_t = sl_t;
+                } else if (
+                    sl_t && sl_t->genus == TY_ARRAY && sl_t->basis
+                    && sl_t->basis->genus == TY_STRUCT
+                    && sl_t->basis->membra && sl_t->basis->num_membrorum > 0
+                ) {
+                    struct_t       = sl_t->basis;
+                    int struct_mag = typus_magnitudo(struct_t);
+                    if (struct_mag > 0)
+                        memb_off = elem->init_offset % struct_mag;
+                }
+                if (struct_t) {
+                    int res = init_est_char_array_ad_offset(struct_t, memb_off);
+                    if (res < 0)
+                        erratum_ad(
+                            elem->linea,
+                            "initializator staticae localis: offset %d non congruit ulli foliō structurae",
+                            memb_off
+                        );
+                    est_char_array = (res == 1);
                 } else if (
                     sl_t && sl_t->genus == TY_ARRAY && sl_t->basis
                     && (

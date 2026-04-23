@@ -79,5 +79,6 @@
 
 void scribo_macho(const char *plica_exitus, int main_offset);
 void scribo_obiectum(const char *plica_exitus);
+void scribo_praefixum_pone(const char *praefixum);
 
 #endif /* SCRIBO_H */

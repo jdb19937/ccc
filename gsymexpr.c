@@ -310,14 +310,24 @@ void genera_expr(nodus_t *n, int dest)
                     esym_int_to_double(rb, n->dexter->typus);
 
                 switch (n->op) {
-                case T_PLUS:   esym_fadd(ra, ra, rb); break;
-                case T_MINUS:  esym_fsub(ra, ra, rb); break;
-                case T_STAR:   esym_fmul(ra, ra, rb); break;
-                case T_SLASH:  esym_fdiv(ra, ra, rb); break;
-                case T_EQEQ:   esym_fcmp(ra, rb);
+                case T_PLUS:
+                    esym_fadd(ra, ra, rb);
+                    break;
+                case T_MINUS:
+                    esym_fsub(ra, ra, rb);
+                    break;
+                case T_STAR:
+                    esym_fmul(ra, ra, rb);
+                    break;
+                case T_SLASH:
+                    esym_fdiv(ra, ra, rb);
+                    break;
+                case T_EQEQ:
+                    esym_fcmp(ra, rb);
                     esym_cset(ra, GSYM_COND_EQ);
                     break;
-                case T_BANGEQ: esym_fcmp(ra, rb);
+                case T_BANGEQ:
+                    esym_fcmp(ra, rb);
                     esym_cset(ra, GSYM_COND_NE);
                     break;
                 /* §F.3, §F.8.3 (annex_f_iec60559): comparationes cum NaN
@@ -326,16 +336,20 @@ void genera_expr(nodus_t *n, int dest)
                  * NaN — falsum; utere LO (C=0). LE = Z=1 vel N!=V est
                  * TRUE pro NaN — falsum; utere LS (C=0 vel Z=1). GT et
                  * GE iam reddunt false pro NaN. */
-                case T_LT:     esym_fcmp(ra, rb);
+                case T_LT:
+                    esym_fcmp(ra, rb);
                     esym_cset(ra, GSYM_COND_LO);
                     break;
-                case T_GT:     esym_fcmp(ra, rb);
+                case T_GT:
+                    esym_fcmp(ra, rb);
                     esym_cset(ra, GSYM_COND_GT);
                     break;
-                case T_LTEQ:   esym_fcmp(ra, rb);
+                case T_LTEQ:
+                    esym_fcmp(ra, rb);
                     esym_cset(ra, GSYM_COND_LS);
                     break;
-                case T_GTEQ:   esym_fcmp(ra, rb);
+                case T_GTEQ:
+                    esym_fcmp(ra, rb);
                     esym_cset(ra, GSYM_COND_GE);
                     break;
                 default:
@@ -373,7 +387,9 @@ void genera_expr(nodus_t *n, int dest)
                     }
                 }
                 break;
-            case T_STAR:  esym_mul(ra, ra, rb); break;
+            case T_STAR:
+                esym_mul(ra, ra, rb);
+                break;
             case T_SLASH:
                 if (est_unsigned(n->typus))
                     esym_udiv(ra, ra, rb);
@@ -388,10 +404,18 @@ void genera_expr(nodus_t *n, int dest)
                 esym_mul(17, 17, rb);
                 esym_sub(ra, ra, 17);
                 break;
-            case T_AMP:    esym_and(ra, ra, rb); break;
-            case T_PIPE:   esym_orr(ra, ra, rb); break;
-            case T_CARET:  esym_eor(ra, ra, rb); break;
-            case T_LTLT:   esym_lsl(ra, ra, rb); break;
+            case T_AMP:
+                esym_and(ra, ra, rb);
+                break;
+            case T_PIPE:
+                esym_orr(ra, ra, rb);
+                break;
+            case T_CARET:
+                esym_eor(ra, ra, rb);
+                break;
+            case T_LTLT:
+                esym_lsl(ra, ra, rb);
+                break;
             case T_GTGT:
                 if (est_unsigned(n->sinister->typus))
                     esym_lsr(ra, ra, rb);
@@ -493,8 +517,11 @@ void genera_expr(nodus_t *n, int dest)
                 else
                     esym_neg(r, r);
                 break;
-            case T_TILDE: esym_mvn(r, r); break;
-            case T_BANG:  esym_cmpi(r, 0, mag_typi(n->sinister->typus));
+            case T_TILDE:
+                esym_mvn(r, r);
+                break;
+            case T_BANG:
+                esym_cmpi(r, 0, mag_typi(n->sinister->typus));
                 esym_cset(r, GSYM_COND_EQ);
                 break;
             case T_PLUSPLUS:
@@ -651,10 +678,10 @@ void genera_expr(nodus_t *n, int dest)
                         if (rem >= 8) {
                             esym_ldr64(17, r, i);
                             esym_str64(17, reg_arm(r2), i);
-                        }else if (rem >= 4) {
+                        } else if (rem >= 4) {
                             esym_ldr32(17, r, i);
                             esym_str32(17, reg_arm(r2), i);
-                        }else {
+                        } else {
                             esym_ldrb(17, r, i);
                             esym_strb(17, reg_arm(r2), i);
                         }
@@ -690,19 +717,35 @@ void genera_expr(nodus_t *n, int dest)
                 genera_expr(n->dexter, r4);
                 int rb = reg_arm(r4);
                 switch (n->op) {
-                case T_PLUSEQ:   esym_add(r, r, rb); break;
-                case T_MINUSEQ:  esym_sub(r, r, rb); break;
-                case T_STAREQ:   esym_mul(r, r, rb); break;
-                case T_SLASHEQ:  esym_sdiv(r, r, rb); break;
+                case T_PLUSEQ:
+                    esym_add(r, r, rb);
+                    break;
+                case T_MINUSEQ:
+                    esym_sub(r, r, rb);
+                    break;
+                case T_STAREQ:
+                    esym_mul(r, r, rb);
+                    break;
+                case T_SLASHEQ:
+                    esym_sdiv(r, r, rb);
+                    break;
                 case T_PERCENTEQ:
                     esym_sdiv(17, r, rb);
                     esym_mul(17, 17, rb);
                     esym_sub(r, r, 17);
                     break;
-                case T_AMPEQ:    esym_and(r, r, rb); break;
-                case T_PIPEEQ:   esym_orr(r, r, rb); break;
-                case T_CARETEQ:  esym_eor(r, r, rb); break;
-                case T_LTLTEQ:   esym_lsl(r, r, rb); break;
+                case T_AMPEQ:
+                    esym_and(r, r, rb);
+                    break;
+                case T_PIPEEQ:
+                    esym_orr(r, r, rb);
+                    break;
+                case T_CARETEQ:
+                    esym_eor(r, r, rb);
+                    break;
+                case T_LTLTEQ:
+                    esym_lsl(r, r, rb);
+                    break;
                 case T_GTGTEQ:
                     if (cb_mem->campus_signatus == 0)
                         esym_lsr(r, r, rb);
@@ -728,10 +771,18 @@ void genera_expr(nodus_t *n, int dest)
                 if (!typus_est_fluat(n->dexter->typus))
                     esym_int_to_double(rb, n->dexter->typus);
                 switch (n->op) {
-                case T_PLUSEQ:   esym_fadd(r, r, rb); break;
-                case T_MINUSEQ:  esym_fsub(r, r, rb); break;
-                case T_STAREQ:   esym_fmul(r, r, rb); break;
-                case T_SLASHEQ:  esym_fdiv(r, r, rb); break;
+                case T_PLUSEQ:
+                    esym_fadd(r, r, rb);
+                    break;
+                case T_MINUSEQ:
+                    esym_fsub(r, r, rb);
+                    break;
+                case T_STAREQ:
+                    esym_fmul(r, r, rb);
+                    break;
+                case T_SLASHEQ:
+                    esym_fdiv(r, r, rb);
+                    break;
                 default:
                     erratum_ad(n->linea, "operator %d non sustentatur pro typis fluitantibus", n->op);
                 }
@@ -766,17 +817,29 @@ void genera_expr(nodus_t *n, int dest)
                     }
                     esym_sub(r, r, rb);
                     break;
-                case T_STAREQ:   esym_mul(r, r, rb); break;
-                case T_SLASHEQ:  esym_sdiv(r, r, rb); break;
+                case T_STAREQ:
+                    esym_mul(r, r, rb);
+                    break;
+                case T_SLASHEQ:
+                    esym_sdiv(r, r, rb);
+                    break;
                 case T_PERCENTEQ:
                     esym_sdiv(17, r, rb);
                     esym_mul(17, 17, rb);
                     esym_sub(r, r, 17);
                     break;
-                case T_AMPEQ:    esym_and(r, r, rb); break;
-                case T_PIPEEQ:   esym_orr(r, r, rb); break;
-                case T_CARETEQ:  esym_eor(r, r, rb); break;
-                case T_LTLTEQ:   esym_lsl(r, r, rb); break;
+                case T_AMPEQ:
+                    esym_and(r, r, rb);
+                    break;
+                case T_PIPEEQ:
+                    esym_orr(r, r, rb);
+                    break;
+                case T_CARETEQ:
+                    esym_eor(r, r, rb);
+                    break;
+                case T_LTLTEQ:
+                    esym_lsl(r, r, rb);
+                    break;
                 case T_GTGTEQ:
                     if (est_unsigned(n->sinister->typus))
                         esym_lsr(r, r, rb);

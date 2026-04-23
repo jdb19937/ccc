@@ -28,31 +28,53 @@ typus_t *parse_specifiers(
 
     for (;;) {
         switch (sig.genus) {
-        case T_STATIC:   s_stat = 1;
+        case T_STATIC:
+            s_stat = 1;
             lex_proximum();
             continue;
-        case T_EXTERN:   s_ext = 1;
+        case T_EXTERN:
+            s_ext = 1;
             lex_proximum();
             continue;
-        case T_TYPEDEF:  s_td = 1;
+        case T_TYPEDEF:
+            s_td = 1;
             lex_proximum();
             continue;
-        case T_CONST:    s_const = 1;
+        case T_CONST:
+            s_const = 1;
             lex_proximum();
             continue;
-        case T_VOLATILE: lex_proximum(); continue;
-        case T_REGISTER: lex_proximum(); continue;
-        case T_AUTO:     lex_proximum(); continue;
-        case T_INLINE:   lex_proximum(); continue; /* §6.7.4: praetermittitur */
-        case T_RESTRICT: lex_proximum(); continue; /* §6.7.3.1: praetermittitur */
-        case T_BOOL:     lex_proximum();           /* §6.2.5: _Bool — magnit. 1 oct. */
+        case T_VOLATILE:
+            lex_proximum();
+            continue;
+        case T_REGISTER:
+            lex_proximum();
+            continue;
+        case T_AUTO:
+            lex_proximum();
+            continue;
+        case T_INLINE:
+            lex_proximum();
+            continue;
+            /* §6.7.4: praetermittitur */
+        case T_RESTRICT:
+            lex_proximum();
+            continue;
+            /* §6.7.3.1: praetermittitur */
+        case T_BOOL:
+            lex_proximum();
+            /* §6.2.5: _Bool — magnit. 1 oct. */
             t = ty_uchar;
             continue;
-        case T_SIGNED:   lex_proximum(); continue;
-        case T_UNSIGNED: s_unsigned = 1;
+        case T_SIGNED:
             lex_proximum();
             continue;
-        case T_SHORT:    s_short = 1;
+        case T_UNSIGNED:
+            s_unsigned = 1;
+            lex_proximum();
+            continue;
+        case T_SHORT:
+            s_short = 1;
             lex_proximum();
             continue;
         case T_LONG:
@@ -61,19 +83,24 @@ typus_t *parse_specifiers(
             s_long = 1;
             lex_proximum();
             continue;
-        case T_CHAR:     s_char = 1;
+        case T_CHAR:
+            s_char = 1;
             lex_proximum();
             continue;
-        case T_INT:      s_int = 1;
+        case T_INT:
+            s_int = 1;
             lex_proximum();
             continue;
-        case T_VOID:     s_void = 1;
+        case T_VOID:
+            s_void = 1;
             lex_proximum();
             continue;
-        case T_FLOAT:    lex_proximum();
+        case T_FLOAT:
+            lex_proximum();
             t = ty_float;   /* §6.7.2: float — Annex F §F.2 */
             continue;
-        case T_DOUBLE:   lex_proximum();
+        case T_DOUBLE:
+            lex_proximum();
             t = ty_double;  /* §6.7.2: double — Annex F §F.2 */
             continue;
         case T_STRUCT:

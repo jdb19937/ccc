@@ -33,6 +33,20 @@ static void scribe_nomen_seg(FILE *fp, const char *nomen)
     fwrite(alveus, 1, 16, fp);
 }
 
+/* praefixum pro symbolis exportatis (.globl) in .o.
+ * Non afficit symbola externa (undef), nec static. */
+static char scribo_praefixum[128] = "";
+
+void scribo_praefixum_pone(const char *praefixum)
+{
+    if (praefixum) {
+        strncpy(scribo_praefixum, praefixum, sizeof(scribo_praefixum) - 1);
+        scribo_praefixum[sizeof(scribo_praefixum) - 1] = 0;
+    } else {
+        scribo_praefixum[0] = 0;
+    }
+}
+
 static int encode_uleb128(uint8_t *buf, uint64_t val)
 {
     int i = 0;
@@ -320,9 +334,15 @@ void scribo_macho(const char *plica_exitus, int main_offset)
         data_reloc_t *dr = &data_relocs[i];
         uint64_t addr;
         switch (dr->genus) {
-        case DR_CSTRING: addr = cstring_vmaddr + dr->target; break;
-        case DR_TEXT:    addr = text_sect_vmaddr + dr->target; break;
-        case DR_IDATA:   addr = idata_vmaddr + dr->target; break;
+        case DR_CSTRING:
+            addr = cstring_vmaddr + dr->target;
+            break;
+        case DR_TEXT:
+            addr = text_sect_vmaddr + dr->target;
+            break;
+        case DR_IDATA:
+            addr = idata_vmaddr + dr->target;
+            break;
         default:
             erratum("data_reloc genus invalidum: %d", dr->genus);
         }
@@ -981,16 +1001,22 @@ void scribo_obiectum(const char *plica_exitus)
     /* functiones non-staticae definitae → extdef symbola */
     for (int i = 0; i < num_got; i++) {
         const char *gn = got[i].nomen;
-        int fl         = func_loc_quaere(gn[0] == '_' ? gn + 1 : gn);
+        const char *bn = (gn[0] == '_') ? gn + 1 : gn;
+        int fl         = func_loc_quaere(bn);
         if (fl >= 0) {
+            char nn[260];
+            if (func_loci[fl].est_staticus)
+                snprintf(nn, 260, "_%s", bn);
+            else
+                snprintf(nn, 260, "_%s%s", scribo_praefixum, bn);
             int iam = 0;
             for (int j = 0; j < nsyms; j++)
-                if (strcmp(syms[j].nomen, gn) == 0) {
+                if (strcmp(syms[j].nomen, nn) == 0) {
                 iam = 1;
                 break;
             }
             if (!iam) {
-                strncpy(syms[nsyms].nomen, gn, 259);
+                strncpy(syms[nsyms].nomen, nn, 259);
                 syms[nsyms] .sectio = 1;
                 syms[nsyms] .valor  = labels[fl];
                 nsyms++;
@@ -1003,7 +1029,7 @@ void scribo_obiectum(const char *plica_exitus)
         if (func_loci[i].est_staticus)
             continue;
         char nn[260];
-        snprintf(nn, 260, "_%s", func_loci[i].nomen);
+        snprintf(nn, 260, "_%s%s", scribo_praefixum, func_loci[i].nomen);
         int iam = 0;
         for (int j = 0; j < nsyms; j++)
             if (strcmp(syms[j].nomen, nn) == 0) {
@@ -1029,7 +1055,7 @@ void scribo_obiectum(const char *plica_exitus)
         if (globales[i].est_staticus)
             snprintf(nn, 260, "_L_%s.%d", globales[i].nomen, i);
         else
-            snprintf(nn, 260, "_%s", globales[i].nomen);
+            snprintf(nn, 260, "_%s%s", scribo_praefixum, globales[i].nomen);
         /* proba si iam addita */
         int iam = 0;
         for (int j = 0; j < nsyms; j++)
@@ -1061,11 +1087,17 @@ void scribo_obiectum(const char *plica_exitus)
     int got_ad_sym[MAX_GOT];
     for (int i = 0; i < num_got; i++) {
         const char *gn = got[i].nomen;
-        int fl         = func_loc_quaere(gn[0] == '_' ? gn + 1 : gn);
+        const char *bn = (gn[0] == '_') ? gn + 1 : gn;
+        int fl         = func_loc_quaere(bn);
         if (fl >= 0) {
             /* iam definitum — quaere indicem */
+            char nn[260];
+            if (func_loci[fl].est_staticus)
+                snprintf(nn, 260, "_%s", bn);
+            else
+                snprintf(nn, 260, "_%s%s", scribo_praefixum, bn);
             for (int j = 0; j < i_undef; j++)
-                if (strcmp(syms[j].nomen, gn) == 0) {
+                if (strcmp(syms[j].nomen, nn) == 0) {
                 got_ad_sym[i] = j;
                 break;
             }
@@ -1258,7 +1290,10 @@ void scribo_obiectum(const char *plica_exitus)
                 for (int fi = 0; fi < num_func_loc; fi++) {
                     if (func_loci[fi].label == label_id) {
                         char nn[260];
-                        snprintf(nn, 260, "_%s", func_loci[fi].nomen);
+                        if (func_loci[fi].est_staticus)
+                            snprintf(nn, 260, "_%s", func_loci[fi].nomen);
+                        else
+                            snprintf(nn, 260, "_%s%s", scribo_praefixum, func_loci[fi].nomen);
                         for (int j = 0; j < nsyms; j++) {
                             if (strcmp(syms[j].nomen, nn) == 0) {
                                 sym_idx = j;
