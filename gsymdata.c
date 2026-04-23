@@ -290,8 +290,24 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
                 if (elem->init_offset >= 0 && elem->init_size > 0) {
                     elem_off  = data_off + elem->init_offset;
                     store_mag = elem->init_size;
-                    if (elem->genus == N_STR && elem->init_size > 8)
+                    if (elem->genus == N_STR && est_struct) {
+                        for (int mi = 0; mi < elem_t->num_membrorum; mi++) {
+                            if (elem_t->membra[mi].offset != elem->init_offset)
+                                continue;
+                            typus_t *mt = elem_t->membra[mi].typus;
+                            if (
+                                mt && mt->genus == TY_ARRAY && mt->basis
+                                && (
+                                    mt->basis->genus == TY_CHAR
+                                    || mt->basis->genus == TY_UCHAR
+                                )
+                            )
+                                est_char_array = 1;
+                            break;
+                        }
+                    } else if (elem->genus == N_STR && elem->init_size > 8) {
                         est_char_array = 1;
+                    }
                 } else if (singula_structura) {
                     elem_off  = data_off + j * folium_mag;
                     store_mag = folium_mag;
@@ -644,8 +660,44 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
             if (elem_off + store_mag > data_off + mag)
                 break;
             if (elem->genus == N_STR) {
-                int sid = gsym_chorda_adde(elem->chorda, elem->lon_chordae);
-                gsym_data_reloc_adde(elem_off, DR_CSTRING, sid);
+                int est_char_array = 0;
+                if (
+                    sl_t && sl_t->genus == TY_STRUCT
+                    && sl_t->membra && sl_t->num_membrorum > 0
+                ) {
+                    for (int mi = 0; mi < sl_t->num_membrorum; mi++) {
+                        if (sl_t->membra[mi].offset != elem->init_offset)
+                            continue;
+                        typus_t *mt = sl_t->membra[mi].typus;
+                        if (
+                            mt && mt->genus == TY_ARRAY && mt->basis
+                            && (
+                                mt->basis->genus == TY_CHAR
+                                || mt->basis->genus == TY_UCHAR
+                            )
+                        )
+                            est_char_array = 1;
+                        break;
+                    }
+                } else if (
+                    sl_t && sl_t->genus == TY_ARRAY && sl_t->basis
+                    && (
+                        sl_t->basis->genus == TY_CHAR
+                        || sl_t->basis->genus == TY_UCHAR
+                    )
+                ) {
+                    est_char_array = 1;
+                }
+                if (est_char_array) {
+                    int lon = elem->lon_chordae < store_mag
+                        ? elem->lon_chordae : store_mag;
+                    memcpy(gsym_init_data + elem_off, elem->chorda, lon);
+                    if (lon < store_mag)
+                        memset(gsym_init_data + elem_off + lon, 0, store_mag - lon);
+                } else {
+                    int sid = gsym_chorda_adde(elem->chorda, elem->lon_chordae);
+                    gsym_data_reloc_adde(elem_off, DR_CSTRING, sid);
+                }
             } else if (elem->genus == N_NUM) {
                 long v = elem->valor;
                 memcpy(gsym_init_data + elem_off, &v, store_mag);
