@@ -150,7 +150,7 @@ static int objc_msgsend_stub_adde(const char *sym_nomen)
     if (!dollar || !dollar[1])
         erratum("symbolum msgSend malformātum: '%s'", sym_nomen);
     const char  *sel = dollar + 1;
-    int sel_len = (int)strlen(sel);
+    int sel_len      = (int)strlen(sel);
 
     /* reservā 8 octetos in init_data prō cache SEL (initiātus ad 0) */
     if (init_data_lon + 8 > MAX_DATA)
@@ -268,7 +268,7 @@ static int objc_msgsend_stub_adde(const char *sym_nomen)
     /* registrā in tabulā */
     strncpy(objc_stubs[num_objc_stubs].nomen, sym_nomen, 259);
     objc_stubs[num_objc_stubs] .nomen[259] = '\0';
-    objc_stubs[num_objc_stubs] .stub_off = stub_off;
+    objc_stubs[num_objc_stubs] .stub_off   = stub_off;
     num_objc_stubs++;
 
     return stub_off;
@@ -286,8 +286,8 @@ void liga_objecta(int num_obj, const char **viae, const char *plica_exitus)
 
     /* relocationes dilatae */
     liga_reloc_t   *relocs = NULL;
-    int num_relocs = 0;
-    int cap_relocs = 0;
+    int num_relocs         = 0;
+    int cap_relocs         = 0;
 
     /* relocātiōnēs dātōrum dīlātae (ad symbola externa indefīnīta) */
     liga_data_reloc_t *data_relocs_dilatae = NULL;

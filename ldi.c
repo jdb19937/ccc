@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
             erratum("memoria exhausta");
         memcpy(defalta, plicae[0], lon - 2);
         defalta[lon  - 2] = '\0';
-        plica_exitus = defalta;
+        plica_exitus      = defalta;
     }
 
     /* adde .a plicae ad biblio_res ut extrahantur */

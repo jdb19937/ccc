@@ -157,8 +157,8 @@ static int ar_numerus(const uint8_t *p, int lon)
 char **biblio_extrahe_objecta(int *numerum)
 {
     char       **viae = NULL;
-    int    num = 0;
-    int    cap = 0;
+    int    num        = 0;
+    int    cap        = 0;
 
     for (int bi = 0; bi < num_biblio_res; bi++) {
         if (biblio_res[bi].genus != BIBLIO_A)

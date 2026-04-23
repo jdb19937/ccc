@@ -321,7 +321,7 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
                         int sub_idx = sj;
                         for (int mi = 0; mi < num_camp; mi++) {
                             typus_t *mt = elem_t->membra[mi].typus;
-                            int cnt = numera_elementa_init(mt);
+                            int cnt     = numera_elementa_init(mt);
                             int is_ch_arr = (
                                 mt->genus == TY_ARRAY && mt->basis
                                 && (
@@ -534,7 +534,7 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
 
     /* staticae locālēs cum initiālizātōribus */
     for (int si = 0; si < num_staticarum_localium; si++) {
-        nodus_t    *n    = staticae_locales[si];
+        nodus_t    *n = staticae_locales[si];
         symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
         if (!s || s->globalis_index < 0)
             continue;
@@ -659,6 +659,68 @@ void gsymdata_aedifica_initiationes(nodus_t *radix)
                 int flabel = gsym_func_loc_quaere(elem->nomen);
                 if (flabel >= 0)
                     gsym_data_reloc_adde(elem_off, DR_TEXT, flabel);
+                else
+                    erratum_ad(
+                        elem->linea,
+                        "initializator staticae localis: identifier '%s' non est functio",
+                        elem->nomen
+                    );
+            } else if (elem->genus == N_NUM_FLUAT) {
+                if (store_mag == 4) {
+                    float fv = (float)elem->valor_f;
+                    memcpy(gsym_init_data + elem_off, &fv, 4);
+                } else {
+                    double dv = elem->valor_f;
+                    memcpy(
+                        gsym_init_data + elem_off, &dv,
+                        store_mag > 8 ? 8 : store_mag
+                    );
+                }
+            } else if (
+                elem->genus == N_UNOP && elem->op == T_MINUS
+                && elem->sinister && elem->sinister->genus == N_NUM_FLUAT
+            ) {
+                if (store_mag == 4) {
+                    float fv = (float)-elem->sinister->valor_f;
+                    memcpy(gsym_init_data + elem_off, &fv, 4);
+                } else {
+                    double dv = -elem->sinister->valor_f;
+                    memcpy(
+                        gsym_init_data + elem_off, &dv,
+                        store_mag > 8 ? 8 : store_mag
+                    );
+                }
+            } else if (
+                (elem->typus && typus_est_fluat(elem->typus))
+                || gsymconst_continet_fluat(elem)
+            ) {
+                double dv = gsymconst_evalua_fluat(elem);
+                if (store_mag == 4) {
+                    float fv = (float)dv;
+                    memcpy(gsym_init_data + elem_off, &fv, 4);
+                } else {
+                    memcpy(
+                        gsym_init_data + elem_off, &dv,
+                        store_mag > 8 ? 8 : store_mag
+                    );
+                }
+            } else if (
+                elem->typus && (
+                    typus_est_integer(elem->typus)
+                    || elem->typus->genus == TY_PTR
+                )
+            ) {
+                long v = gsymconst_evalua_integer(elem);
+                memcpy(
+                    gsym_init_data + elem_off, &v,
+                    store_mag > 8 ? 8 : store_mag
+                );
+            } else {
+                erratum_ad(
+                    elem->linea,
+                    "staticae localis initializator elementi genus %d non tractatur",
+                    elem->genus
+                );
             }
         }
     }

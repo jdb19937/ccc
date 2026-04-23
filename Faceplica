@@ -7,33 +7,46 @@
 CC      ?= cc
 CFLAGS  ?= -Wall -Wextra -pedantic -std=c99 -O2
 
-CAPITA  = utilia.h emitte.h emittesym.h scribo.h generasym.h gsymconst.h generasym_intern.h parser.h parser_intern.h lexator.h liga.h biblio.h fluat.h typus.h func.h
+CAPITA  = utilia.h emitte.h emittesym.h scribo.h generasym.h gsymconst.h generasym_intern.h parser.h parser_intern.h lexator.h liga.h biblio.h typus.h
 
-ICCC_OBJECTA  = iccc.o
-CCC_OBJECTA = ccc.o utilia.o lexator.o parser.o parser_typi.o parser_expr.o parser_sent.o generasym.o gsymexpr.o gsymsent.o gsymconst.o gsymdata.o emittesym.o emitte.o biblio.o fluat.o typus.o func.o
-LDI_OBJECTA = ldi.o utilia.o liga.o emitte.o scribo.o biblio.o typus.o func.o fluat.o
-IMM_OBJECTA = imm.o utilia.o emitte.o scribo.o biblio.o fluat.o typus.o func.o
-OBJECTA     = iccc.o ccc.o ldi.o imm.o utilia.o lexator.o parser.o parser_typi.o parser_expr.o parser_sent.o generasym.o gsymexpr.o gsymsent.o gsymconst.o gsymdata.o emitte.o emittesym.o scribo.o liga.o biblio.o fluat.o typus.o func.o
+LIBCCC_OBJECTA = \
+    parser.o parser_typi.o parser_expr.o parser_sent.o lexator.o utilia.o typus.o
+LIBCCC_CAPITA = \
+    utilia.h parser.h parser_intern.h lexator.h typus.h
+LIBLXIV_OBJECTA = \
+    generasym.o gsymexpr.o gsymsent.o gsymconst.o gsymdata.o emittesym.o \
+    emitte.o biblio.o scribo.o liga.o
+LIBLXIV_CAPITA = \
+    generasym.h generasym_intern.h gsymconst.h emittesym.h \
+    emitte.h biblio.h scribo.h liga.h
+
+CAPITA = $(LIBCCC_CAPITA) $(LIBLXIV_CAPITA)
 
 omnia: ccc ldi iccc imm
 
 %.o: %.c $(CAPITA)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-iccc: $(ICCC_OBJECTA)
-	$(CC) $(CFLAGS) -o $@ $(ICCC_OBJECTA)
+libccc.a: $(LIBCCC_OBJECTA)
+	ar rcs $@ $^
+
+liblxiv.a: $(LIBLXIV_OBJECTA)
+	ar rcs $@ $^
+
+iccc: iccc.o
+	$(CC) $(CFLAGS) -o $@ $^
 	@echo "==> iccc aedificatum"
 
-ccc: $(CCC_OBJECTA)
-	$(CC) $(CFLAGS) -o $@ $(CCC_OBJECTA)
+ccc: ccc.o libccc.a liblxiv.a
+	$(CC) $(CFLAGS) -o $@ $^
 	@echo "==> ccc aedificatum"
 
-ldi: $(LDI_OBJECTA)
-	$(CC) $(CFLAGS) -o $@ $(LDI_OBJECTA)
+ldi: ldi.o libccc.a liblxiv.a
+	$(CC) $(CFLAGS) -o $@ $^
 	@echo "==> ldi aedificatum"
 
-imm: $(IMM_OBJECTA)
-	$(CC) $(CFLAGS) -o $@ $(IMM_OBJECTA)
+imm: imm.o libccc.a liblxiv.a
+	$(CC) $(CFLAGS) -o $@ $^
 	@echo "==> imm aedificatum"
 
 PREFIX = /opt/apotheca
@@ -46,13 +59,22 @@ colloca: omnia
 	install -m 755 imm $(PREFIX)/bin/
 	install -d $(PREFIX)/var/ccc/capita/sys
 	install -d $(PREFIX)/var/ccc/capita/objc
+	install -d $(PREFIX)/include/ccc/libccc
+	install -d $(PREFIX)/include/ccc/liblxiv
 	install -m 644 capita/capitum.h $(PREFIX)/var/ccc/capita/
+	install -m 644 $(LIBCCC_CAPITA) $(PREFIX)/include/ccc/libccc
+	install -m 644 $(LIBLXIV_CAPITA) $(PREFIX)/include/ccc/liblxiv
+	install -d $(PREFIX)/lib
+	install -m 644 libccc.a $(PREFIX)/lib
+	install -m 644 liblxiv.a $(PREFIX)/lib
 	for f in capita/*.h; do install -m 644 $$f $(PREFIX)/var/ccc/capita/; done
 	for f in capita/sys/*.h; do install -m 644 $$f $(PREFIX)/var/ccc/capita/sys/; done
 	for f in capita/objc/*.h; do install -m 644 $$f $(PREFIX)/var/ccc/capita/objc/; done
 
 purga:
-	rm -f $(OBJECTA) ccc ldi iccc imm
+	rm -f $(LIBCCC_OBJECTA) $(LIBLXIV_OBJECTA) ccc.o ldi.o iccc.o imm.o
+	rm -f ccc ldi iccc imm
+	rm -f libccc.a liblxiv.a
 	rm -f initia.fac reinitia.fac
 	rm -rf initia reinitia
 

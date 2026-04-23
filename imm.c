@@ -16,8 +16,7 @@
 #include "utilia.h"
 #include "emitte.h"
 #include "scribo.h"
-#include "func.h"
-#include "fluat.h"
+#include "typus.h"
 
 /* ================================================================
  * sectiones
@@ -47,7 +46,7 @@ typedef struct {
     int  definitum;     /* vera si label vel data definita */
 } sym_t;
 
-static sym_t *symbola = NULL;
+static sym_t *symbola     = NULL;
 static int num_symbolorum = 0;
 static int cap_symbolorum = 0;
 
@@ -480,7 +479,7 @@ static void parse_mem(mem_t *m)
         /* intus potest esse #imm, Xm, vel _sym@PAGEOFF */
         if (spectus() == '#') {
             m ->habet_imm = 1;
-            m ->imm = lege_imm();
+            m ->imm       = lege_imm();
         } else if (
             est_initium_nom(spectus())
             && !(
@@ -508,7 +507,7 @@ static void parse_mem(mem_t *m)
             int save = pos;
             (void)save;
             m ->habet_rm = 1;
-            m ->rm = parse_reg(&m->rm_w);
+            m ->rm       = parse_reg(&m->rm_w);
             if (matcha(',')) {
                 /* shift vel extend */
                 char ext[16];
@@ -540,7 +539,7 @@ static void parse_mem(mem_t *m)
         saltus_spatii();
         if (spectus() == '#') {
             m ->habet_imm = 1;
-            m ->imm = lege_imm();
+            m ->imm       = lege_imm();
         } else
             erratum_ad(linea_num, "post-index exspectat valorem immediatum");
     }
@@ -638,7 +637,7 @@ static void pass1(void)
             symbola[si] .definitum = 1;
             if (sect == SEC_TEXT) {
                 if (nom[0] == '_') {
-                    symbola[si] .genus = SYM_FUNC;
+                    symbola[si] .genus        = SYM_FUNC;
                     symbola[si] .est_globalis = ultimus_globl_def;
                 } else {
                     symbola[si].genus = SYM_TXT_LAB;
@@ -810,7 +809,7 @@ static int glob_sym_ensure(int si)
         return symbola[si].id;
     if (num_globalium >= MAX_GLOBALES)
         erratum("nimis multae globales");
-    int gi     = num_globalium++;
+    int gi         = num_globalium++;
     const char *nm = symbola[si].nomen;
     const char *nn = (nm[0] == '_') ? nm + 1 : nm;
     strncpy(globales[gi].nomen, nn, 255);
@@ -834,7 +833,7 @@ static int sym_got_id(int si)
     if (s->genus == SYM_IGNOTUS) {
         /* non definitum hic → externum */
         s ->genus = SYM_EXT;
-        s ->id = got_adde(s->nomen);
+        s ->id    = got_adde(s->nomen);
         return s->id;
     }
     if (s->genus == SYM_EXT)
@@ -1353,9 +1352,9 @@ static void dir_quad(void)
         } else if (s->genus == SYM_IGNOTUS) {
             /* symbolum externum (functio vel globalis in alia .o):
              * emitte relocationem externam per GOT */
-            int gid = got_adde(s->nomen);
+            int gid         = got_adde(s->nomen);
             s       ->genus = SYM_EXT;
-            s       ->id = gid;
+            s       ->id    = gid;
             data_reloc_adde(data_off, DR_EXT_FUNC, gid);
         } else if (s->genus == SYM_EXT) {
             data_reloc_adde(data_off, DR_EXT_FUNC, s->id);
@@ -1467,7 +1466,7 @@ static void pone_labelum(const char *nom)
     } else if (sectio_currens == SEC_CSTRING) {
         /* id assignabitur cum .asciz sequitur */
         symbola[si]      .genus = SYM_CHORDA;
-        ultimum_data_sym = si;
+        ultimum_data_sym        = si;
     } else {
         /* data/const/bss — globalis. Sī iam placeholder creātum per
          * glob_sym_ensure, updā data_offset et colineationem nunc. */
@@ -1602,7 +1601,7 @@ static void ins_add_sub_generic(int est_sub, int est_s)
             erratum_ad(linea_num, "sub/adds/subs cum @%s invalidum", rel);
         if (strcmp(rel, "PAGEOFF") != 0)
             erratum_ad(linea_num, "add @%s non supportatum", rel);
-        int si = sym_quaere_vel_crea(sn);
+        int si    = sym_quaere_vel_crea(sn);
         sym_t  *s = &symbola[si];
         if (s->genus == SYM_CHORDA) {
             fixup_adde(FIX_ADD_LO12, codex_lon, s->id, 0);
@@ -2054,7 +2053,7 @@ static void ins_b(int est_bl)
 {
     char nom[256];
     lege_nom(nom, 256);
-    int si = sym_quaere_vel_crea(nom);
+    int si    = sym_quaere_vel_crea(nom);
     sym_t  *s = &symbola[si];
     if (s->genus == SYM_TXT_LAB) {
         if (s->id < 0)
@@ -2079,13 +2078,13 @@ static void ins_b(int est_bl)
         if (est_bl) {
             /* ad externum — emit FIX_BL_EXT */
             s ->genus = SYM_EXT;
-            s ->id = got_adde(nom);
+            s ->id    = got_adde(nom);
             fixup_adde(FIX_BL_EXT, codex_lon, s->id, 0);
             emit32(0x94000000);
         } else {
             /* b ad ignotum: adsumimus labelem futurum */
             s ->genus = SYM_TXT_LAB;
-            s ->id = label_novus();
+            s ->id    = label_novus();
             emit_b_label(s->id);
         }
     } else if (s->genus == SYM_EXT) {
@@ -2102,7 +2101,7 @@ static void ins_bcond(int cond)
 {
     char nom[256];
     lege_nom(nom, 256);
-    int si = sym_quaere_vel_crea(nom);
+    int si    = sym_quaere_vel_crea(nom);
     sym_t  *s = &symbola[si];
     if (s->genus == SYM_TXT_LAB || s->genus == SYM_IGNOTUS) {
         if (s->id < 0)
@@ -2120,7 +2119,7 @@ static void ins_cbz_cbnz(int est_cbnz)
     exige(',');
     char nom[256];
     lege_nom(nom, 256);
-    int si = sym_quaere_vel_crea(nom);
+    int si    = sym_quaere_vel_crea(nom);
     sym_t  *s = &symbola[si];
     if (s->id < 0)
         s->id = label_novus();
@@ -2145,7 +2144,7 @@ static void ins_tbz_tbnz(int est_tbnz)
     exige(',');
     char nom[256];
     lege_nom(nom, 256);
-    int si = sym_quaere_vel_crea(nom);
+    int si    = sym_quaere_vel_crea(nom);
     sym_t  *s = &symbola[si];
     if (s->id < 0)
         s->id = label_novus();
@@ -2185,7 +2184,7 @@ static void ins_adrp(void)
     exige(',');
     char sn[256], rel[32];
     lege_sym_cum_rel(sn, 256, rel, 32);
-    int si = sym_quaere_vel_crea(sn);
+    int si    = sym_quaere_vel_crea(sn);
     sym_t  *s = &symbola[si];
     if (!strcmp(rel, "PAGE")) {
         if (s->genus == SYM_CHORDA) {
@@ -2225,7 +2224,7 @@ static void ins_adr(void)
     lege_sym_cum_rel(sn, 256, rel, 32);
     if (rel[0])
         erratum_ad(linea_num, "adr cum @%s non supportatur", rel);
-    int si = sym_quaere_vel_crea(sn);
+    int si    = sym_quaere_vel_crea(sn);
     sym_t  *s = &symbola[si];
     if (s->genus != SYM_TXT_LAB && s->genus != SYM_IGNOTUS)
         erratum_ad(linea_num, "adr: symbolum '%s' non label", sn);
@@ -2267,7 +2266,7 @@ static void enc_ldr_str_mem(
             return;
         }
         if (!strcmp(m->rel, "PAGEOFF")) {
-            int si = sym_quaere_vel_crea(m->rel_sym);
+            int si    = sym_quaere_vel_crea(m->rel_sym);
             sym_t  *s = &symbola[si];
             if (s->genus == SYM_GLOB || s->genus == SYM_IGNOTUS) {
                 int gid = glob_sym_ensure(si);
@@ -3363,7 +3362,7 @@ static void processa_lineam(void)
             if (symbola[si].genus == SYM_IGNOTUS) {
                 if (num_globalium >= MAX_GLOBALES)
                     erratum("nimis multae globales");
-                int gi     = num_globalium++;
+                int gi         = num_globalium++;
                 const char *nn = (sn[0] == '_') ? sn + 1 : sn;
                 strncpy(globales[gi].nomen, nn, 255);
                 globales[gi] .typus = NULL;
@@ -3402,7 +3401,7 @@ static void processa_lineam(void)
             int si = sym_quaere_vel_crea(sn);
             if (num_globalium >= MAX_GLOBALES)
                 erratum("nimis globales");
-            int gi     = num_globalium++;
+            int gi         = num_globalium++;
             const char *nn = (sn[0] == '_') ? sn + 1 : sn;
             strncpy(globales[gi].nomen, nn, 255);
             globales[gi] .magnitudo = (int)sz;
@@ -3483,8 +3482,8 @@ int main(int argc, char *argv[])
             erratum("nomen plicae nimis longum");
         memcpy(out_buf, plica_in, lin);
         out_buf[lin  -1] = 'o';
-        out_buf[lin] = 0;
-        plica_out    = out_buf;
+        out_buf[lin]     = 0;
+        plica_out        = out_buf;
     }
     plica_currentis = plica_in;
 

@@ -253,7 +253,7 @@ static int lege_effugium(void)
  * ================================================================ */
 
 static signum_t sig_spectans;
-static int      habet_spectantem = 0;
+static int      habet_spectantem  = 0;
 static const char *plica_spectans = NULL;
 
 /* ================================================================
@@ -264,8 +264,8 @@ static int lege_signum_internum(void)
 {
 inicio:
     praetermitte_spatia();
-    sig.linea = cur_linea;
-    sig_linea = cur_linea;
+    sig.linea       = cur_linea;
+    sig_linea       = cur_linea;
     plica_currentis = cur_nomen;
 
     int c = lege_c();
@@ -324,7 +324,7 @@ inicio:
         }
         /* §6.4.4.2: punctum decimale → constans fluitans */
         if (c == '.') {
-            est_fluitans    = 1;
+            est_fluitans        = 1;
             num_buf[num_len ++] = '.';
             while ((c = lege_c()) != -1 && c >= '0' && c <= '9')
                 num_buf[num_len++] = (char)c;
@@ -344,9 +344,15 @@ inicio:
             }
         }
         /* suffixum — §6.4.4.1, §6.4.4.2 */
+        sig .num_sfx_f = 0;
         if (est_fluitans) {
-            if (c == 'f' || c == 'F' || c == 'l' || c == 'L')
+            if (c == 'f' || c == 'F') {
+                sig.num_sfx_f = 1;
                 c = lege_c();
+            } else if (c == 'l' || c == 'L') {
+                sig.num_sfx_f = 2;
+                c = lege_c();
+            }
         } else {
             sig .num_sfx_u = 0;
             sig .num_sfx_l = 0;
@@ -354,12 +360,16 @@ inicio:
                 c == 'u' || c == 'U' || c == 'l' || c == 'L' ||
                 c == 'f' || c == 'F'
             ) {
-                if (c == 'f' || c == 'F')
-                    est_fluitans = 1;
-                else if (c == 'u' || c == 'U')
+                if (c == 'f' || c == 'F') {
+                    est_fluitans  = 1;
+                    sig.num_sfx_f = 1;
+                } else if (c == 'u' || c == 'U')
                     sig.num_sfx_u = 1;
-                else
+                else {
                     sig.num_sfx_l++;
+                    if (est_fluitans)
+                        sig.num_sfx_f = 2;  /* L/l post fluitans → long double */
+                }
                 c = lege_c();
             }
         }
@@ -369,7 +379,12 @@ inicio:
         if (est_fluitans) {
             num_buf[num_len] = '\0';
             sig.genus        = T_NUM_FLUAT;
-            sig.valor_f      = strtod(num_buf, NULL);
+            /* §6.4.4.2: si suffixum 'f'/'F' adest, valor ad float rotundatur. */
+            double dv        = strtod(num_buf, NULL);
+            if (sig.num_sfx_f == 1)
+                sig.valor_f = (double)(float)dv;
+            else
+                sig.valor_f = dv;
             sig.valor        = 0;
             return T_NUM_FLUAT;
         }

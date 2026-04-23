@@ -8,7 +8,6 @@
 #include "utilia.h"
 #include "emitte.h"
 #include "scribo.h"
-#include "func.h"
 #include "biblio.h"
 
 #include <errno.h>
@@ -126,7 +125,7 @@ void scribo_macho(const char *plica_exitus, int main_offset)
             erratum("memoria exhausta");
         for (int i = 0; i < num_dylib_add; i++) {
             const char      *via = biblio_dylib_via(i);
-            lc_dylib_add[i] = (int)allinea(24 + strlen(via) + 1, 8);
+            lc_dylib_add[i]      = (int)allinea(24 + strlen(via) + 1, 8);
         }
     }
 
@@ -428,7 +427,7 @@ void scribo_macho(const char *plica_exitus, int main_offset)
 
     /* strtab */
     uint8_t strtab[65536];
-    int strtab_lon    = 0;
+    int strtab_lon        = 0;
     strtab[strtab_lon ++] = ' ';  /* index 0: empty/space */
     strtab[strtab_lon ++] = '\0';
 
@@ -449,8 +448,8 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     /* extdefs: _main */
     int iextdefsym = nsyms;
     {
-        nlist64_t *nl = &symtab_entries[nsyms++];
-        nl        ->n_strx    = strtab_lon;
+        nlist64_t *nl      = &symtab_entries[nsyms++];
+        nl        ->n_strx = strtab_lon;
         memcpy(&strtab[strtab_lon], "_main", 6);
         strtab_lon += 6;
         nl ->n_type  = N_SECT | N_EXT;
@@ -784,7 +783,7 @@ void scribo_macho(const char *plica_exitus, int main_offset)
     /* --- LC_LOAD_DYLIB additionles (-l) --- */
     for (int i = 0; i < num_dylib_add; i++) {
         const char  *via = biblio_dylib_via(i);
-        int via_lon = (int)strlen(via) + 1;
+        int via_lon      = (int)strlen(via) + 1;
         scribe32(fp, LC_LOAD_DYLIB);
         scribe32(fp, lc_dylib_add[i]);
         scribe32(fp, 24);               /* name offset */
@@ -982,7 +981,7 @@ void scribo_obiectum(const char *plica_exitus)
     /* functiones non-staticae definitae → extdef symbola */
     for (int i = 0; i < num_got; i++) {
         const char *gn = got[i].nomen;
-        int fl     = func_loc_quaere(gn[0] == '_' ? gn + 1 : gn);
+        int fl         = func_loc_quaere(gn[0] == '_' ? gn + 1 : gn);
         if (fl >= 0) {
             int iam = 0;
             for (int j = 0; j < nsyms; j++)
@@ -1062,7 +1061,7 @@ void scribo_obiectum(const char *plica_exitus)
     int got_ad_sym[MAX_GOT];
     for (int i = 0; i < num_got; i++) {
         const char *gn = got[i].nomen;
-        int fl     = func_loc_quaere(gn[0] == '_' ? gn + 1 : gn);
+        int fl         = func_loc_quaere(gn[0] == '_' ? gn + 1 : gn);
         if (fl >= 0) {
             /* iam definitum — quaere indicem */
             for (int j = 0; j < i_undef; j++)

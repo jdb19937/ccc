@@ -281,4 +281,74 @@ void fixup_adde(int genus, int offset, int target, int mag);
 int  chorda_adde(const char *data, int lon);
 int  got_adde(const char *nomen);
 
+/* ================================================================
+ * emissio instructionum ARM64 pro typis fluitantibus
+ *
+ * ARM64 SIMD/FP registra: d0–d31 (64-bit double),
+ *                          s0–s31 (32-bit float, infima pars dn).
+ *
+ * Annex F §F.3: +, -, *, / praebent operationes IEC 60559.
+ * ================================================================ */
+
+/* FMOV Sd, Wn — transfer 32-bit integrum ad FP singulare */
+void emit_fmov_sw(int sd, int wn);
+
+/* FMOV Wn, Sd — transfer FP singulare ad 32-bit integrum */
+void emit_fmov_ws(int wd, int sn);
+
+/* FADD Sd, Sn, Sm — additio singularis */
+void emit_fadds(int fd, int fn, int fm);
+
+/* FSUB Sd, Sn, Sm — subtractio singularis */
+void emit_fsubs(int fd, int fn, int fm);
+
+/* FMUL Sd, Sn, Sm — multiplicatio singularis */
+void emit_fmuls(int fd, int fn, int fm);
+
+/* FDIV Sd, Sn, Sm — divisio singularis */
+void emit_fdivs(int fd, int fn, int fm);
+
+/* FNEG Sd, Sn — negatio singularis */
+void emit_fnegs(int fd, int fn);
+
+/* FCMP Sn, Sm — comparatio singularis */
+void emit_fcmps(int fn, int fm);
+
+/* LDR Dt, [Xn, #imm] — carrica 64-bit duplum ex memoria */
+void emit_fldr64(int ft, int xn, int imm);
+
+/* STR Dt, [Xn, #imm] — salva 64-bit duplum in memoriam */
+void emit_fstr64(int ft, int xn, int imm);
+
+/* LDR St, [Xn, #imm] — carrica 32-bit singulare ex memoria */
+void emit_fldr32(int ft, int xn, int imm);
+
+/* STR St, [Xn, #imm] — salva 32-bit singulare in memoriam */
+void emit_fstr32(int ft, int xn, int imm);
+
+/* §6.3.1.5¶1: FCVT Dd, Sn — promove float ad double */
+void emit_fcvt_ds(int dd, int sn);
+
+/* §6.3.1.5¶2: FCVT Sd, Dn — demove double ad float */
+void emit_fcvt_sd(int sd, int dn);
+
+/* §6.3.1.4¶1: FCVTZS Wd, Sn — converte singulare ad 32-bit integrum signatum */
+void emit_fcvtzs_wd(int wd, int sn);
+
+/* §6.3.1.4¶2: SCVTF Sd, Wn — converte 32-bit integrum signatum ad singulare */
+void emit_scvtf_sw(int sd, int wn);
+
+
+typedef struct {
+    char nomen[256];
+    int label;
+    int est_staticus;
+} func_loc_t;
+
+extern func_loc_t *func_loci;
+extern int num_func_loc;
+
+int  func_loc_quaere(const char *nomen);
+int  func_loc_adde(const char *nomen, int est_staticus);
+
 #endif /* EMITTE_H */

@@ -58,6 +58,9 @@ typedef struct {
     /* §6.4.4.1: suffixa constantis integrae */
     int num_sfx_u;          /* U/u praesens */
     int num_sfx_l;          /* numerus l/L suffixōrum (0, 1, 2) */
+    /* §6.4.4.2: suffixum constantis fluitantis
+     *   0 = nullum (double); 1 = f/F (float); 2 = l/L (long double) */
+    int num_sfx_f;
 } signum_t;
 
 /* ================================================================

@@ -579,6 +579,11 @@ int feraiseexcept(int);
 
 /* float — limites IEEE 754 binary32/binary64 */
 #define FLT_RADIX       2
+#define FLT_ROUNDS      (fegetround() == FE_TONEAREST  ? 1 : \
+                         fegetround() == FE_TOWARDZERO ? 0 : \
+                         fegetround() == FE_UPWARD     ? 2 : \
+                         fegetround() == FE_DOWNWARD   ? 3 : -1)
+#define FLT_EVAL_METHOD 0
 #define FLT_MANT_DIG    24
 #define FLT_DIG         6
 #define FLT_MIN_EXP     (-125)

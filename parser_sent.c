@@ -8,7 +8,7 @@
 #include "utilia.h"
 #include "parser.h"
 #include "parser_intern.h"
-#include "fluat.h"
+#include "typus.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -48,8 +48,8 @@ nodus_t *parse_sententia(void)
 
     case T_DO: {
             lex_proximum();
-            nodus_t *n = nodus_novus(N_DOWHILE);
-            n       ->dexter  = parse_sententia();
+            nodus_t *n       = nodus_novus(N_DOWHILE);
+            n       ->dexter = parse_sententia();
             expecta(T_WHILE);
             expecta(T_LPAREN);
             n->sinister = parse_expr();
@@ -187,8 +187,8 @@ nodus_t *parse_sententia(void)
 
     case T_GOTO: {
             lex_proximum();
-            nodus_t *n = nodus_novus(N_GOTO);
-            n       ->nomen   = strdup(sig.chorda);
+            nodus_t *n      = nodus_novus(N_GOTO);
+            n       ->nomen = strdup(sig.chorda);
             lex_proximum(); /* consume nomen */
             expecta(T_SEMICOLON);
             return n;
@@ -205,8 +205,8 @@ nodus_t *parse_sententia(void)
         }
         /* label: sententia (goto label) */
         if (sig.genus == T_IDENT && lex_specta() == T_COLON) {
-            nodus_t *n = nodus_novus(N_LABEL);
-            n       ->nomen   = strdup(sig.chorda);
+            nodus_t *n      = nodus_novus(N_LABEL);
+            n       ->nomen = strdup(sig.chorda);
             lex_proximum(); /* consume nomen */
             lex_proximum(); /* consume : */
             /* sententia post label */
@@ -214,7 +214,7 @@ nodus_t *parse_sententia(void)
             return n;
         }
         {
-            nodus_t *n  = nodus_novus(N_EXPR_STMT);
+            nodus_t *n         = nodus_novus(N_EXPR_STMT);
             n       ->sinister = parse_expr();
             expecta(T_SEMICOLON);
             return n;
@@ -228,9 +228,9 @@ nodus_t *parse_blocum(void)
     expecta(T_LBRACE);
     ambitus_intra();
 
-    int cap = 1024;
+    int cap        = 1024;
     nodus_t **sent = calloc(cap, sizeof(nodus_t *));
-    int num = 0;
+    int num        = 0;
 
     while (sig.genus != T_RBRACE && sig.genus != T_EOF) {
         nodus_t *s = parse_sententia();
@@ -245,8 +245,8 @@ nodus_t *parse_blocum(void)
     expecta(T_RBRACE);
     ambitus_exi();
 
-    nodus_t *b = nodus_novus(N_BLOCK);
-    b       ->membra  = calloc(num, sizeof(nodus_t *));
+    nodus_t *b       = nodus_novus(N_BLOCK);
+    b       ->membra = calloc(num, sizeof(nodus_t *));
     memcpy(b->membra, sent, num * sizeof(nodus_t *));
     b->num_membrorum = num;
     return b;
@@ -277,7 +277,7 @@ int parse_init_elementa(
             if (sig.genus == T_LBRACKET) {
                 lex_proximum();
                 nodus_t  *ie = parse_expr_conditio();
-                long idx = evalua_constans(ie);
+                long idx     = evalua_constans(ie);
                 expecta(T_RBRACKET);
                 if (!sub_t || sub_t->genus != TY_ARRAY)
                     erratum_ad(
@@ -369,24 +369,17 @@ int parse_init_elementa(
             )
                 e->init_size = typus_magnitudo(elem_t);
             else if (elem_t) {
-                typus_t *fol = elem_t;
-                while (
-                    fol && (
-                        fol->genus == TY_ARRAY
-                        || fol->genus == TY_STRUCT
-                    )
-                ) {
-                    if (fol->genus == TY_ARRAY && fol->basis)
+                /* §6.7.8: initializer non-braced pro struct-typo est
+                 * expressio structi integri — magnitudo tota, non folii.
+                 * Aliter (scalaris in tabula) descende ad folium. */
+                if (elem_t->genus == TY_STRUCT) {
+                    e->init_size = typus_magnitudo(elem_t);
+                } else {
+                    typus_t *fol = elem_t;
+                    while (fol && fol->genus == TY_ARRAY && fol->basis)
                         fol = fol->basis;
-                    else if (
-                        fol->genus == TY_STRUCT && fol->membra
-                        && fol->num_membrorum > 0
-                    )
-                        fol = fol->membra[0].typus;
-                    else
-                        break;
+                    e->init_size = typus_magnitudo(fol);
                 }
-                e->init_size = typus_magnitudo(fol);
                 if (e->init_size < 1)
                     e->init_size = 8;
             } else {
@@ -410,7 +403,7 @@ int parse_init_elementa(
 
 nodus_t *parse_declaratio(int est_globalis)
 {
-    int s_stat = 0, s_ext = 0, s_td = 0;
+    int s_stat     = 0, s_ext = 0, s_td = 0;
     typus_t    *tb = parse_specifiers(&s_stat, &s_ext, &s_td);
 
     /* typedef */
@@ -445,8 +438,8 @@ nodus_t *parse_declaratio(int est_globalis)
         if (sig.genus == T_LPAREN && est_globalis) {
             ambitus_intra();
             symbolum_t  **psyms = NULL;
-            int nparams = 0;
-            typus_t     *tf        = parse_parametros(td, &psyms, &nparams);
+            int nparams         = 0;
+            typus_t     *tf     = parse_parametros(td, &psyms, &nparams);
 
             symbolum_t *fs = ambitus_quaere(nomen, SYM_FUNC);
             if (!fs) {
@@ -554,8 +547,8 @@ nodus_t *parse_declaratio(int est_globalis)
         /* declaratio functionis (protypus) */
         if (sig.genus == T_LPAREN) {
             symbolum_t  **psyms = NULL;
-            int nparams = 0;
-            typus_t     *tf        = parse_parametros(td, &psyms, &nparams);
+            int nparams         = 0;
+            typus_t     *tf     = parse_parametros(td, &psyms, &nparams);
             free(psyms);
 
             symbolum_t *fs   = ambitus_adde(nomen, SYM_FUNC);
@@ -645,8 +638,8 @@ nodus_t *parse_declaratio(int est_globalis)
                     int basis_mag = typus_magnitudo(td->basis);
                     if (basis_mag > 0 && td->basis->genus == TY_ARRAY) {
                         /* 2D: int[][3] — dividi elementa plana per inner */
-                        int folium_mag = basis_mag;
-                        typus_t        *f     = td->basis;
+                        int folium_mag    = basis_mag;
+                        typus_t        *f = td->basis;
                         while (f && f->genus == TY_ARRAY)
                             f = f->basis;
                         if (f)

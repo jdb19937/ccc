@@ -4,7 +4,7 @@
 
 #include "emittesym.h"
 #include "utilia.h"
-#include "fluat.h"
+#include "typus.h"
 
 #include <stdarg.h>
 #include <string.h>
@@ -37,7 +37,7 @@ static int  reg_buf_idx = 0;
 static char *reg_buf(void)
 {
     char        *b = reg_bufs[reg_buf_idx];
-    reg_buf_idx = (reg_buf_idx + 1) & 7;
+    reg_buf_idx    = (reg_buf_idx + 1) & 7;
     return b;
 }
 static const char *xn(int r)
@@ -523,6 +523,30 @@ void esym_store(int rt, int rn, int offset, int mag)
     }
 }
 
+/* esym_memcpy_bytes: copia mag bytes ex [rsrc+src_off] ad [rdst+dst_off]
+ * per chunks 8/4/1. Utitur r_tmp ut registro temporalis. */
+void esym_memcpy_bytes(
+    int rdst, int dst_off, int rsrc, int src_off,
+    int mag, int r_tmp
+) {
+    int k = 0;
+    while (k + 8 <= mag) {
+        esym_ldr64(r_tmp, rsrc, src_off + k);
+        esym_str64(r_tmp, rdst, dst_off + k);
+        k += 8;
+    }
+    while (k + 4 <= mag) {
+        esym_ldr32(r_tmp, rsrc, src_off + k);
+        esym_str32(r_tmp, rdst, dst_off + k);
+        k += 4;
+    }
+    while (k < mag) {
+        esym_ldrb(r_tmp, rsrc, src_off + k);
+        esym_strb(r_tmp, rdst, dst_off + k);
+        k++;
+    }
+}
+
 void esym_load(int rd, int rn, int offset, int mag)
 {
     switch (mag) {
@@ -628,8 +652,8 @@ void esym_fmov_dd(int rd, int rn)      { L("fmov\t%s, %s", dn(rd), dn(rn)); }
  * Signed vs unsigned per est_sine_signo. Integer ante in r sub typū src. */
 void esym_int_to_double(int r, typus_t *src)
 {
-    int mag    = typus_magnitudo(src);
-    int sgn    = !src->est_sine_signo;
+    int mag        = typus_magnitudo(src);
+    int sgn        = !src->est_sine_signo;
     const char *op = sgn ? "scvtf" : "ucvtf";
     if (mag == 8)
         L("%s\t%s, %s", op, dn(r), xn(r));

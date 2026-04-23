@@ -15,7 +15,7 @@ import tempfile
 CCC = os.environ.get("CCC", "./ccc")
 LDI = os.environ.get("LDI", "./ldi")
 CC  = os.environ.get("CC", "cc")
-DIR = sys.argv[1] if len(sys.argv) > 1 else "../corpus/casus"
+DIRS = sys.argv[1:] if len(sys.argv) > 1 else ["../corpus/casus"]
 TIMEOUT = 5
 
 # quattuor modi compilandi et coniungendi
@@ -74,18 +74,21 @@ def color_run(v):
     return f"{R}{v:>7}{Z}"
 
 def main():
-    programmae = []  # [(nomen, [fontes...])]
-    for entry in sorted(os.listdir(DIR)):
-        prog_dir = os.path.join(DIR, entry)
-        if not os.path.isdir(prog_dir):
-            continue
-        fontes = sorted(glob.glob(os.path.join(prog_dir, "*.c")))
-        if not fontes:
-            continue
-        programmae.append((entry, fontes))
+    programmae = []  # [(label, [fontes...])]
+    multi = len(DIRS) > 1
+    for d in DIRS:
+        for entry in sorted(os.listdir(d)):
+            prog_dir = os.path.join(d, entry)
+            if not os.path.isdir(prog_dir):
+                continue
+            fontes = sorted(glob.glob(os.path.join(prog_dir, "*.c")))
+            if not fontes:
+                continue
+            label = f"{os.path.basename(os.path.normpath(d))}/{entry}" if multi else entry
+            programmae.append((label, fontes))
 
     if not programmae:
-        print(f"nullus casus in {DIR}/")
+        print(f"nullus casus in {', '.join(DIRS)}")
         return
 
     with tempfile.TemporaryDirectory() as tmp:
@@ -95,18 +98,20 @@ def main():
 
         # capita
         nomina = [m[0] for m in MODI]
-        print(f"{'':16s}   -------- compilātiō ---------    ----------- cursus ----------")
-        print(f"{'CASUS':16s}", end="")
+        wlab = max(16, max(len(p[0]) for p in programmae))
+        print(f"{'':{wlab}s}   -------- compilātiō ---------    ----------- cursus ----------")
+        print(f"{'CASUS':{wlab}s}", end="")
         for n in nomina: print(f" {n:>7}", end="")
         print(" ", end="")
         for n in nomina: print(f" {n:>7}", end="")
         print()
 
-        for nomen, fontes_orig in programmae:
+        for idx_p, (nomen, fontes_orig) in enumerate(programmae):
             tot += 1
+            safe = nomen.replace("/", "__")
 
             # copia programmatis directorium in tmp ne quid scribatur in fonte
-            prog_tmp = os.path.join(tmp, f"src_{nomen}")
+            prog_tmp = os.path.join(tmp, f"src_{idx_p}_{safe}")
             shutil.copytree(os.path.dirname(fontes_orig[0]), prog_tmp)
             fontes = sorted(glob.glob(os.path.join(prog_tmp, "*.c")))
 
@@ -116,8 +121,8 @@ def main():
 
             # compila singulos modos
             for i, (mn, comp, cf, coni, lf) in enumerate(MODI):
-                out = os.path.join(tmp, f"{nomen}_{i}.out")
-                r, bin_ = compila_et_coniunge(comp, cf, coni, lf, fontes, tmp, nomen, i)
+                out = os.path.join(tmp, f"{safe}_{i}.out")
+                r, bin_ = compila_et_coniunge(comp, cf, coni, lf, fontes, tmp, safe, i)
                 comp_res.append(r)
                 bins.append(bin_)
                 outs.append(out)
@@ -154,9 +159,9 @@ def main():
             has_bad = has_bad or ref_run not in ("-", "0")
 
             if has_bad:
-                print(f"{Y}{nomen:16s}{Z}", end="")
+                print(f"{Y}{nomen:{wlab}s}{Z}", end="")
             else:
-                print(f"{nomen:16s}", end="")
+                print(f"{nomen:{wlab}s}", end="")
 
             for v in comp_res: print(f" {color_comp(v)}", end="")
             print(" ", end="")

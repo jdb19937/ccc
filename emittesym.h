@@ -18,7 +18,6 @@
 #include <stdint.h>
 
 #include "typus.h"
-#include "emitte.h"  /* pro constantibus SP, FP, LR, XZR */
 
 /* ================================================================
  * initia et finis
@@ -128,6 +127,10 @@ void esym_str32(int rt, int rn, int imm);
 void esym_strh(int rt, int rn, int imm);
 void esym_strb(int rt, int rn, int imm);
 void esym_store(int rt, int rn, int offset, int mag);
+void esym_memcpy_bytes(
+    int rdst, int dst_off, int rsrc, int src_off,
+    int mag, int r_tmp
+);
 void esym_load(int rd, int rn, int offset, int mag);
 void esym_load_unsigned(int rd, int rn, int offset, int mag);
 

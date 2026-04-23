@@ -78,4 +78,14 @@ double fmodl(double, double);
 #define INFINITY  (1.0f/0.0f)
 #define NAN       (0.0f/0.0f)
 
+/* signbit: implementatio inline per copysignf/copysign (evitat
+ * compilatoris-specifica __builtin_signbit*). */
+#define signbit(x) \
+    (sizeof (x) == sizeof (float)  ? (copysignf(1.0f, (float)(x))  < 0.0f) \
+    : (copysign(1.0, (double)(x)) < 0.0))
+
+double copysign(double x, double y);
+long double copysignl(long double x, long double y);
+float copysignf(float x, float y);
+
 #endif

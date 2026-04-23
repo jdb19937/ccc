@@ -6,9 +6,9 @@
  */
 
 #include "utilia.h"
+#include "typus.h"
 #include "parser.h"
 #include "parser_intern.h"
-#include "fluat.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -35,7 +35,7 @@ ambitus_t *cur_ambitus = NULL;
 nodus_t *nodus_novus(int genus)
 {
     if (nodi_vertex >= nodi_cap) {
-        int nova_cap = nodi_cap ? nodi_cap * 2 : 1024;
+        int nova_cap         = nodi_cap ? nodi_cap * 2 : 1024;
         nodus_t      **novus = realloc(nodi_area, nova_cap * sizeof(nodus_t *));
         if (!novus)
             erratum("memoria exhausta");
@@ -60,7 +60,7 @@ nodus_t *nodus_novus(int genus)
 void ambitus_intra(void)
 {
     if (ambitus_vertex >= ambitus_cap) {
-        int nova_cap = ambitus_cap ? ambitus_cap * 2 : 64;
+        int nova_cap         = ambitus_cap ? ambitus_cap * 2 : 64;
         ambitus_t    **novus = realloc(ambitus_area, nova_cap * sizeof(ambitus_t *));
         if (!novus)
             erratum("memoria exhausta");
@@ -106,7 +106,7 @@ symbolum_t *ambitus_quaere_omnes(const char *nomen)
 symbolum_t *ambitus_adde(const char *nomen, int genus)
 {
     if (symbola_vertex >= symbola_cap) {
-        int nova_cap = symbola_cap ? symbola_cap * 2 : 256;
+        int nova_cap         = symbola_cap ? symbola_cap * 2 : 256;
         symbolum_t   **novus = realloc(symbola_area, nova_cap * sizeof(symbolum_t *));
         if (!novus)
             erratum("memoria exhausta");
@@ -195,7 +195,6 @@ void parse_initia(void)
     cur_ambitus    = NULL;
 
     typus_initia();
-    fluat_initia();  /* §6.2.5¶10: ty_float, ty_double */
     ambitus_intra(); /* ambitus globalis */
 
     /* lege primum signum */
@@ -219,8 +218,8 @@ nodus_t *parse_translatio(void)
         }
     }
 
-    nodus_t *radix = nodus_novus(N_BLOCK);
-    radix   ->membra  = calloc(ndecl, sizeof(nodus_t *));
+    nodus_t *radix   = nodus_novus(N_BLOCK);
+    radix   ->membra = calloc(ndecl, sizeof(nodus_t *));
     memcpy(radix->membra, decls, ndecl * sizeof(nodus_t *));
     radix->num_membrorum = ndecl;
     return radix;

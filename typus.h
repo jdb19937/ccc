@@ -100,4 +100,27 @@ extern typus_t *ty_uint;
 extern typus_t *ty_long;
 extern typus_t *ty_ulong;
 
+/* ================================================================
+ * typi praefiniti — float et double
+ *
+ * §6.2.5¶10: float ⊂ double ⊂ long double
+ * Annex F §F.2: float = IEC 60559 singularis (4 octeti, col 4)
+ *               double = IEC 60559 duplex (8 octeti, col 8)
+ * ================================================================ */
+
+extern typus_t *ty_float;
+extern typus_t *ty_double;
+
+/* ================================================================
+ * praedicata typorum
+ * ================================================================ */
+
+/* §6.2.5¶10: estne typus fluitans? (float vel double) */
+int typus_est_fluat(const typus_t *t);
+
+/* §6.3.1.8: conversiones arithmeticae usitae —
+ * si uterque operandus fluitans, communis typus est maior;
+ * si unus fluitans et alter integer, integer convertitur */
+typus_t *typus_communis_fluat(typus_t *a, typus_t *b);
+
 #endif /* TYPUS_H */

@@ -9,7 +9,7 @@
 #include "parser.h"
 #include "generasym.h"
 #include "emittesym.h"
-#include "fluat.h"
+#include "typus.h"
 #include "generasym_intern.h"
 
 #include <string.h>
@@ -126,7 +126,24 @@ static void genera_sententia(nodus_t *n)
                         && n->typus_decl->genus != TY_STRUCT
                     )
                         val = evalua_constans(n->sinister);
-                    int gid = gsym_globalis_adde(n->nomen, n->typus_decl, n->est_staticus, val);
+                    /* §6.2.2p3: staticae locales (function-scope) nomen
+                     * internum distinctum habent. globalis_index < 0 hic
+                     * significat statica haec nondum in tabula globalium —
+                     * si est_staticus, munge nomen ne homonymae in aliis
+                     * functionibus collidant. */
+                    const char *nomen_reg = n->nomen;
+                    char nomen_muncus[288];
+                    if (s->est_staticus) {
+                        static int contor_staticae = 0;
+                        snprintf(
+                            nomen_muncus, sizeof nomen_muncus,
+                            "%s.%d", n->nomen, contor_staticae++
+                        );
+                        nomen_reg = nomen_muncus;
+                    }
+                    int gid = gsym_globalis_adde(
+                        nomen_reg, n->typus_decl, n->est_staticus, val
+                    );
                     s       ->globalis_index = gid;
                 }
                 if ((n->num_membrorum > 0 && n->membra) || n->sinister) {
@@ -147,11 +164,11 @@ static void genera_sententia(nodus_t *n)
                     ) {
                         for (int i = 0; i < n->num_membrorum; i++) {
                             nodus_t    *elem = n->membra[i];
-                            reg_vertex = 0;
+                            reg_vertex       = 0;
                             genera_expr(elem, 0);
                             int moff, mmag;
-                            int bitpos = elem->init_bitpos;
-                            int bitwd  = elem->init_bitwidth;
+                            int bitpos        = elem->init_bitpos;
+                            int bitwd         = elem->init_bitwidth;
                             typus_t    *mem_t = NULL;
                             if (elem->init_offset >= 0) {
                                 moff = off_basis + elem->init_offset;
@@ -214,6 +231,26 @@ static void genera_sententia(nodus_t *n)
                     } else {
                         /* tabula (fortasse structurarum): utere init_offset
                          * quod parser_sent.c iam computavit pro quoque scalari. */
+                        /* leaf typus destinationis: descendit per ARRAY/STRUCT
+                         * ad typum scalarem. Adhibetur ad decidendum si
+                         * conversio integer→float necessaria est. */
+                        typus_t *dest_fol = s->typus;
+                        while (
+                            dest_fol && (
+                                dest_fol->genus == TY_ARRAY
+                                || dest_fol->genus == TY_STRUCT
+                            )
+                        ) {
+                            if (dest_fol->genus == TY_ARRAY && dest_fol->basis)
+                                dest_fol = dest_fol->basis;
+                            else if (
+                                dest_fol->genus == TY_STRUCT && dest_fol->membra
+                                && dest_fol->num_membrorum > 0
+                            )
+                                dest_fol = dest_fol->membra[0].typus;
+                            else
+                                break;
+                        }
                         for (int i = 0; i < n->num_membrorum; i++) {
                             nodus_t *elem = n->membra[i];
                             if (elem->init_offset < 0)
@@ -236,9 +273,45 @@ static void genera_sententia(nodus_t *n)
                             int elem_off = off_basis + elem->init_offset;
                             esym_movi(17, -elem_off);
                             esym_sub(17, FP, 17);
-                            if (typus_est_fluat(elem->typus))
-                                esym_fstore_to_addr(0, 17, elem->typus);
-                            else
+                            /* §6.7.8: initiālizātor convertitur ad typum
+                             * destinātiōnis. Si dest est float et fons est
+                             * integer, converte ante scripturam. */
+                            int dest_est_fluat = dest_fol
+                                && typus_est_fluat(dest_fol);
+                            if (
+                                dest_est_fluat
+                                && typus_est_integer(elem->typus)
+                            ) {
+                                esym_int_to_double(0, elem->typus);
+                                if (elem->init_size == 4) {
+                                    esym_fcvt_ds(0, 0);
+                                    esym_fstr32(0, 17, 0);
+                                } else {
+                                    esym_fstr64(0, 17, 0);
+                                }
+                            } else if (typus_est_fluat(elem->typus)) {
+                                /* magnitudinem destinationis (init_size)
+                                 * adhibemus, non typum fontis: e.g. float
+                                 * slot 4-octeti requiret str s0, etiam si
+                                 * expressio fontis est double. */
+                                if (elem->init_size == 4) {
+                                    esym_fcvt_ds(0, 0);
+                                    esym_fstr32(0, 17, 0);
+                                } else {
+                                    esym_fstr64(0, 17, 0);
+                                }
+                            } else if (
+                                elem->typus
+                                && elem->typus->genus == TY_STRUCT
+                                && elem->init_size > 0
+                            ) {
+                                /* init tabulae cum valore structurae:
+                                 * x0 = adresse fontis, x17 = destinationis. */
+                                esym_memcpy_bytes(
+                                    17, 0, 0, 0,
+                                    elem->init_size, 16
+                                );
+                            } else
                                 esym_store(0, 17, 0, elem->init_size > 8 ? 8 : elem->init_size);
                             reg_vertex = 0;
                         }
@@ -252,9 +325,9 @@ static void genera_sententia(nodus_t *n)
                     n->sinister->typus->genus == TY_ARRAY
                 ) && s
             ) {
-                int off     = s->offset;
+                int off         = s->offset;
                 typus_t     *st = n->sinister->typus;
-                int tot_mag = st->magnitudo > 0 ? st->magnitudo : mag_typi(st);
+                int tot_mag     = st->magnitudo > 0 ? st->magnitudo : mag_typi(st);
                 esym_imple_zeris(off, tot_mag);
                 if (st->genus == TY_STRUCT && st->membra) {
                     for (int i = 0; i < n->sinister->num_membrorum && i < st->num_membrorum; i++) {
@@ -272,7 +345,7 @@ static void genera_sententia(nodus_t *n)
                     }
                 } else {
                     typus_t  *elem_t = st->basis ? st->basis : ty_int;
-                    int emag = typus_magnitudo(elem_t);
+                    int emag         = typus_magnitudo(elem_t);
                     if (emag < 1)
                         erratum_ad(n->linea, "magnitudo elementi tabulae invalida");
                     for (int i = 0; i < n->sinister->num_membrorum; i++) {
@@ -299,7 +372,7 @@ static void genera_sententia(nodus_t *n)
                 int arr_mag = s->typus->magnitudo;
                 esym_imple_zeris(off, arr_mag);
                 const char *str = n->sinister->chorda;
-                int slen   = n->sinister->lon_chordae;
+                int slen        = n->sinister->lon_chordae;
                 for (int i = 0; i <= slen && i < arr_mag; i++) {
                     esym_movi(0, (unsigned char)str[i]);
                     esym_movi(17, -(off + i));
@@ -316,19 +389,7 @@ static void genera_sententia(nodus_t *n)
                     if (s->typus && s->typus->genus == TY_STRUCT) {
                         esym_movi(17, -off);
                         esym_sub(17, FP, 17);
-                        for (int i = 0; i < mag; i += 8) {
-                            int rem = mag - i;
-                            if (rem >= 8) {
-                                esym_ldr64(16, 0, i);
-                                esym_str64(16, 17, i);
-                            }else if (rem >= 4) {
-                                esym_ldr32(16, 0, i);
-                                esym_str32(16, 17, i);
-                            }else {
-                                esym_ldrb(16, 0, i);
-                                esym_strb(16, 17, i);
-                            }
-                        }
+                        esym_memcpy_bytes(17, 0, 0, 0, mag, 16);
                     } else if (typus_est_fluat(s->typus)) {
                         if (!typus_est_fluat(n->sinister->typus))
                             esym_int_to_double(0, n->sinister->typus);

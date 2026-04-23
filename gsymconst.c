@@ -90,7 +90,7 @@ long gsymconst_evalua_integer(nodus_t *n)
         {
             /* §6.6: recognosce idiōma offsetof:
              * &((T*)0)->membrum  vel  &((T*)0)->m.sub[...] */
-            long base = 0;
+            long base    = 0;
             nodus_t   *e = n->sinister;
             while (e) {
                 if (e->genus == N_ARROW) {

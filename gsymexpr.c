@@ -10,7 +10,7 @@
 #include "parser.h"
 #include "generasym.h"
 #include "emittesym.h"
-#include "fluat.h"
+#include "typus.h"
 #include "generasym_intern.h"
 
 #include <string.h>
@@ -52,7 +52,7 @@ void genera_magnitudo_typi(typus_t *t, int dest_reg)
 {
     int constant_mag = 1;
     nodus_t *dims[16];
-    int ndims = 0;
+    int ndims      = 0;
     typus_t   *cur = t;
     while (cur && cur->genus == TY_ARRAY) {
         if (cur->num_elementorum > 0) {
@@ -109,10 +109,12 @@ void genera_lval(nodus_t *n, int dest)
                 gsym_extern_adde(s->nomen);
                 esym_adrp_ldr_got(r, s->nomen);
             } else if (s->est_globalis) {
-                /* definitum localis — per @PAGE/@PAGEOFF */
+                /* definitum localis — per @PAGE/@PAGEOFF.
+                 * §6.2.2: staticae locales habent linkage nullam; nomen
+                 * internum (fortasse muncum) in tabula globalium servatur. */
                 if (s->globalis_index < 0)
                     s->globalis_index = gsym_globalis_adde(s->nomen, s->typus, s->est_staticus, 0);
-                esym_adrp_add_sym(r, s->nomen);
+                esym_adrp_add_sym(r, gsym_globales[s->globalis_index].nomen);
             } else {
                 /* localis — offset a FP */
                 int off = s->offset;
@@ -914,8 +916,8 @@ void genera_expr(nodus_t *n, int dest)
                 reg_vertex = 0;
                 genera_expr(n->membra[i], 0);
                 typus_t       *mt = n->membra[i]->typus;
-                int m_hfa_n   = 0, m_hfa_t = 0;
-                int m_est_hfa = typus_hfa(mt, &m_hfa_n, &m_hfa_t);
+                int m_hfa_n       = 0, m_hfa_t = 0;
+                int m_est_hfa     = typus_hfa(mt, &m_hfa_n, &m_hfa_t);
                 if (typus_est_fluat(mt)) {
                     int off = arg_spill_base + i * 8;
                     esym_movi(17, off);
@@ -971,8 +973,8 @@ void genera_expr(nodus_t *n, int dest)
              * argumenta sequentia eunt in acervum in ordine. Variadica
              * non-nominata semper in acervum (conventio Apple).
              * Nullum argumentum silenter saltetur. */
-            int num_fp_regs = 0;
-            int num_gp_regs = 0;
+            int num_fp_regs  = 0;
+            int num_gp_regs  = 0;
             int *arg_reg     = malloc(nargs * sizeof(int));
             int *arg_stk_off = malloc(nargs * sizeof(int));
             int *arg_hfa_n   = malloc(nargs * sizeof(int));
@@ -1003,9 +1005,12 @@ void genera_expr(nodus_t *n, int dest)
                         arg_hfa_typ[i] = hfa_typ;
                         num_fp_regs   += hfa_n;
                     } else {
-                        /* NSRN := 8, in acervum */
+                        /* AAPCS64 §B.5: NSRN := 8; HFA transitur per
+                         * acervum ut N elementa consecutiva. */
                         num_fp_regs    = 8;
                         arg_reg[i]     = -1;
+                        arg_hfa_n[i]   = hfa_n;
+                        arg_hfa_typ[i] = hfa_typ;
                         arg_stk_off[i] = stk_bytes;
                         stk_bytes += (pt->magnitudo + 7) & ~7;
                     }
@@ -1063,7 +1068,20 @@ void genera_expr(nodus_t *n, int dest)
                 if (!pt)
                     pt = n->membra[i]->typus;
                 int off = arg_stk_off[i];
-                if (
+                if (arg_hfa_n[i] > 0) {
+                    /* HFA in acervum: carrica punctum struct et scribe
+                     * N elementa consecutiva (float=4, double=8). */
+                    esym_ldr64(17, FP, -(arg_spill_base + i * 8));
+                    for (int k = 0; k < arg_hfa_n[i]; k++) {
+                        if (arg_hfa_typ[i] == TY_FLOAT) {
+                            esym_fldr32(0, 17, k * 4);
+                            esym_fstr32(0, SP, off + k * 4);
+                        } else {
+                            esym_fldr64(0, 17, k * 8);
+                            esym_fstr64(0, SP, off + k * 8);
+                        }
+                    }
+                } else if (
                     pt && pt->genus == TY_STRUCT
                     && pt->magnitudo <= 16 && pt->magnitudo > 0
                 ) {
@@ -1280,7 +1298,7 @@ void genera_expr(nodus_t *n, int dest)
     case N_MEMBER:
         {
             typus_t   *st_mem = n->sinister ? n->sinister->typus : NULL;
-            membrum_t *mb   = quaere_membrum(st_mem, n->nomen);
+            membrum_t *mb     = quaere_membrum(st_mem, n->nomen);
             if (mb && mb->campus_bitorum > 0) {
                 genera_lval(n, dest);
                 genera_lectio_campi_bitorum(r, mb);

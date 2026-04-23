@@ -8,7 +8,7 @@
 #include "utilia.h"
 #include "parser.h"
 #include "parser_intern.h"
-#include "fluat.h"
+#include "typus.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -106,7 +106,7 @@ static nodus_t *parse_expr_primaria(void)
     switch (sig.genus) {
     /* §6.4.4.1: typus constantis integrae ex amplitudine valoris */
     case T_NUM:
-        n = nodus_novus(N_NUM);
+        n         = nodus_novus(N_NUM);
         n ->valor = sig.valor;
         /* §6.4.4.1: typus ex suffixo et amplitudine valoris */
         {
@@ -121,16 +121,17 @@ static nodus_t *parse_expr_primaria(void)
         lex_proximum();
         return n;
 
-    /* §6.4.4.2: constans fluitans — sine suffixo typus est double */
+    /* §6.4.4.2: constans fluitans — sine suffixo typus est double;
+     * 'f'/'F' → float; 'l'/'L' → long double (tractatum ut double). */
     case T_NUM_FLUAT:
         n = nodus_novus(N_NUM_FLUAT);
         n ->valor_f = sig.valor_f;
-        n ->typus   = ty_double;
+        n ->typus   = (sig.num_sfx_f == 1) ? ty_float : ty_double;
         lex_proximum();
         return n;
 
     case T_CHARLIT:
-        n = nodus_novus(N_NUM);
+        n         = nodus_novus(N_NUM);
         n ->valor = sig.valor;
         n ->typus = ty_int;
         lex_proximum();
@@ -180,7 +181,7 @@ static nodus_t *parse_expr_primaria(void)
                 n = nodus_novus(N_VA_ARG);
                 n ->sinister = parse_expr_assign();
                 expecta(T_COMMA);
-                int s_stat = 0, s_ext = 0;
+                int s_stat     = 0, s_ext = 0;
                 typus_t    *tb = parse_specifiers(&s_stat, &s_ext, NULL);
                 char nom[256] = {0};
                 n ->typus_decl = parse_declarator(tb, nom, 256);
@@ -189,7 +190,7 @@ static nodus_t *parse_expr_primaria(void)
                 return n;
             }
 
-            n = nodus_novus(N_IDENT);
+            n         = nodus_novus(N_IDENT);
             n ->nomen = strdup(nomen);
 
         /* quaere symbolum et salva in nodo */
@@ -213,7 +214,7 @@ static nodus_t *parse_expr_primaria(void)
             lex_proximum();
         /* est cast? */
             if (est_specifier_typi()) {
-                int s_stat = 0, s_ext = 0;
+                int s_stat     = 0, s_ext = 0;
                 typus_t    *tb = parse_specifiers(&s_stat, &s_ext, NULL);
                 char nom[256] = {0};
                 typus_t *ct = parse_declarator(tb, nom, 256);
@@ -250,14 +251,14 @@ static nodus_t *parse_expr_primaria(void)
                 /* sizeof( — consume parenthesim et inspice an typus sequatur */
                 lex_proximum(); /* consume '(' */
                 if (est_specifier_typi()) {
-                    int s_stat = 0;
-                    int s_ext  = 0;
+                    int s_stat     = 0;
+                    int s_ext      = 0;
                     typus_t    *tb = parse_specifiers(&s_stat, &s_ext, NULL);
                     char nom[256] = {0};
                     typus_t *st   = parse_declarator(tb, nom, 256);
 
                     expecta(T_RPAREN);
-                    n = nodus_novus(N_NUM);
+                    n         = nodus_novus(N_NUM);
                     n ->valor = typus_magnitudo(st);
                     n ->typus = ty_long;
                     return n;
@@ -286,7 +287,7 @@ static nodus_t *parse_expr_primaria(void)
                     n->typus = ty_long;
                     return n;
                 }
-                n = nodus_novus(N_NUM);
+                n         = nodus_novus(N_NUM);
                 n ->valor = e->typus ? typus_magnitudo(e->typus) : 0;
                 n ->typus = ty_long;
                 return n;
@@ -317,7 +318,7 @@ static nodus_t *parse_expr_postfixa(void)
     for (;;) {
         if (sig.genus == T_LBRACKET) {
             lex_proximum();
-            nodus_t *idx  = nodus_novus(N_INDEX);
+            nodus_t *idx       = nodus_novus(N_INDEX);
             idx     ->sinister = n;
             idx     ->dexter   = parse_expr();
             expecta(T_RBRACKET);
@@ -337,7 +338,7 @@ static nodus_t *parse_expr_postfixa(void)
                 for (int i = 0; i < n->typus->num_membrorum; i++) {
                     if (strcmp(n->typus->membra[i].nomen, mem->nomen) == 0) {
                         mem     ->typus = n->typus->membra[i].typus;
-                        invenit = 1;
+                        invenit         = 1;
                         break;
                     }
                 }
@@ -370,11 +371,11 @@ static nodus_t *parse_expr_postfixa(void)
                 n->typus->basis->genus == TY_STRUCT
             ) {
                 typus_t     *st = n->typus->basis;
-                int invenit = 0;
+                int invenit     = 0;
                 for (int i = 0; i < st->num_membrorum; i++) {
                     if (strcmp(st->membra[i].nomen, mem->nomen) == 0) {
                         mem     ->typus = st->membra[i].typus;
-                        invenit = 1;
+                        invenit         = 1;
                         break;
                     }
                 }
@@ -397,7 +398,7 @@ static nodus_t *parse_expr_postfixa(void)
         } else if (sig.genus == T_LPAREN) {
             /* vocatio functionis */
             lex_proximum();
-            nodus_t *vocatio  = nodus_novus(N_CALL);
+            nodus_t *vocatio   = nodus_novus(N_CALL);
             vocatio ->sinister = n;
 
             nodus_t *args[MAX_PARAM];
@@ -534,7 +535,7 @@ static nodus_t *parse_expr_unaria(void)
     case T_MINUS: case T_TILDE: case T_BANG: {
             int op = sig.genus;
             lex_proximum();
-            nodus_t *n  = nodus_novus(N_UNOP);
+            nodus_t *n         = nodus_novus(N_UNOP);
             n       ->op       = op;
             n       ->sinister = parse_expr_unaria();
             n       ->typus    = n->sinister->typus;
@@ -542,7 +543,7 @@ static nodus_t *parse_expr_unaria(void)
         }
     case T_STAR: {
             lex_proximum();
-            nodus_t *n  = nodus_novus(N_DEREF);
+            nodus_t *n         = nodus_novus(N_DEREF);
             n       ->sinister = parse_expr_unaria();
             if (n->sinister->typus)
                 n->typus = typus_basis_indicis(n->sinister->typus);
@@ -552,14 +553,14 @@ static nodus_t *parse_expr_unaria(void)
         }
     case T_AMP: {
             lex_proximum();
-            nodus_t *n  = nodus_novus(N_ADDR);
+            nodus_t *n         = nodus_novus(N_ADDR);
             n       ->sinister = parse_expr_unaria();
             n       ->typus    = typus_indicem(n->sinister->typus ? n->sinister->typus : ty_int);
             return n;
         }
     case T_PLUSPLUS: {
             lex_proximum();
-            nodus_t *n  = nodus_novus(N_UNOP);
+            nodus_t *n         = nodus_novus(N_UNOP);
             n       ->op       = T_PLUSPLUS;
             n       ->sinister = parse_expr_unaria();
             n       ->typus    = n->sinister->typus;
@@ -567,7 +568,7 @@ static nodus_t *parse_expr_unaria(void)
         }
     case T_MINUSMINUS: {
             lex_proximum();
-            nodus_t *n  = nodus_novus(N_UNOP);
+            nodus_t *n         = nodus_novus(N_UNOP);
             n       ->op       = T_MINUSMINUS;
             n       ->sinister = parse_expr_unaria();
             n       ->typus    = n->sinister->typus;
@@ -609,7 +610,7 @@ static nodus_t *parse_expr_binaria(int min_prec)
         lex_proximum();
         nodus_t *dexter = parse_expr_binaria(prec + 1);
 
-        nodus_t *n  = nodus_novus(N_BINOP);
+        nodus_t *n         = nodus_novus(N_BINOP);
         n       ->op       = op;
         n       ->sinister = sinister;
         n       ->dexter   = dexter;
@@ -667,7 +668,7 @@ nodus_t *parse_expr_conditio(void)
 
     if (sig.genus == T_QUESTION) {
         lex_proximum();
-        nodus_t *ter  = nodus_novus(N_TERNARY);
+        nodus_t *ter       = nodus_novus(N_TERNARY);
         ter     ->sinister = n;
         ter     ->dexter   = parse_expr();
         expecta(T_COLON);
@@ -686,7 +687,7 @@ nodus_t *parse_expr_assign(void)
     int op = sig.genus;
     if (op == T_ASSIGN) {
         lex_proximum();
-        nodus_t *a  = nodus_novus(N_ASSIGN);
+        nodus_t *a         = nodus_novus(N_ASSIGN);
         a       ->sinister = n;
         a       ->dexter   = parse_expr_assign();
         a       ->typus    = n->typus;
@@ -699,7 +700,7 @@ nodus_t *parse_expr_assign(void)
         op == T_GTGTEQ
     ) {
         lex_proximum();
-        nodus_t *a  = nodus_novus(N_OPASSIGN);
+        nodus_t *a         = nodus_novus(N_OPASSIGN);
         a       ->op       = op;
         a       ->sinister = n;
         a       ->dexter   = parse_expr_assign();

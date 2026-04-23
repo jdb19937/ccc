@@ -12,10 +12,9 @@
 
 #include "utilia.h"
 #include "parser.h"
+#include "typus.h"
 #include "generasym.h"
 #include "emittesym.h"
-#include "emitte.h"    /* pro typis: globalis_t, chorda_lit_t, data_reloc_t; constantibus SP/FP/LR/XZR */
-#include "fluat.h"
 #include "gsymconst.h"
 #include "generasym_intern.h"
 
@@ -28,26 +27,26 @@
  * ================================================================ */
 
 /* chordae litterales */
-chorda_lit_t *gsym_chordae     = NULL;
+chorda_lit_t *gsym_chordae       = NULL;
 int           gsym_num_chordarum = 0;
 
 /* globales (data, bss, cstring labels) */
-globalis_t   *gsym_globales    = NULL;
+globalis_t   *gsym_globales      = NULL;
 int           gsym_num_globalium = 0;
 
 /* init_data — byti initializatorum ante emissionem textualem */
-uint8_t      *gsym_init_data   = NULL;
+uint8_t      *gsym_init_data     = NULL;
 int           gsym_init_data_lon = 0;
 
 /* relocationes in init_data (adresses intra data) */
-data_reloc_t *gsym_data_relocs = NULL;
+data_reloc_t *gsym_data_relocs     = NULL;
 int           gsym_num_data_relocs = 0;
 
 /* labels — simplex alveus ad memorandum an definita sit */
 static int *gsym_labels_def = NULL;     /* 0 = nondum, 1 = posita */
 static int  gsym_num_labels = 0;
 
-gsym_func_loc_t *gsym_func_loci  = NULL;
+gsym_func_loc_t *gsym_func_loci    = NULL;
 int              gsym_num_func_loc = 0;
 
 /* ================================================================
@@ -73,7 +72,7 @@ int gsym_chorda_adde(const char *data, int lon)
     memcpy(gsym_chordae[id].data, data, lon);
     gsym_chordae[id] .data[lon] = 0;
     gsym_chordae[id] .longitudo = lon;
-    gsym_chordae[id] .offset = 0;  /* non adhibetur in modo symbolico */
+    gsym_chordae[id] .offset    = 0;  /* non adhibetur in modo symbolico */
     return id;
 }
 
@@ -93,13 +92,13 @@ int gsym_globalis_adde(const char *nomen, typus_t *typus, int est_staticus, long
     int col = typus ? typus_colineatio(typus) : 1;
     if (col < 1)
         col = 1;
-    gsym_globales[id] .colineatio = col;
-    gsym_globales[id] .est_bss = 1;  /* defalta: in BSS nisi initiatur */
-    gsym_globales[id] .bss_offset = 0;
-    gsym_globales[id] .data_offset = 0;
-    gsym_globales[id] .est_staticus = est_staticus;
+    gsym_globales[id] .colineatio      = col;
+    gsym_globales[id] .est_bss         = 1;  /* defalta: in BSS nisi initiatur */
+    gsym_globales[id] .bss_offset      = 0;
+    gsym_globales[id] .data_offset     = 0;
+    gsym_globales[id] .est_staticus    = est_staticus;
     gsym_globales[id] .valor_initialis = valor;
-    gsym_globales[id] .habet_valorem = 0;
+    gsym_globales[id] .habet_valorem   = 0;
     return id;
 }
 
@@ -156,8 +155,8 @@ static int gsym_func_loc_adde(const char *nomen, int est_staticus)
         erratum("generasym: nimis multae functiones locales");
     int i = gsym_num_func_loc++;
     strncpy(gsym_func_loci[i].nomen, nomen, 255);
-    gsym_func_loci[i] .nomen[255] = 0;
-    gsym_func_loci[i] .label = lab;
+    gsym_func_loci[i] .nomen[255]   = 0;
+    gsym_func_loci[i] .label        = lab;
     gsym_func_loci[i] .est_staticus = est_staticus;
     return lab;
 }
@@ -233,7 +232,7 @@ void generasym_translatio(nodus_t *radix, FILE *out)
         nodus_t *n = radix->membra[i];
         if (n->genus == N_VAR_DECL && !n->est_externus) {
             symbolum_t *s = n->sym ? n->sym : ambitus_quaere_omnes(n->nomen);
-            long val   = 0;
+            long val      = 0;
             if (n->sinister && n->sinister->genus == N_NUM)
                 val = n->sinister->valor;
             int gid = gsym_globalis_adde(n->nomen, n->typus_decl, n->est_staticus, val);

@@ -8,7 +8,7 @@
 #include "utilia.h"
 #include "parser.h"
 #include "parser_intern.h"
-#include "fluat.h"
+#include "typus.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -19,12 +19,12 @@ typus_t *parse_specifiers(
     int *est_staticus, int *est_externus,
     int *est_typedef
 ) {
-    int s_stat     = 0, s_ext = 0, s_td = 0;
-    int s_unsigned = 0;
-    int s_short    = 0, s_long = 0, s_longlong = 0;
-    int s_char     = 0, s_int = 0, s_void = 0;
-    int s_const    = 0;
-    typus_t        *t     = NULL;
+    int s_stat        = 0, s_ext = 0, s_td = 0;
+    int s_unsigned    = 0;
+    int s_short       = 0, s_long = 0, s_longlong = 0;
+    int s_char        = 0, s_int = 0, s_void = 0;
+    int s_const       = 0;
+    typus_t        *t = NULL;
 
     for (;;) {
         switch (sig.genus) {
@@ -84,7 +84,11 @@ typus_t *parse_specifiers(
             t = parse_enum();
             continue;
         case T_IDENT:
-            if (lex_est_typus(sig.chorda)) {
+            /* §6.7.2: typedef-nomen valet ut type-specifier solum si
+             * nullus alius type-specifier adhuc visus est. Aliter
+             * identifier est declarator (e.g. typedef struct {} Nomen;
+             * ubi Nomen iam aliter typedef'atus est in alio scopo). */
+            if (!t && !s_void && lex_est_typus(sig.chorda)) {
                 symbolum_t *sym = ambitus_quaere(sig.chorda, SYM_TYPEDEF);
                 if (!sym || !sym->typus)
                     erratum_ad(sig_linea, "typedef '%s' sine typo", sig.chorda);
@@ -149,8 +153,8 @@ typus_t *parse_struct_vel_union(void)
         /* declaratio ante — crea typum incompletum */
         typus_t *t = typus_novus(TY_STRUCT);
         strncpy(t->nomen_tag, nomen_tag, 127);
-        symbolum_t *ns = ambitus_adde(nomen_tag, SYM_STRUCT_TAG);
-        ns         ->typus      = t;
+        symbolum_t *ns     = ambitus_adde(nomen_tag, SYM_STRUCT_TAG);
+        ns         ->typus = t;
         return t;
     }
 
@@ -165,8 +169,8 @@ typus_t *parse_struct_vel_union(void)
         t = typus_novus(TY_STRUCT);
         strncpy(t->nomen_tag, nomen_tag, 127);
         if (nomen_tag[0]) {
-            symbolum_t *ns = ambitus_adde(nomen_tag, SYM_STRUCT_TAG);
-            ns         ->typus      = t;
+            symbolum_t *ns     = ambitus_adde(nomen_tag, SYM_STRUCT_TAG);
+            ns         ->typus = t;
         }
     }
 
@@ -321,7 +325,7 @@ typus_t *parse_enum(void)
     if (nomen_tag[0]) {
         symbolum_t *es = ambitus_quaere(nomen_tag, SYM_ENUM_TAG);
         if (!es) {
-            es = ambitus_adde(nomen_tag, SYM_ENUM_TAG);
+            es         = ambitus_adde(nomen_tag, SYM_ENUM_TAG);
             es ->typus = t;
         } else {
             t = es->typus;
@@ -429,7 +433,7 @@ typus_t *parse_declarator(typus_t *basis, char *nomen, int max_nomen)
         int ndims = 0;
         while (sig.genus == T_LBRACKET) {
             lex_proximum();
-            int num = 0;
+            int num     = 0;
             nodus_t *ve = NULL;
             /* §6.7.5.3: praetermitte 'static' in [static N] */
             if (sig.genus == T_STATIC)
@@ -515,7 +519,7 @@ typus_t *parse_parametros(
             break;
         }
 
-        int s_stat = 0, s_ext = 0;
+        int s_stat     = 0, s_ext = 0;
         typus_t    *tb = parse_specifiers(&s_stat, &s_ext, NULL);
         char nomen[256] = {0};
         typus_t *tp = parse_declarator(tb, nomen, 256);

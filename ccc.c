@@ -73,8 +73,8 @@ static char *quaere_iccc(const char *argv0)
     const char *slash = strrchr(argv0, '/');
     if (!slash)
         return strdup("iccc");
-    int dirlon = (int)(slash - argv0);
-    char       *via  = malloc(dirlon + 6);
+    int dirlon      = (int)(slash - argv0);
+    char       *via = malloc(dirlon + 6);
     if (!via)
         erratum("memoria exhausta");
     memcpy(via, argv0, dirlon);
@@ -97,14 +97,14 @@ static void exsecute_iccc(
         char **arg = malloc((num_iccc_args + 5) * sizeof(char *));
         if (!arg)
             _exit(127);
-        int n = 0;
+        int n     = 0;
         arg[n ++] = (char *)iccc_via;
         for (int i = 0; i < num_iccc_args; i++)
             arg[n++] = iccc_args[i];
         arg[n  ++] = "-o";
         arg[n  ++] = (char *)plica_i;
         arg[n  ++] = (char *)plica_c;
-        arg[n] = NULL;
+        arg[n]     = NULL;
         /* execvp: si iccc_via continet '/', directe exsecutatur; alias PATH quaeritur */
         execvp(iccc_via, arg);
         fprintf(
@@ -261,12 +261,12 @@ int main(int argc, char *argv[])
             erratum("fork: %s", strerror(errno));
         if (pid == 0) {
             char *args[6];
-            int a   = 0;
+            int a       = 0;
             args[a  ++] = imm_via;
             args[a  ++] = (char *)plica_s_nomen;
             args[a  ++] = "-o";
             args[a  ++] = (char *)plica_exitus;
-            args[a] = NULL;
+            args[a]     = NULL;
             execvp(imm_via, args);
             fprintf(stderr, "ccc: non possum exsecure imm: %s\n", strerror(errno));
             _exit(127);

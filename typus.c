@@ -4,7 +4,6 @@
 
 #include "utilia.h"
 #include "typus.h"
-#include "fluat.h"
 
 /* ================================================================
  * allocator typorum
@@ -81,6 +80,16 @@ void typus_initia(void)
     ty_ulong ->magnitudo = 8;
     ty_ulong ->colineatio = 8;
     ty_ulong ->est_sine_signo = 1;
+
+    /* §6.2.5¶10, Annex F §F.2: float = IEC 60559 singularis */
+    ty_float = typus_novus(TY_FLOAT);
+    ty_float ->magnitudo = 4;    /* 32-bit */
+    ty_float ->colineatio = 4;
+
+    /* §6.2.5¶10, Annex F §F.2: double = IEC 60559 duplex */
+    ty_double = typus_novus(TY_DOUBLE);
+    ty_double ->magnitudo = 8;   /* 64-bit */
+    ty_double ->colineatio = 8;
 }
 
 /* ================================================================
@@ -278,4 +287,69 @@ int typus_hfa(const typus_t *t, int *n_elem, int *elem_genus)
     *n_elem     = t->num_membrorum;
     *elem_genus = base;
     return 1;
+}
+
+
+/* ================================================================
+ * typi praefiniti
+ *
+ * §6.2.5¶10: "There are three real floating types, designated
+ *  as float, double, and long double."
+ *
+ * Annex F §F.2:
+ *   float  = IEC 60559 singularis (32-bit, 4 octeti)
+ *   double = IEC 60559 duplex (64-bit, 8 octeti)
+ *
+ * long double non sustentatur (tractatur ut double).
+ * ================================================================ */
+
+typus_t *ty_float;
+typus_t *ty_double;
+
+void fluat_initia(void)
+{
+    /* §6.2.5¶10, Annex F §F.2: float = IEC 60559 singularis */
+    ty_float = typus_novus(TY_FLOAT);
+    ty_float ->magnitudo = 4;    /* 32-bit */
+    ty_float ->colineatio = 4;
+
+    /* §6.2.5¶10, Annex F §F.2: double = IEC 60559 duplex */
+    ty_double = typus_novus(TY_DOUBLE);
+    ty_double ->magnitudo = 8;   /* 64-bit */
+    ty_double ->colineatio = 8;
+}
+
+/*
+ * §6.3.1.8: conversiones arithmeticae usitae pro typis fluitantibus:
+ *
+ *   "First, if the corresponding real type of either operand is
+ *    long double, the other operand is converted ... to long double."
+ *   "Otherwise, if ... either operand is double, the other operand
+ *    is converted ... to double."
+ *   "Otherwise, if ... either operand is float, the other operand
+ *    is converted ... to float."
+ *
+ * Si neuter est fluitans, reddit NULL (regulae integrorum applicandae).
+ */
+typus_t *typus_communis_fluat(typus_t *a, typus_t *b)
+{
+    int af = typus_est_fluat(a);
+    int bf = typus_est_fluat(b);
+
+    if (!af && !bf)
+        return NULL; /* ambo integri — regulae integrorum applicandae */
+
+    /* §6.3.1.8: si uterque double (vel alter double, alter minor) → double */
+    if ((a && a->genus == TY_DOUBLE) || (b && b->genus == TY_DOUBLE))
+        return ty_double;
+
+    /* §6.3.1.8: si uterque float → float */
+    if (af && bf)
+        return ty_float;
+
+    /* §6.3.1.8: unus fluitans, alter integer →
+     * §6.3.1.4¶2: integer convertitur ad typum fluitantem. */
+    if (af)
+        return a;
+    return b;
 }
