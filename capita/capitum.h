@@ -241,6 +241,7 @@ struct sigaction {
 #define SIG_DFL ((__sighandler_t)0)
 #define SIG_IGN ((__sighandler_t)1)
 #define SIGINT 2
+#define SIGPIPE 13
 #define SIGALRM 14
 #define SIGTERM 15
 #define SIGCHLD 20
