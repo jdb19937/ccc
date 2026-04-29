@@ -1,0 +1,9 @@
+GCC_INC := $(shell $(CC) -print-file-name=include)
+
+USER_CFLAGS  = -std=c99 -O2 -Wall -Wno-unused-function -Wno-unused-variable \
+               -nostdinc -isystem $(GCC_INC) -Iminerva/include \
+               -ffreestanding -fno-pic -fno-pie
+USER_LDFLAGS = -static -nostdlib -no-pie -Wl,-z,noexecstack
+
+opera/%: opera/%.c minerva/minerva.c
+	$(CC) $(USER_CFLAGS) $(USER_LDFLAGS) $< minerva/minerva.c -o $@

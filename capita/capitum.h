@@ -181,6 +181,11 @@ int *__error(void);
 #define EWOULDBLOCK EAGAIN
 #define EINTR 4
 #define ENOENT 2
+#define ENOMEM 12
+#define EINVAL 22
+#define ENOTTY 25
+#define EIO 5
+#define EACCES 13
 
 /* termios */
 #define NCCS 24
@@ -275,7 +280,9 @@ int tcsetpgrp(int, int);
 int getpid(void);
 int getppid(void);
 unsigned int getuid(void);
+unsigned int geteuid(void);
 unsigned int getgid(void);
+unsigned int getegid(void);
 int getpgrp(void);
 long lseek(int, long, int);
 int ftruncate(int, long);
@@ -333,11 +340,17 @@ struct stat {
     long st_birthtime;
     long st_birthtime_nsec;
     long st_size;
-    char __pad2[40];
+    long st_blocks;
+    int st_blksize;
+    unsigned int st_flags;
+    unsigned int st_gen;
+    int st_lspare;
+    long st_qspare[2];
 };
 int stat(const char *, struct stat *);
 int fstat(int, struct stat *);
 int lstat(const char *, struct stat *);
+ssize_t readlink(const char *, char *, size_t);
 int chmod(const char *, unsigned short);
 #define S_ISDIR(m) (((m) & 0170000) == 0040000)
 #define S_ISREG(m) (((m) & 0170000) == 0100000)
@@ -410,9 +423,13 @@ unsigned long fread(void *, unsigned long, unsigned long, void *);
 #define PROT_READ  1
 #define PROT_WRITE 2
 #define PROT_EXEC  4
-#define MAP_SHARED    1
-#define MAP_PRIVATE   2
-#define MAP_ANONYMOUS 4096
+#define MAP_SHARED    0x0001
+#define MAP_PRIVATE   0x0002
+#define MAP_FIXED     0x0010
+#define MAP_NOCACHE   0x0400
+#define MAP_JIT       0x0800
+#define MAP_ANON      0x1000
+#define MAP_ANONYMOUS MAP_ANON
 #define MAP_FAILED ((void *)-1)
 #define MS_SYNC 16
 void *mmap(void *, unsigned long, int, int, int, long);
@@ -508,6 +525,14 @@ struct timeval {
     long tv_sec;
     long tv_usec;
 };
+struct timespec {
+    long tv_sec;
+    long tv_nsec;
+};
+typedef int clockid_t;
+#define CLOCK_REALTIME  0
+#define CLOCK_MONOTONIC 6
+int clock_gettime(clockid_t, struct timespec *);
 typedef struct {
     int fds_bits[32];
 } fd_set;

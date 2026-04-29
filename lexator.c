@@ -149,6 +149,39 @@ static void tracta_directivam_lineae(void)
     /* iam post '#' — praetermitte spatia */
     int c;
     while ((c = lege_c()) == ' ' || c == '\t') {}
+    /* #pragma — monitum et omitte ad finem lineae (ut iccc) */
+    if (c == 'p') {
+        char rel[8] = {0};
+        int n    = 0;
+        rel[n++] = (char)c;
+        while (n < (int)sizeof(rel) - 1) {
+            c = lege_c();
+            if (c < 'a' || c > 'z')
+                break;
+            rel[n++] = (char)c;
+        }
+        rel[n] = 0;
+        if (!strcmp(rel, "pragma")) {
+            char buf[256];
+            int b = 0;
+            while (c != -1 && c != '\n') {
+                if (b < (int)sizeof(buf) - 1)
+                    buf[b++] = (char)c;
+                c = lege_c();
+            }
+            buf[b] = 0;
+            fprintf(
+                stderr, "%s:%d: monitum: #pragma ignoratum:%s\n",
+                cur_nomen ? cur_nomen : "?", cur_linea, buf
+            );
+            return;
+        }
+        erratum_ad(
+            cur_linea,
+            "directiva '#' malformata in plica praeprocessata "
+            "(expectabatur '# N \"plica\"')"
+        );
+    }
     /* lege numerum lineae */
     if (c < '0' || c > '9')
         erratum_ad(

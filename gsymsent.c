@@ -204,6 +204,7 @@ static void genera_sententia(nodus_t *n)
                             } else if (
                                 mem_t && mem_t->genus == TY_STRUCT
                                 && mem_t->magnitudo > 0
+                                && elem->typus && elem->typus->genus == TY_STRUCT
                             ) {
                                 /* init struct-membrī ex struct-valōre:
                                  * x0 = adresse fontis, x17 = adresse dēst. */

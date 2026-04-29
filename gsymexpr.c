@@ -1446,7 +1446,9 @@ void genera_expr(nodus_t *n, int dest)
                             esym_sxth(r, r);
                         break;
                     case 4:
-                        if (!est_unsigned(n->typus_decl))
+                        if (est_unsigned(n->typus_decl))
+                            esym_uxtw(r, r);
+                        else
                             esym_sxtw(r, r);
                         break;
                     default:
@@ -1473,7 +1475,9 @@ void genera_expr(nodus_t *n, int dest)
                             esym_sxth(r, r);
                         break;
                     case 4:
-                        if (!est_unsigned(n->typus_decl))
+                        if (est_unsigned(n->typus_decl))
+                            esym_uxtw(r, r);
+                        else
                             esym_sxtw(r, r);
                         break;
                     default:
@@ -1499,7 +1503,9 @@ void genera_expr(nodus_t *n, int dest)
                             esym_sxth(r, r);
                         break;
                     case 4:
-                        if (!est_unsigned(n->typus_decl))
+                        if (est_unsigned(n->typus_decl))
+                            esym_uxtw(r, r);
+                        else
                             esym_sxtw(r, r);
                         break;
                     default:
